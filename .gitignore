@@ -1,0 +1,12 @@
+.gradle/
+build/
+logs/
+*.log
+
+.env
+application-secret.yml
+src/main/resources/application-secret.yml
+
+.idea/
+*.iml
+out/

@@ -1,0 +1,11 @@
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: ${DB_URL:jdbc:mysql://localhost:3306/hinsight}
+    username: ${DB_USERNAME:hinsight}
+    password: ${DB_PASSWORD:}
+
+logging:
+  level:
+    com.hinsight: debug
+    org.mybatis: debug

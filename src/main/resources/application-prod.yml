@@ -1,0 +1,8 @@
+spring:
+  thymeleaf:
+    cache: true
+
+logging:
+  level:
+    com.hinsight: info
+    org.mybatis: warn

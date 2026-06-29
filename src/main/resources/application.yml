@@ -1,0 +1,21 @@
+spring:
+  application:
+    name: H-Insight-AI
+  profiles:
+    active: dev
+    include: secret
+  thymeleaf:
+    cache: false
+    prefix: classpath:/templates/
+    suffix: .html
+
+mybatis:
+  mapper-locations: classpath:/mapper/**/*.xml
+  type-aliases-package: com.hinsight.**.model.vo
+  configuration:
+    map-underscore-to-camel-case: true
+
+server:
+  error:
+    include-stacktrace: never
+    include-message: never
