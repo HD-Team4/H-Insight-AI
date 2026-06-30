@@ -8,4 +8,10 @@
         FROM products
     </select>
 
+    <select id="getProductById" parameterType="long" resultType="Product">
+        SELECT *
+        FROM products
+        WHERE product_id = #{productId}
+    </select>
+
 </mapper>

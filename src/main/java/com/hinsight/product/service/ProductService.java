@@ -17,4 +17,7 @@ public class ProductService {
         return productDao.getAllProducts();
     }
 
+    public Product getProductById(Long productId) {
+        return productDao.getProductById(productId);
+    }
 }
