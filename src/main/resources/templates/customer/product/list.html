@@ -6,84 +6,49 @@
 <th:block layout:fragment="content">
     <div class="container">
 
-        <nav class="category-nav">
-            <a th:href="@{/products}"
-               class="category-tab"
-               th:classappend="${condition.categoryGroup() == null} ? 'active'">전체</a>
-            <a th:href="@{/products(categoryGroup='TOP')}"
-               class="category-tab"
-               th:classappend="${condition.categoryGroup() == 'TOP'} ? 'active'">상의</a>
-            <a th:href="@{/products(categoryGroup='BOTTOM')}"
-               class="category-tab"
-               th:classappend="${condition.categoryGroup() == 'BOTTOM'} ? 'active'">하의</a>
-            <a th:href="@{/products(categoryGroup='OUTER')}"
-               class="category-tab"
-               th:classappend="${condition.categoryGroup() == 'OUTER'} ? 'active'">아우터</a>
-            <a th:href="@{/products(categoryGroup='ACCESSORY')}"
-               class="category-tab"
-               th:classappend="${condition.categoryGroup() == 'ACCESSORY'} ? 'active'">악세서리</a>
-        </nav>
+        <div class="filter-bar">
+            <nav class="category-nav">
+                <a th:href="@{/products(keyword=${condition.keyword()}, minPrice=${condition.minPrice()}, maxPrice=${condition.maxPrice()})}"
+                   class="category-tab"
+                   th:classappend="${condition.categoryGroup() == null} ? 'active'">전체</a>
+                <a th:href="@{/products(categoryGroup='TOP', keyword=${condition.keyword()}, minPrice=${condition.minPrice()}, maxPrice=${condition.maxPrice()})}"
+                   class="category-tab"
+                   th:classappend="${condition.categoryGroup() == 'TOP'} ? 'active'">상의</a>
+                <a th:href="@{/products(categoryGroup='BOTTOM', keyword=${condition.keyword()}, minPrice=${condition.minPrice()}, maxPrice=${condition.maxPrice()})}"
+                   class="category-tab"
+                   th:classappend="${condition.categoryGroup() == 'BOTTOM'} ? 'active'">하의</a>
+                <a th:href="@{/products(categoryGroup='OUTER', keyword=${condition.keyword()}, minPrice=${condition.minPrice()}, maxPrice=${condition.maxPrice()})}"
+                   class="category-tab"
+                   th:classappend="${condition.categoryGroup() == 'OUTER'} ? 'active'">아우터</a>
+                <a th:href="@{/products(categoryGroup='ACCESSORY', keyword=${condition.keyword()}, minPrice=${condition.minPrice()}, maxPrice=${condition.maxPrice()})}"
+                   class="category-tab"
+                   th:classappend="${condition.categoryGroup() == 'ACCESSORY'} ? 'active'">악세서리</a>
+            </nav>
 
-        <form id="priceFilterForm" th:action="@{/products}" method="get" class="price-filter">
-            <input type="hidden" name="categoryGroup" th:value="${condition.categoryGroup()}"/>
-            <input type="hidden" name="minPrice" id="minPriceInput" th:value="${condition.minPrice()}"/>
-            <input type="hidden" name="maxPrice" id="maxPriceInput" th:value="${condition.maxPrice()}"/>
+            <div class="price-filter">
+                <input type="number" id="minPriceInput" class="price-input" placeholder="최소 금액" min="0"
+                       th:value="${condition.minPrice()}"/>
+                <span class="price-divider">~</span>
+                <input type="number" id="maxPriceInput" class="price-input" placeholder="최대 금액" min="0"
+                       th:value="${condition.maxPrice()}"/>
+                <button type="button" class="price-apply-btn" onclick="applyPriceFilter()">적용</button>
+            </div>
+        </div>
 
-            <label>
-                <input type="radio" name="priceRangeOption" value="0,"
-                       th:checked="${condition.minPrice() == null and condition.maxPrice() == null}"
-                       onchange="applyPriceRange(this.value)"/> 전체
-            </label>
-            <label>
-                <input type="radio" name="priceRangeOption" value="0,10000"
-                       th:checked="${condition.maxPrice() == 10000}"
-                       onchange="applyPriceRange(this.value)"/> 1만원 이하
-            </label>
-            <label>
-                <input type="radio" name="priceRangeOption" value="10000,30000"
-                       th:checked="${condition.minPrice() == 10000 and condition.maxPrice() == 30000}"
-                       onchange="applyPriceRange(this.value)"/> 1~3만원
-            </label>
-            <label>
-                <input type="radio" name="priceRangeOption" value="30000,50000"
-                       th:checked="${condition.minPrice() == 30000 and condition.maxPrice() == 50000}"
-                       onchange="applyPriceRange(this.value)"/> 3~5만원
-            </label>
-            <label>
-                <input type="radio" name="priceRangeOption" value="50000,"
-                       th:checked="${condition.minPrice() == 50000 and condition.maxPrice() == null}"
-                       onchange="applyPriceRange(this.value)"/> 5만원 이상
-            </label>
-        </form>
-
-        <script th:inline="javascript">
-            function applyPriceRange(rangeValue) {
-                // rangeValue 형식: "min,max" (예: "10000,30000", "50000,", "0,")
-                const [min, max] = rangeValue.split(",");
-
-                const minInput = document.getElementById("minPriceInput");
-                const maxInput = document.getElementById("maxPriceInput");
-
-                // "전체"(0,)는 min/max 둘 다 비움
-                minInput.value = (min === "0" && max === "") ? "" : min;
-                maxInput.value = max;
-
-                document.getElementById("priceFilterForm").submit();
-            }
-        </script>
-
-        <h2 class="section-title">H-Insight 추천 픽</h2>
+        <h2 class="section-title" th:if="${condition.categoryGroup() == null}">
+            H-Insight 추천 픽
+        </h2>
 
         <div class="product-grid">
             <a th:each="product : ${products}"
                th:href="@{/products/{id}(id=${product.productId})}"
                class="product-card">
 
-                <div class="product-img" style="position: relative; width: 100%; aspect-ratio: 3 / 4; overflow: hidden; background: #f2f2f2;">
+                <div class="product-img">
                     <img th:if="${product.imageUrl}"
                          th:src="${product.imageUrl}"
                          th:alt="${product.productName}"
-                         style="width: 100%; height: 100%; object-fit: cover; display: block;"/>
+                         style="width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 12px;"/>
                 </div>
 
                 <div class="product-info">
@@ -98,5 +63,30 @@
         </div>
 
     </div>
+
+    <script th:inline="javascript">
+        (function () {
+            const minInput = document.getElementById('minPriceInput');
+            const maxInput = document.getElementById('maxPriceInput');
+
+            window.applyPriceFilter = function () {
+                const params = new URLSearchParams(window.location.search);
+
+                const min = minInput.value.trim();
+                const max = maxInput.value.trim();
+
+                if (min !== '') { params.set('minPrice', min); } else { params.delete('minPrice'); }
+                if (max !== '') { params.set('maxPrice', max); } else { params.delete('maxPrice'); }
+
+                window.location.href = '/products?' + params.toString();
+            };
+
+            [minInput, maxInput].forEach(function (el) {
+                el.addEventListener('keydown', function (e) {
+                    if (e.key === 'Enter') { applyPriceFilter(); }
+                });
+            });
+        })();
+    </script>
 </th:block>
 </html>

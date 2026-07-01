@@ -4,6 +4,7 @@ import com.hinsight.product.dao.ProductDao;
 import com.hinsight.product.model.dto.ProductSearchConditionDto;
 import com.hinsight.product.model.dto.ProductSearchQuery;
 import com.hinsight.product.model.vo.CategoryGroup;
+import com.hinsight.product.model.vo.PriceRange;
 import com.hinsight.product.model.vo.Product;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -50,4 +51,9 @@ public class ProductService {
 
         return null; // 전체 상품 대상
     }
+
+    public PriceRange getPriceRange() {
+        return productDao.getPriceRange();
+    }
+
 }

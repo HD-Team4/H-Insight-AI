@@ -23,9 +23,9 @@ public class ProductController {
     ) {
         model.addAttribute("products", productService.searchProducts(condition));
         model.addAttribute("condition", condition);
+        model.addAttribute("priceRange", productService.getPriceRange());   // 추가
         return "customer/product/list";
     }
-
 
 
     @GetMapping("/{id}")

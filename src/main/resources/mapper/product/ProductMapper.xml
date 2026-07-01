@@ -38,4 +38,9 @@
         </if>
     </select>
 
+    <select id="getPriceRange" resultType="PriceRange">
+        SELECT MIN(price) AS minPrice, MAX(price) AS maxPrice
+        FROM products
+    </select>
+
 </mapper>
