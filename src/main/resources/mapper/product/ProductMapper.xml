@@ -22,8 +22,11 @@
             AND product_name LIKE CONCAT('%', #{keyword}, '%')
         </if>
 
-        <if test="categoryId != null">
-            AND category_id = #{categoryId}
+        <if test="categoryIds != null and categoryIds.size() > 0">
+            AND category_id IN
+            <foreach collection="categoryIds" item="cid" open="(" separator="," close=")">
+                #{cid}
+            </foreach>
         </if>
 
         <if test="minPrice != null">
@@ -33,6 +36,6 @@
         <if test="maxPrice != null">
             AND price <![CDATA[ <= ]]> #{maxPrice}
         </if>
-
     </select>
+
 </mapper>
