@@ -2,4 +2,19 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.hinsight.review.dao.ReviewDao">
+
+    <select id="findByProductId" parameterType="long" resultType="Review">
+        SELECT
+            review_id,
+            product_id,
+            user_id,
+            content,
+            rating,
+            sentiment,
+            created_at,
+            updated_at
+        FROM reviews
+        WHERE product_id = #{productId}
+        ORDER BY created_at DESC, review_id DESC
+    </select>
 </mapper>

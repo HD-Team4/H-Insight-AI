@@ -20,13 +20,12 @@
             b.company_name AS brand_name,
             p.product_name,
             p.price,
-            p.stock_quantity,
             p.image_url,
             p.description,
             p.product_info
         FROM products p
         LEFT JOIN biz_users b
-            ON p.biz_user_id = b.biz_user_id
+            ON p.biz_id = b.biz_id
         WHERE p.product_id = #{productId}
     </select>
 

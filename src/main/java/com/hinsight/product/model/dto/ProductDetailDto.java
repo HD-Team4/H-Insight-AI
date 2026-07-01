@@ -5,7 +5,6 @@ public record ProductDetailDto(
         String brandName,
         String productName,
         Integer price,
-        Integer stockQuantity,
         String imageUrl,
         String description,
         String productInfo
