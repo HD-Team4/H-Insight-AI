@@ -1,0 +1,341 @@
+/* ================= Design System ================= */
+:root {
+    --primary: #008982;
+    --primary-hover: #00706a;
+    --accent: #E2A807;
+    --text-main: #000000;
+    --text-sub: #666666;
+    --bg-base: #FFFFFF;
+    --bg-light: #F8F9FA;
+    --border: #EAEAEA;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Pretendard', sans-serif;
+}
+
+body {
+    background-color: var(--bg-base);
+    color: var(--text-main);
+    line-height: 1.5;
+}
+
+a { text-decoration: none; color: inherit; }
+ul { list-style: none; }
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+/* ================= Header ================= */
+.top-bar {
+    background-color: var(--text-main);
+    height: 24px;
+    width: 100%;
+}
+
+.header-main {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.logo {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--primary);
+    flex: 1;
+    letter-spacing: -0.5px;
+}
+
+.search-wrapper {
+    flex: 2;
+    display: flex;
+    justify-content: center;
+}
+
+.search-bar {
+    width: 100%;
+    max-width: 400px;
+    display: flex;
+    align-items: center;
+    background-color: var(--bg-light);
+    border-radius: 30px;
+    padding: 10px 20px;
+    border: 1px solid transparent;
+    transition: border 0.3s ease;
+}
+
+.search-bar:focus-within {
+    border: 1px solid var(--primary);
+    background-color: var(--bg-base);
+}
+
+.search-bar input {
+    border: none;
+    background: transparent;
+    width: 100%;
+    outline: none;
+    font-size: 15px;
+}
+
+.header-utils {
+    flex: 1;
+    display: flex;
+    justify-content: flex-end;
+    gap: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.header-utils a:hover {
+    color: var(--primary);
+}
+
+/* ================= Categories ================= */
+.category-nav {
+    padding: 20px 0;
+    display: flex;
+    gap: 12px;
+}
+
+.category-tab {
+    padding: 10px 24px;
+    border-radius: 20px;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-sub);
+    background-color: var(--bg-light);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+}
+
+.category-tab:hover {
+    background-color: var(--bg-base);
+    border: 1px solid var(--border);
+    color: var(--text-main);
+}
+
+.category-tab.active {
+    background-color: var(--primary);
+    color: var(--bg-base);
+    box-shadow: 0 4px 10px rgba(0, 137, 130, 0.2);
+}
+
+/* ================= Main Grid & Cards ================= */
+.section-title {
+    font-size: 22px;
+    font-weight: 700;
+    margin: 40px 0 20px 0;
+}
+
+.product-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+    margin-bottom: 30px;
+}
+
+.product-card {
+    border-radius: 12px;
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    cursor: pointer;
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.08);
+}
+
+.product-img {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    background-color: var(--bg-light);
+    border-radius: 12px;
+    position: relative;
+}
+
+.badge-new {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    background-color: var(--accent);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 20px;
+}
+
+.product-info {
+    padding: 16px 8px;
+}
+
+.brand-name {
+    font-size: 12px;
+    color: var(--text-sub);
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.product-name {
+    font-size: 15px;
+    font-weight: 500;
+    margin-bottom: 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.product-price {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+/* Pagination */
+.pagination-dots {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 60px;
+}
+
+.dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--border);
+    cursor: pointer;
+}
+
+.dot.active {
+    background-color: var(--primary);
+    width: 24px;
+    border-radius: 4px;
+}
+
+/* ================= Recommendation Section ================= */
+.recommendation-section {
+    background-color: var(--bg-light);
+    padding: 40px;
+    border-radius: 16px;
+    margin-bottom: 80px;
+}
+
+.recommend-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.recommend-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.recommend-item:hover {
+    color: var(--primary);
+}
+
+.recommend-item::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    background-color: var(--primary);
+    border-radius: 50%;
+}
+
+/* ================= Footer ================= */
+footer {
+    border-top: 1px solid var(--border);
+    padding: 40px 0;
+    color: var(--text-sub);
+    font-size: 13px;
+}
+
+.footer-content {
+    display: flex;
+    justify-content: space-between;
+}
+
+/* ================= Chatbot ================= */
+.chatbot-btn {
+    position: fixed;
+    bottom: 40px;
+    right: 40px;
+    width: 64px;
+    height: 64px;
+    background-color: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    box-shadow: 0 8px 24px rgba(0, 137, 130, 0.4);
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.3s ease;
+    z-index: 100;
+}
+
+.chatbot-btn:hover {
+    transform: scale(1.1);
+    background-color: var(--primary-hover);
+}
+
+/* ================= Responsive ================= */
+@media (max-width: 768px) {
+    .header-main {
+        flex-direction: column;
+        gap: 16px;
+        padding: 16px 0;
+    }
+
+    .logo, .search-wrapper, .header-utils {
+        flex: none;
+        width: 100%;
+        justify-content: center;
+    }
+
+    .header-utils {
+        justify-content: space-evenly;
+    }
+
+    .product-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+    }
+
+    .category-nav {
+        overflow-x: auto;
+        padding-bottom: 10px;
+    }
+
+    .category-tab {
+        white-space: nowrap;
+    }
+
+    .chatbot-btn {
+        bottom: 20px;
+        right: 20px;
+        width: 56px;
+        height: 56px;
+    }
+}
