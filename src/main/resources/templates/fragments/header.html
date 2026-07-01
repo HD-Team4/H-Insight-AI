@@ -8,8 +8,18 @@
             <a th:href="@{/}" class="logo">H-Insight-AI</a>
 
             <div class="search-wrapper">
-                <form th:action="@{/customer/product/list}" method="get" class="search-bar">
-                    <input type="text" name="searchKeyword" placeholder="어떤 스타일을 찾으시나요?">
+                <form th:action="@{/products}" method="get" class="search-bar">
+                    <input type="hidden" name="categoryGroup"
+                           th:if="${condition != null and condition.categoryGroup() != null}"
+                           th:value="${condition.categoryGroup()}">
+                    <input type="hidden" name="minPrice"
+                           th:if="${condition != null and condition.minPrice() != null}"
+                           th:value="${condition.minPrice()}">
+                    <input type="hidden" name="maxPrice"
+                           th:if="${condition != null and condition.maxPrice() != null}"
+                           th:value="${condition.maxPrice()}">
+                    <input type="text" name="keyword" placeholder="어떤 스타일을 찾으시나요?"
+                           th:value="${condition != null ? condition.keyword() : ''}">
                 </form>
             </div>
 

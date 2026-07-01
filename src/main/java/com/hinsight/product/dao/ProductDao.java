@@ -1,6 +1,7 @@
 package com.hinsight.product.dao;
 
-import com.hinsight.product.model.dto.ProductSearchConditionDto;
+import com.hinsight.product.model.dto.ProductSearchQuery;
+import com.hinsight.product.model.vo.PriceRange;
 import com.hinsight.product.model.vo.Product;
 import org.apache.ibatis.annotations.Mapper;
 
@@ -11,6 +12,6 @@ public interface ProductDao {
 
     List<Product> getAllProducts();
     Product getProductById(Long productId);
-    List<Product> search(ProductSearchConditionDto condition);
-
+    List<Product> search(ProductSearchQuery query);
+    PriceRange getPriceRange();
 }

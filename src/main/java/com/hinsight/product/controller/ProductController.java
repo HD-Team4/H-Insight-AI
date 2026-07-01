@@ -21,11 +21,12 @@ public class ProductController {
             ProductSearchConditionDto condition,
             Model model
     ) {
-        model.addAttribute("products",
-                productService.searchProducts(condition));
-
+        model.addAttribute("products", productService.searchProducts(condition));
+        model.addAttribute("condition", condition);
+        model.addAttribute("priceRange", productService.getPriceRange());   // 추가
         return "customer/product/list";
     }
+
 
     @GetMapping("/{id}")
     public String getProduct(Model model, @PathVariable Long id) {
