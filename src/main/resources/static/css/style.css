@@ -215,6 +215,55 @@ ul { list-style: none; }
     margin-bottom: 30px;
 }
 
+/* ================= Empty State ================= */
+.empty-result {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 80px 20px;
+    margin: 20px 0 40px;
+}
+
+.empty-icon {
+    width: 56px;
+    height: 56px;
+    color: var(--text-sub);
+    margin-bottom: 20px;
+    opacity: 0.7;
+}
+
+.empty-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-main);
+    margin-bottom: 8px;
+}
+
+.empty-desc {
+    font-size: 15px;
+    color: var(--text-sub);
+    margin-bottom: 24px;
+}
+
+.empty-reset-btn {
+    display: inline-block;
+    padding: 12px 28px;
+    border-radius: 24px;
+    background-color: var(--primary);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.empty-reset-btn:hover {
+    background-color: var(--primary-hover);
+    color: #fff;
+}
+
 .product-card {
     border-radius: 12px;
     overflow: hidden;

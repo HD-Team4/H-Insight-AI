@@ -39,7 +39,7 @@
             H-Insight 추천 픽
         </h2>
 
-        <div class="product-grid">
+        <div class="product-grid" th:unless="${#lists.isEmpty(products)}">
             <a th:each="product : ${products}"
                th:href="@{/products/{id}(id=${product.productId})}"
                class="product-card">
@@ -56,10 +56,18 @@
                     <div class="product-price" th:text="${#numbers.formatInteger(product.price, 0, 'COMMA')} + '원'">0원</div>
                 </div>
             </a>
+        </div>
 
-            <div th:if="${#lists.isEmpty(products)}" class="empty-result">
-                조건에 맞는 상품이 없습니다.
-            </div>
+        <div th:if="${#lists.isEmpty(products)}" class="empty-result">
+            <svg class="empty-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
+                 stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="7"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                <line x1="8" y1="11" x2="14" y2="11"></line>
+            </svg>
+            <p class="empty-title">조건에 맞는 상품이 없어요</p>
+            <p class="empty-desc">검색어나 필터 조건을 바꿔보세요.</p>
+            <a th:href="@{/products}" class="empty-reset-btn">필터 초기화</a>
         </div>
 
     </div>
