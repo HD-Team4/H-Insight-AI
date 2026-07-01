@@ -32,6 +32,7 @@
                 <input type="number" id="maxPriceInput" class="price-input" placeholder="최대 금액" min="0"
                        th:value="${condition.maxPrice()}"/>
                 <button type="button" class="price-apply-btn" onclick="applyPriceFilter()">적용</button>
+                <a th:href="@{/products}" class="price-reset-btn">필터 초기화</a>
             </div>
         </div>
 

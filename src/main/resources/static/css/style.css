@@ -201,6 +201,26 @@ ul { list-style: none; }
     background-color: var(--primary-hover);
 }
 
+.price-reset-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    background-color: var(--text-main);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color 0.2s ease;
+}
+
+.price-reset-btn:hover {
+    background-color: #333;
+    color: #fff;
+}
+
 /* ================= Main Grid & Cards ================= */
 .section-title {
     font-size: 22px;
