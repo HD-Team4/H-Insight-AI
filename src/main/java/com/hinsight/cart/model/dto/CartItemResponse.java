@@ -10,7 +10,6 @@ public record CartItemResponse(
         String imageUrl,
         Integer price,
         Integer quantity,
-        Integer stockQuantity,
         long lineTotal
 ) {
     // Cart(수량) + Product(상품정보) 를 합쳐서 화면용 한 줄을 만든다
@@ -23,7 +22,6 @@ public record CartItemResponse(
                 product.getImageUrl(),
                 product.getPrice(),
                 cart.getQuantity(),
-                product.getStockQuantity(),
                 lineTotal
         );
     }

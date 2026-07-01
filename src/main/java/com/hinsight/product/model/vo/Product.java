@@ -13,12 +13,9 @@ public class Product extends BaseTimeVo {
     private String productName;    // product_name
 
     private Integer price;         // price
-    private Integer stockQuantity; // stock_quantity
 
     private String imageUrl;       // image_url
     private String description;    // description
     private String productInfo;    // product_info
-
-    private Boolean isActive;      // is_active
 
 }
