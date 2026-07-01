@@ -44,14 +44,14 @@ public class ProductService {
         List<Long> categoryIds = resolveCategoryIds(condition);
         String keyword = condition.keyword();
 
-        // 검색어가 없으면(브라우징/카테고리·가격 필터만) DB로 직접 조회
-        // 전체 목록이 ES 인덱스 상태(빈 인덱스·재색인 중·장애)에 좌우되지 않도록 하기 위함.
+        // 1. 검색어가 비면 Elastic Search 타지 않고 DB에서 검색
         if (keyword == null || keyword.isBlank()) {
             return ProductSearchResult.of(searchByDb(condition, categoryIds));
         }
 
         // 검색어가 있으면 ES(동의어·상품 키워드) 검색
         try {
+            // CategoryIds: 카테고리는 1개 선택, 상의 안에 니트(1), 셔츠(2)가 있다면 [1, 2] 이런식으로 보냄
             List<Product> results = esSearch(keyword, categoryIds, condition);
             if (!results.isEmpty()) {
                 return ProductSearchResult.of(results);

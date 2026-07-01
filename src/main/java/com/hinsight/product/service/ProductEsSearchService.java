@@ -1,10 +1,13 @@
 package com.hinsight.product.service;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch._types.FieldValue;
+import co.elastic.clients.elasticsearch._types.query_dsl.Operator;
+import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
+import co.elastic.clients.json.JsonData;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.hinsight.product.es.ProductEsConstants;
 import lombok.RequiredArgsConstructor;
@@ -14,13 +17,12 @@ import org.elasticsearch.client.RestClient;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-import java.io.StringReader;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
  * ES 기반 상품 검색. 매칭된 상품 ID를 점수 순으로 반환한다.
  * (실제 상품 데이터는 호출부에서 DB로 로드)
- * 쿼리 본문은 JSON으로 조립해 클라이언트 타입 API의 버전 차이를 피한다.
  */
 @Service
 @RequiredArgsConstructor
@@ -34,11 +36,16 @@ public class ProductEsSearchService {
 
     public List<Long> searchIds(String keyword, List<Long> categoryIds, Integer minPrice, Integer maxPrice)
             throws IOException {
-        ObjectNode body = buildQuery(keyword, categoryIds, minPrice, maxPrice);
 
+        // 1. 빌더 방식으로 조립된 Query 객체 가져오기
+        Query query = buildQuery(keyword, categoryIds, minPrice, maxPrice);
+
+        // 2. esClient의 기능을 온전히 활용하여 쿼리 수행
         SearchResponse<Void> res = esClient.search(s -> s
                 .index(ProductEsConstants.INDEX)
-                .withJson(new StringReader(body.toString())), Void.class);
+                .size(MAX_RESULTS)
+                .source(src -> src.fetch(false)) // _source: false 설정과 동일
+                .query(query), Void.class);
 
         return res.hits().hits().stream()
                 .map(h -> Long.valueOf(h.id()))
@@ -56,9 +63,9 @@ public class ProductEsSearchService {
 
         ObjectNode term = objectMapper.createObjectNode();
         term.put("field", "productName");
-        term.put("analyzer", "standard");    // 한글 오타 단어를 통째로 비교(형태소 분해로 쪼개지 않도록)
-        term.put("suggest_mode", "missing"); // 색인에 없는 토큰만 교정
-        term.put("min_word_length", 2);      // 기본값 4는 짧은 한글 단어를 제외하므로 낮춤
+        term.put("analyzer", "standard");
+        term.put("suggest_mode", "missing");
+        term.put("min_word_length", 2);
         term.put("sort", "frequency");
         ObjectNode s = objectMapper.createObjectNode();
         s.put("text", keyword);
@@ -97,56 +104,58 @@ public class ProductEsSearchService {
         return anyCorrection ? sb.toString() : null;
     }
 
-    private ObjectNode buildQuery(String keyword, List<Long> categoryIds, Integer minPrice, Integer maxPrice) {
-        ObjectNode root = objectMapper.createObjectNode();
-        root.put("size", MAX_RESULTS);
-        root.put("_source", false);
+    /**
+     * Java API Client를 사용하여 Type-Safe하게 쿼리를 빌드
+     */
+    private Query buildQuery(String keyword, List<Long> categoryIds, Integer minPrice, Integer maxPrice) {
+        return Query.of(q -> q.bool(b -> {
 
-        ObjectNode bool = objectMapper.createObjectNode();
+            // [MUST] 키워드 매칭 조건
+            if (keyword != null && !keyword.isBlank()) {
+                b.must(m -> m.multiMatch(mm -> mm
+                        .query(keyword)
+                        .operator(Operator.And)
+                        .fields("productName^2", "keywords", "description")
+                ));
+            } else {
+                b.must(m -> m.matchAll(ma -> ma));
+            }
 
-        // must: 키워드 매칭 (없으면 전체)
-        if (keyword != null && !keyword.isBlank()) {
-            ObjectNode mm = objectMapper.createObjectNode();
-            mm.put("query", keyword);
-            mm.put("operator", "and"); // 질의어의 모든 토큰이 한 필드 안에서 매칭돼야 함(정밀도↑)
-            ArrayNode fields = mm.putArray("fields");
-            fields.add("productName^2").add("keywords").add("description");
-            ObjectNode multiMatch = objectMapper.createObjectNode();
-            multiMatch.set("multi_match", mm);
-            bool.set("must", multiMatch);
-        } else {
-            ObjectNode matchAll = objectMapper.createObjectNode();
-            matchAll.set("match_all", objectMapper.createObjectNode());
-            bool.set("must", matchAll);
-        }
+            // [FILTER] 카테고리 및 가격 조건
+            List<Query> filters = new ArrayList<>();
 
-        // filter: 카테고리 / 가격
-        ArrayNode filters = objectMapper.createArrayNode();
-        if (categoryIds != null && !categoryIds.isEmpty()) {
-            ObjectNode terms = objectMapper.createObjectNode();
-            ArrayNode ids = terms.putArray("categoryId");
-            categoryIds.forEach(id -> ids.add(id.longValue()));
-            ObjectNode termsWrap = objectMapper.createObjectNode();
-            termsWrap.set("terms", terms);
-            filters.add(termsWrap);
-        }
-        if (minPrice != null || maxPrice != null) {
-            ObjectNode price = objectMapper.createObjectNode();
-            if (minPrice != null) price.put("gte", minPrice.intValue());
-            if (maxPrice != null) price.put("lte", maxPrice.intValue());
-            ObjectNode range = objectMapper.createObjectNode();
-            range.set("price", price);
-            ObjectNode rangeWrap = objectMapper.createObjectNode();
-            rangeWrap.set("range", range);
-            filters.add(rangeWrap);
-        }
-        if (!filters.isEmpty()) {
-            bool.set("filter", filters);
-        }
+            // 1. 카테고리 ID 필터 (Terms Query)
+            if (categoryIds != null && !categoryIds.isEmpty()) {
+                List<FieldValue> fieldValues = categoryIds.stream()
+                        .map(FieldValue::of)
+                        .toList();
 
-        ObjectNode query = objectMapper.createObjectNode();
-        query.set("bool", bool);
-        root.set("query", query);
-        return root;
+                filters.add(Query.of(f -> f.terms(t -> t
+                        .field("categoryId")
+                        .terms(v -> v.value(fieldValues))
+                )));
+            }
+
+            // 2. 가격 범위 필터 (Range Query - ES 8.15+ 최신 스펙 반영)
+            if (minPrice != null || maxPrice != null) {
+                filters.add(Query.of(f -> f.range(r -> r
+                        .untyped(u -> {
+                            u.field("price");
+                            if (minPrice != null) {
+                                u.gte(JsonData.of(minPrice));
+                            }
+                            if (maxPrice != null) {
+                                u.lte(JsonData.of(maxPrice));
+                            }
+                            return u;
+                        })
+                )));
+            }
+
+            if (!filters.isEmpty()) {
+                b.filter(filters);
+            }
+            return b;
+        }));
     }
 }
