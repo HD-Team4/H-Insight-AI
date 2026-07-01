@@ -40,6 +40,15 @@
             H-Insight 추천 픽
         </h2>
 
+        <p class="did-you-mean"
+           th:if="${searchResult != null and searchResult.corrected}"
+           style="margin: 8px 0 16px; color: #555;">
+            <span th:text="|'${searchResult.originalKeyword}'|">'검색어'</span>
+            검색 결과가 없어
+            <strong th:text="|'${searchResult.correctedKeyword}'|">'교정어'</strong>
+            (으)로 검색한 결과를 보여드릴게요
+        </p>
+
         <div class="product-grid" th:unless="${#lists.isEmpty(products)}">
             <a th:each="product : ${products}"
                th:href="@{/products/{id}(id=${product.productId})}"

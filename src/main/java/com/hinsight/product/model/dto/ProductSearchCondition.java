@@ -1,6 +1,6 @@
 package com.hinsight.product.model.dto;
 
-public record ProductSearchConditionDto(
+public record ProductSearchCondition(
         String keyword,
         Long categoryId,
         String categoryGroup,   // "TOP", "BOTTOM", "OUTER", "ACCESSORY"

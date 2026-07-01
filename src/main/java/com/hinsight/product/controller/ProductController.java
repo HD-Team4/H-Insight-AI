@@ -1,6 +1,7 @@
 package com.hinsight.product.controller;
 
-import com.hinsight.product.model.dto.ProductSearchConditionDto;
+import com.hinsight.product.model.dto.ProductSearchCondition;
+import com.hinsight.product.model.dto.ProductSearchResult;
 import com.hinsight.product.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
@@ -18,12 +19,14 @@ public class ProductController {
 
     @GetMapping
     public String productList(
-            ProductSearchConditionDto condition,
+            ProductSearchCondition condition,
             Model model
     ) {
-        model.addAttribute("products", productService.searchProducts(condition));
+        ProductSearchResult result = productService.searchProducts(condition);
+        model.addAttribute("products", result.products());
+        model.addAttribute("searchResult", result); // 오타 교정(did-you-mean) 안내용
         model.addAttribute("condition", condition);
-        model.addAttribute("priceRange", productService.getPriceRange());   // 추가
+        model.addAttribute("priceRange", productService.getPriceRange());
         return "customer/product/list";
     }
 
