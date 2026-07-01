@@ -2,9 +2,13 @@
   "settings": {
     "analysis": {
       "tokenizer": {
-        "nori_mixed": {
+        "nori_index": {
           "type": "nori_tokenizer",
           "decompound_mode": "mixed"
+        },
+        "nori_search": {
+          "type": "nori_tokenizer",
+          "decompound_mode": "none"
         }
       },
       "filter": {
@@ -17,11 +21,11 @@
       "analyzer": {
         "korean_index": {
           "type": "custom",
-          "tokenizer": "nori_mixed"
+          "tokenizer": "nori_index"
         },
         "korean_search": {
           "type": "custom",
-          "tokenizer": "nori_mixed",
+          "tokenizer": "nori_search",
           "filter": ["product_synonym_filter"]
         }
       }

@@ -35,6 +35,13 @@ public class ProductService {
     public List<Product> searchProducts(ProductSearchConditionDto condition) {
         List<Long> categoryIds = resolveCategoryIds(condition);
 
+        // 검색어가 없으면(브라우징/카테고리·가격 필터만) DB로 직접 조회한다.
+        // 전체 목록이 ES 인덱스 상태(빈 인덱스·재색인 중·장애)에 좌우되지 않도록 하기 위함.
+        if (condition.keyword() == null || condition.keyword().isBlank()) {
+            return searchByDb(condition, categoryIds);
+        }
+
+        // 검색어가 있으면 ES(동의어·상품 키워드) 검색을 사용한다.
         try {
             List<Long> ids = productEsSearchService.searchIds(
                     condition.keyword(), categoryIds, condition.minPrice(), condition.maxPrice());
@@ -51,10 +58,14 @@ public class ProductService {
         } catch (Exception e) {
             // ES 장애 시 기존 LIKE 검색으로 폴백 (사이트가 죽지 않도록)
             log.warn("[ES] 검색 실패, LIKE 검색으로 폴백: {}", e.getMessage());
-            ProductSearchQuery query = new ProductSearchQuery(
-                    condition.keyword(), categoryIds, condition.minPrice(), condition.maxPrice());
-            return productDao.search(query);
+            return searchByDb(condition, categoryIds);
         }
+    }
+
+    private List<Product> searchByDb(ProductSearchConditionDto condition, List<Long> categoryIds) {
+        ProductSearchQuery query = new ProductSearchQuery(
+                condition.keyword(), categoryIds, condition.minPrice(), condition.maxPrice());
+        return productDao.search(query);
     }
 
     private List<Long> resolveCategoryIds(ProductSearchConditionDto condition) {
