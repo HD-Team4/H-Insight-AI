@@ -46,4 +46,8 @@
         WHERE cart_id = #{cartId}
     </delete>
 
+    <delete id="deleteByUserId" parameterType="long">
+        DELETE FROM carts
+        WHERE user_id = #{userId}
+    </delete>
 </mapper>
