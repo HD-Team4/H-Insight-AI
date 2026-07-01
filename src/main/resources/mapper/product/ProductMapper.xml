@@ -8,10 +8,16 @@
         FROM products
     </select>
 
-    <select id="getProductById" parameterType="long" resultType="Product">
+    <select id="getProductById" parameterType="long" resultType="com.hinsight.product.model.dto.ProductDetailDto">
         SELECT
-            p.*,
-            b.company_name AS brand_name
+            p.product_id,
+            b.company_name AS brand_name,
+            p.product_name,
+            p.price,
+            p.stock_quantity,
+            p.image_url,
+            p.description,
+            p.product_info
         FROM products p
         LEFT JOIN biz_users b
             ON p.biz_user_id = b.biz_user_id

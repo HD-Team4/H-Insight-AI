@@ -9,10 +9,7 @@ public class Product extends BaseTimeVo {
     private Long productId;        // product_id
     private Long categoryId;       // category_id
     private Long bizUserId;        // biz_user_id
-    private String brandName;      // biz_users.company_name
-
     private String productName;    // product_name
-
     private Integer price;         // price
     private Integer stockQuantity; // stock_quantity
 

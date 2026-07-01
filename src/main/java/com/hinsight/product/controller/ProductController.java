@@ -31,9 +31,9 @@ public class ProductController {
 
     @GetMapping("/{id}")
     public String getProduct(Model model, @PathVariable Long id) {
-        var product = productService.getProductById(id);
+        var product = productService.getProductDetailById(id);
         model.addAttribute("product", product);
-        model.addAttribute("productInfoRows", productInfoFormatter.toRows(product.getProductInfo()));
+        model.addAttribute("productInfoRows", productInfoFormatter.toRows(product.productInfo()));
         return "customer/product/detail";
     }
 }
