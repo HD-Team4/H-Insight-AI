@@ -2,4 +2,48 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.hinsight.cart.dao.CartDao">
+
+    <!-- 유저의 장바구니 전체 -->
+    <select id="findByUserId" parameterType="long" resultType="Cart">
+        SELECT *
+        FROM carts
+        WHERE user_id = #{userId}
+        ORDER BY created_at DESC
+    </select>
+
+    <!-- 항목 1건 -->
+    <select id="findById" parameterType="long" resultType="Cart">
+        SELECT *
+        FROM carts
+        WHERE cart_id = #{cartId}
+    </select>
+
+    <!-- 같은 유저 + 같은 상품이 이미 담겼는지 -->
+    <select id="findByUserIdAndProductId" resultType="Cart">
+        SELECT *
+        FROM carts
+        WHERE user_id = #{userId}
+        AND product_id = #{productId}
+    </select>
+
+    <!-- 새 항목 담기 -->
+    <insert id="insert" parameterType="Cart"
+            useGeneratedKeys="true" keyProperty="cartId">
+        INSERT INTO carts (user_id, product_id, quantity)
+        VALUES (#{userId}, #{productId}, #{quantity})
+    </insert>
+
+    <!-- 수량 변경 -->
+    <update id="updateQuantity">
+        UPDATE carts
+        SET quantity = #{quantity}
+        WHERE cart_id = #{cartId}
+    </update>
+
+    <!-- 항목 삭제 -->
+    <delete id="delete" parameterType="long">
+        DELETE FROM carts
+        WHERE cart_id = #{cartId}
+    </delete>
+
 </mapper>

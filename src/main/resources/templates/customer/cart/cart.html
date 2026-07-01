@@ -1,2 +1,71 @@
 <!doctype html>
-<html lang="ko"><body></body></html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>장바구니</title>
+</head>
+<body>
+<h1>장바구니</h1>
+
+<!-- 비어있을 때 -->
+<p th:if="${cart.items.isEmpty()}">장바구니가 비어 있습니다.</p>
+
+<!-- 항목 목록 -->
+<table th:unless="${cart.items.isEmpty()}" border="1">
+    <thead>
+    <tr>
+        <th>상품</th><th>가격</th><th>수량</th><th>합계</th><th></th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="item : ${cart.items}">
+        <td th:text="${item.productName}"></td>
+        <td th:text="${item.price}"></td>
+        <td>
+            <input type="number" min="1"
+                   th:value="${item.quantity}"
+                   th:attr="data-cart-id=${item.cartId}"
+                   class="qty-input">
+        </td>
+        <td th:text="${item.lineTotal}"></td>
+        <td>
+            <button type="button"
+                    th:attr="data-cart-id=${item.cartId}"
+                    class="remove-btn">삭제</button>
+        </td>
+    </tr>
+    </tbody>
+</table>
+
+<!-- 합계 -->
+<div th:unless="${cart.items.isEmpty()}">
+    <p>총 수량: <span th:text="${cart.totalQuantity}"></span></p>
+    <p>합계: <span th:text="${cart.totalPrice}"></span>원</p>
+</div>
+
+<script>
+    // 수량 변경
+    document.querySelectorAll('.qty-input').forEach(input => {
+        input.addEventListener('change', async (e) => {
+            const cartId = e.target.dataset.cartId;
+            const quantity = Number(e.target.value);
+            await fetch(`/cart/items/${cartId}`, {
+                method: 'PATCH',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({quantity})
+            });
+            location.reload();
+        });
+    });
+
+    // 삭제
+    document.querySelectorAll('.remove-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            const cartId = e.target.dataset.cartId;
+            await fetch(`/cart/items/${cartId}`, {method: 'DELETE'});
+            location.reload();
+        });
+    });
+</script>
+</body>
+</html>

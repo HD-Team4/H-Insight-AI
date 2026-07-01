@@ -4,6 +4,7 @@ logs/
 *.log
 
 .env
+.env.*
 application-secret.yml
 src/main/resources/application-secret.yml
 
