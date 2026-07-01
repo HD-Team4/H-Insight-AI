@@ -8,10 +8,20 @@
         FROM products
     </select>
 
-    <select id="getProductById" parameterType="long" resultType="Product">
-        SELECT *
-        FROM products
-        WHERE product_id = #{productId}
+    <select id="getProductById" parameterType="long" resultType="com.hinsight.product.model.dto.ProductDetailDto">
+        SELECT
+            p.product_id,
+            b.company_name AS brand_name,
+            p.product_name,
+            p.price,
+            p.stock_quantity,
+            p.image_url,
+            p.description,
+            p.product_info
+        FROM products p
+        LEFT JOIN biz_users b
+            ON p.biz_user_id = b.biz_user_id
+        WHERE p.product_id = #{productId}
     </select>
 
     <select id="search" resultType="Product">

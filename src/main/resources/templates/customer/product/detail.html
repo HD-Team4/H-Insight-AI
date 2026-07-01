@@ -1,11 +1,195 @@
-<!doctype html>
-<html lang="ko">
-<body>
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/default}">
+<th:block layout:fragment="content">
+    <div class="product-detail-page container">
+        <section class="product-detail-hero">
+            <aside class="product-thumbnails" aria-label="상품 이미지 목록">
+                <button class="product-thumb is-active" type="button">
+                    <img th:if="${product.imageUrl != null and !product.imageUrl.isBlank()}"
+                         th:src="${product.imageUrl}"
+                         th:alt="${product.productName}">
+                    <span th:unless="${product.imageUrl != null and !product.imageUrl.isBlank()}">No image</span>
+                </button>
+            </aside>
 
+            <div class="product-main-image">
+                <img th:if="${product.imageUrl != null and !product.imageUrl.isBlank()}"
+                     th:src="${product.imageUrl}"
+                     th:alt="${product.productName}">
+                <div th:unless="${product.imageUrl != null and !product.imageUrl.isBlank()}" class="product-image-empty">
+                    이미지 준비중
+                </div>
+            </div>
 
-<td th:text="${product.productId}"></td>
-<td th:text="${product.productName}"></td>
+            <section class="product-purchase-panel">
+                <p class="detail-brand"
+                   th:text="${product.brandName != null and !product.brandName.isBlank()} ? ${product.brandName} : 'H-Insight-Brand'">
+                    H-Insight-Brand
+                    </p>
+                    <h1 th:text="${product.productName}">상품명</h1>
 
+                <!-- 하드 코딩 - 추후 리뷰 업데이트 예정 -->
+                <div class="detail-rating-row">
+                    <span class="detail-stars">★★★★★</span>
+                    <a href="#productReviews">리뷰 21건</a>
+                </div>
 
-</body>
+                <div class="detail-price-row">
+                    <strong th:if="${product.price != null}"
+                            th:text="${#numbers.formatInteger(product.price, 3, 'COMMA')} + '원'">0원</strong>
+                    <strong th:unless="${product.price != null}">가격 문의</strong>
+                </div>
+
+                <div class="detail-benefit-box">
+                    <dl>
+                        <div>
+                            <dt>첫 구매 혜택</dt>
+                            <dd>처음이라면 누구나 첫 구매 쿠폰 적용</dd>
+                        </div>
+                        <div>
+                            <dt>포인트 적립</dt>
+                            <dd>구매 확정 시 멤버십 포인트 적립</dd>
+                        </div>
+                        <div>
+                            <dt>배송방법</dt>
+                            <dd>택배배송</dd>
+                        </div>
+                    </dl>
+                </div>
+
+                <div class="detail-option-group">
+                    <span>색상</span>
+                    <div class="detail-chip-row">
+                        <button class="detail-chip is-selected" type="button">기본</button>
+                    </div>
+                </div>
+
+                <div class="detail-option-group">
+                    <span>수량</span>
+                    <div class="detail-quantity" th:data-unit-price="${product.price}">
+                        <button type="button" data-quantity-action="decrease" aria-label="수량 감소">-</button>
+                        <input type="number"
+                               value="1"
+                               min="1"
+                               th:max="${product.stockQuantity != null and product.stockQuantity > 0} ? ${product.stockQuantity} : null"
+                               aria-label="구매 수량">
+                        <button type="button" data-quantity-action="increase" aria-label="수량 증가">+</button>
+                    </div>
+                </div>
+
+                <div class="detail-total">
+                    <span>총 상품금액</span>
+                    <strong class="detail-total-price"
+                            th:if="${product.price != null}"
+                            th:text="${#numbers.formatInteger(product.price, 3, 'COMMA')} + '원'">0원</strong>
+                    <strong th:unless="${product.price != null}">가격 문의</strong>
+                </div>
+
+                <div class="detail-action-row">
+                    <button class="detail-action detail-action-secondary" type="button">장바구니</button>
+                    <button class="detail-action detail-action-primary" type="button">바로구매</button>
+                </div>
+            </section>
+        </section>
+
+        <nav class="detail-tab-nav" aria-label="상품 상세 메뉴">
+            <a class="is-active" href="#productInfo">상품정보</a>
+            <a href="#productSpecs">상세정보</a>
+            <a href="#productReviews">리뷰 (21)</a>
+        </nav>
+
+        <section id="productInfo" class="detail-content-section">
+            <div class="detail-content-image">
+                <img th:if="${product.imageUrl != null and !product.imageUrl.isBlank()}"
+                     th:src="${product.imageUrl}"
+                     th:alt="${product.productName}">
+            </div>
+            <div class="detail-content-copy">
+                <p class="detail-product-code" th:text="'상품번호 : ' + ${product.productId}">상품번호</p>
+                <h2 th:text="${product.productName}">상품명</h2>
+                <p th:if="${product.description != null and !product.description.isBlank()}"
+                   th:text="${product.description}">상품 설명</p>
+                <p th:unless="${product.description != null and !product.description.isBlank()}">
+                    제품 설명은 준비 중입니다. 상품 정보 영역에서 소재, 관리 방법, 제조 정보 등을 확인해 주세요.
+                </p>
+            </div>
+        </section>
+
+        <section id="productSpecs" class="detail-spec-section">
+            <h2>상품 필수 정보</h2>
+            <table class="detail-spec-table">
+                <tbody>
+                <tr th:if="${productInfoRows == null or productInfoRows.isEmpty()}">
+                    <th scope="row">제품 정보</th>
+                    <td>등록된 제품 정보가 없습니다.</td>
+                </tr>
+                <tr th:each="info : ${productInfoRows}">
+                    <th scope="row" th:text="${info.key}">제품 정보</th>
+                    <td th:text="${info.value}">상세 정보</td>
+                </tr>
+                </tbody>
+            </table>
+        </section>
+        <!-- 하드 코딩 - 추후 리뷰 업데이트 예정 -->
+        <section id="productReviews" class="detail-review-section">
+            <h2>고객 리뷰</h2>
+            <div class="detail-review-card">
+                <div>
+                    <strong>★★★★★</strong>
+                    <span>구매 고객 리뷰</span>
+                </div>
+                <p>리뷰 데이터 연동 전까지 표시되는 기본 영역입니다.</p>
+            </div>
+        </section>
+    </div>
+</th:block>
+<th:block layout:fragment="script">
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const quantityControl = document.querySelector('.detail-quantity');
+            if (!quantityControl) {
+                return;
+            }
+
+            const input = quantityControl.querySelector('input');
+            const totalPrice = document.querySelector('.detail-total-price');
+            const unitPrice = Number(quantityControl.dataset.unitPrice);
+
+            const getMax = () => {
+                const max = Number(input.max);
+                return Number.isFinite(max) && max > 0 ? max : Infinity;
+            };
+
+            const setQuantity = (nextValue) => {
+                const min = Number(input.min) || 1;
+                const max = getMax();
+                const quantity = Math.min(Math.max(nextValue, min), max);
+
+                input.value = quantity;
+
+                if (totalPrice && Number.isFinite(unitPrice)) {
+                    totalPrice.textContent = `${(unitPrice * quantity).toLocaleString('ko-KR')}원`;
+                }
+            };
+
+            quantityControl.addEventListener('click', (event) => {
+                const button = event.target.closest('[data-quantity-action]');
+                if (!button) {
+                    return;
+                }
+
+                const currentValue = Number(input.value) || 1;
+                const delta = button.dataset.quantityAction === 'increase' ? 1 : -1;
+                setQuantity(currentValue + delta);
+            });
+
+            input.addEventListener('change', () => {
+                setQuantity(Number(input.value) || 1);
+            });
+        });
+    </script>
+</th:block>
 </html>

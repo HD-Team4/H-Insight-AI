@@ -2,6 +2,7 @@ package com.hinsight.product.controller;
 
 import com.hinsight.product.model.dto.ProductSearchConditionDto;
 import com.hinsight.product.service.ProductService;
+import com.hinsight.product.support.ProductInfoFormatter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 public class ProductController {
 
     private final ProductService productService;
+    private final ProductInfoFormatter productInfoFormatter;
 
     @GetMapping
     public String productList(
@@ -30,9 +32,9 @@ public class ProductController {
 
     @GetMapping("/{id}")
     public String getProduct(Model model, @PathVariable Long id) {
-        model.addAttribute("product", productService.getProductById(id));
+        var product = productService.getProductDetailById(id);
+        model.addAttribute("product", product);
+        model.addAttribute("productInfoRows", productInfoFormatter.toRows(product.productInfo()));
         return "customer/product/detail";
     }
-
-
 }
