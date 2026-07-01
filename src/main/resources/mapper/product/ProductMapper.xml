@@ -8,7 +8,13 @@
         FROM products
     </select>
 
-    <select id="getProductById" parameterType="long" resultType="com.hinsight.product.model.dto.ProductDetailDto">
+    <select id="getProductById" parameterType="long" resultType="Product">
+        SELECT *
+        FROM products
+        WHERE product_id = #{productId}
+    </select>
+
+    <select id="getProductDetailById" parameterType="long" resultType="com.hinsight.product.model.dto.ProductDetailDto">
         SELECT
             p.product_id,
             b.company_name AS brand_name,
