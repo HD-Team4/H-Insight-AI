@@ -25,7 +25,7 @@ public class ProductService {
     }
 
     public ProductDetailDto getProductDetailById(Long productId) {
-        ProductDetailDto product = productDao.getProductById(productId);
+        ProductDetailDto product = productDao.getProductDetailById(productId);
         if (product == null) { //상품 관련 null exception 추가 , 추후 공통 예외처리
             throw new ProductNotFoundException();
         }
