@@ -1,5 +1,6 @@
 package com.hinsight.product.service;
 
+import com.hinsight.exception.custom.product.ProductNotFoundException;
 import com.hinsight.product.dao.ProductDao;
 import com.hinsight.product.model.dto.ProductSearchConditionDto;
 import com.hinsight.product.model.vo.Product;
@@ -19,8 +20,13 @@ public class ProductService {
     }
 
     public Product getProductById(Long productId) {
-        return productDao.getProductById(productId);
+        Product product = productDao.getProductById(productId);
+        if (product == null) { //상품 관련 null exception 추가 , 추후 공통 예외처리
+            throw new ProductNotFoundException();
+        }
+        return product;
     }
+
     public List<Product> searchProducts(ProductSearchConditionDto condition) {
         return productDao.search(condition);
     }
