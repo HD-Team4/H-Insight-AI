@@ -1,11 +1,77 @@
-<!doctype html>
-<html lang="ko">
-<body>
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/default}"> <th:block layout:fragment="content">
+    <div class="container">
 
-<tr th:each="product : ${products}">
-    <td th:text="${product.productId}"></td>
-    <td th:text="${product.productName}"></td>
-</tr>
+        <nav class="category-nav">
+            <div class="category-tab active">전체</div>
+            <div class="category-tab">상의</div>
+            <div class="category-tab">하의</div>
+            <div class="category-tab">아우터</div>
+            <div class="category-tab">악세서리</div>
+        </nav>
 
-</body>
+        <h2 class="section-title">2030을 위한 H-Insight 추천 픽</h2>
+
+        <div class="product-grid">
+
+            <div class="product-card">
+                <div class="product-img">
+                    <div class="badge-new">NEW</div>
+                </div>
+                <div class="product-info">
+                    <div class="brand-name">MINIMAL STUDIO</div>
+                    <div class="product-name">오버핏 코튼 셔츠</div>
+                    <div class="product-price">49,000원</div>
+                </div>
+            </div>
+
+            <div class="product-card">
+                <div class="product-img"></div>
+                <div class="product-info">
+                    <div class="brand-name">URBAN LOOK</div>
+                    <div class="product-name">와이드 데님 팬츠</div>
+                    <div class="product-price">54,000원</div>
+                </div>
+            </div>
+
+            <div class="product-card">
+                <div class="product-img"></div>
+                <div class="product-info">
+                    <div class="brand-name">BASIC HOUSE</div>
+                    <div class="product-name">프리미엄 무지 반팔티</div>
+                    <div class="product-price">19,900원</div>
+                </div>
+            </div>
+
+            <div class="product-card">
+                <div class="product-img"></div>
+                <div class="product-info">
+                    <div class="brand-name">ACC SCENE</div>
+                    <div class="product-name">실버 레이어드 목걸이</div>
+                    <div class="product-price">25,000원</div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="pagination-dots">
+            <div class="dot active"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+        </div>
+
+        <div class="recommendation-section">
+            <h3 style="margin-bottom: 24px; font-size: 18px; font-weight: 700;">회원님을 위한 맞춤 추천</h3>
+            <div class="recommend-list">
+                <div class="recommend-item">최근 구매하신 '와이드 데님 팬츠'와 매치하기 좋은 상의 추천</div>
+                <div class="recommend-item">최근 검색하신 '실버 목걸이'와 유사한 인기 악세서리</div>
+                <div class="recommend-item">실시간 2030 연령대 스마트 트렌드 반영 아이템</div>
+            </div>
+        </div>
+
+    </div>
+</th:block>
 </html>

@@ -10,6 +10,10 @@ spring:
     cache: false
     prefix: classpath:/templates/
     suffix: .html
+  ai:
+    google:
+      genai:
+        api-key: ${GEMINI_API_KEY:}
 
 mybatis:
   mapper-locations: classpath:/mapper/**/*.xml
