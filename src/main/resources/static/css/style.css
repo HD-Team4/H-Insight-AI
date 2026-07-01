@@ -904,14 +904,29 @@ footer {
     color: #1D1D1F;
 }
 
+.detail-review-card + .detail-review-card {
+    margin-top: 12px;
+}
+
+.detail-review-empty {
+    color: #6E6E73;
+    font-size: 15px;
+}
+
 .detail-review-card div {
     display: flex;
+    align-items: center;
     gap: 12px;
     margin-bottom: 12px;
 }
 
 .detail-review-card strong {
     color: #FFB400;
+}
+
+.detail-review-card time {
+    color: #86868B;
+    font-size: 14px;
 }
 
 @media (max-width: 1024px) {
