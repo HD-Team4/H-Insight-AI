@@ -1,0 +1,52 @@
+{
+  "settings": {
+    "analysis": {
+      "tokenizer": {
+        "nori_mixed": {
+          "type": "nori_tokenizer",
+          "decompound_mode": "mixed"
+        }
+      },
+      "filter": {
+        "product_synonym_filter": {
+          "type": "synonym_graph",
+          "synonyms_set": "product-synonyms",
+          "updateable": true
+        }
+      },
+      "analyzer": {
+        "korean_index": {
+          "type": "custom",
+          "tokenizer": "nori_mixed"
+        },
+        "korean_search": {
+          "type": "custom",
+          "tokenizer": "nori_mixed",
+          "filter": ["product_synonym_filter"]
+        }
+      }
+    }
+  },
+  "mappings": {
+    "properties": {
+      "productId":   { "type": "long" },
+      "categoryId":  { "type": "long" },
+      "price":       { "type": "double" },
+      "productName": {
+        "type": "text",
+        "analyzer": "korean_index",
+        "search_analyzer": "korean_search"
+      },
+      "keywords": {
+        "type": "text",
+        "analyzer": "korean_index",
+        "search_analyzer": "korean_search"
+      },
+      "description": {
+        "type": "text",
+        "analyzer": "korean_index",
+        "search_analyzer": "korean_search"
+      }
+    }
+  }
+}
