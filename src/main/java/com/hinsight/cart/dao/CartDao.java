@@ -29,4 +29,8 @@ public interface CartDao {
     // 항목 삭제
     void delete(Long cartId);
 
+
+    // 유저의 장바구니 전체 비우기 (주문 완료 시)
+    void deleteByUserId(Long userId);
+
 }
