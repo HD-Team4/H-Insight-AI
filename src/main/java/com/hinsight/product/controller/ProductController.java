@@ -1,5 +1,6 @@
 package com.hinsight.product.controller;
 
+import com.hinsight.product.model.dto.ProductSearchConditionDto;
 import com.hinsight.product.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
@@ -16,8 +17,13 @@ public class ProductController {
     private final ProductService productService;
 
     @GetMapping
-    public String productList(Model model) {
-        model.addAttribute("products", productService.getAllProducts());
+    public String productList(
+            ProductSearchConditionDto condition,
+            Model model
+    ) {
+        model.addAttribute("products",
+                productService.searchProducts(condition));
+
         return "customer/product/list";
     }
 

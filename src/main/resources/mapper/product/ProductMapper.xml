@@ -14,4 +14,25 @@
         WHERE product_id = #{productId}
     </select>
 
+    <select id="search" resultType="Product">
+        SELECT *
+        FROM products
+        WHERE 1=1
+        <if test="keyword != null and keyword != ''">
+            AND product_name LIKE CONCAT('%', #{keyword}, '%')
+        </if>
+
+        <if test="categoryId != null">
+            AND category_id = #{categoryId}
+        </if>
+
+        <if test="minPrice != null">
+            AND price <![CDATA[ >= ]]> #{minPrice}
+        </if>
+
+        <if test="maxPrice != null">
+            AND price <![CDATA[ <= ]]> #{maxPrice}
+        </if>
+
+    </select>
 </mapper>

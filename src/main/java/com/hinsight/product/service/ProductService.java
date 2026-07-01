@@ -1,6 +1,7 @@
 package com.hinsight.product.service;
 
 import com.hinsight.product.dao.ProductDao;
+import com.hinsight.product.model.dto.ProductSearchConditionDto;
 import com.hinsight.product.model.vo.Product;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -19,5 +20,8 @@ public class ProductService {
 
     public Product getProductById(Long productId) {
         return productDao.getProductById(productId);
+    }
+    public List<Product> searchProducts(ProductSearchConditionDto condition) {
+        return productDao.search(condition);
     }
 }

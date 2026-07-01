@@ -1,2 +1,23 @@
-<header xmlns:th="http://www.thymeleaf.org" th:fragment="header">
-</header>
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<div th:fragment="headerFragment">
+    <div class="top-bar"></div>
+
+    <header class="container">
+        <div class="header-main">
+            <a th:href="@{/}" class="logo">H-Insight-AI</a>
+
+            <div class="search-wrapper">
+                <form th:action="@{/customer/product/list}" method="get" class="search-bar">
+                    <input type="text" name="searchKeyword" placeholder="어떤 스타일을 찾으시나요?">
+                </form>
+            </div>
+
+            <div class="header-utils">
+                <a th:href="@{/login}">로그인 / 마이페이지</a>
+                <a th:href="@{/cart}">장바구니 <span style="color: var(--accent); font-weight: 700;">(2)</span></a>
+            </div>
+        </div>
+    </header>
+</div>
+</html>
