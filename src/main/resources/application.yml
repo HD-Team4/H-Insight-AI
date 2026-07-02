@@ -37,3 +37,11 @@ server:
 product:
   list:
     page-size: 20
+
+springdoc:
+  # 뷰(HTML 페이지) 컨트롤러까지 문서에 포함 시도.
+  # (기본값 false 면 응답 바디를 반환하는 API 엔드포인트만 문서화됨)
+  model-and-view-allowed: true
+  swagger-ui:
+    operations-sorter: method   # HTTP 메서드 순 정렬
+    tags-sorter: alpha          # 컨트롤러(태그) 이름 순 정렬

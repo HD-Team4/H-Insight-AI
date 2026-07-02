@@ -2,4 +2,25 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.hinsight.user.dao.UserDao">
+
+    <!-- 로그인 아이디로 회원 조회 (map-underscore-to-camel-case 로 컬럼 자동 매핑) -->
+    <select id="findByLoginId" parameterType="string" resultType="User">
+        SELECT user_id, user_name, login_id, password, gender, birth_date, age_group,
+               email, enabled, created_at, updated_at
+        FROM users
+        WHERE login_id = #{loginId}
+    </select>
+
+    <!-- 아이디 중복 여부 (1/0 -> boolean) -->
+    <select id="existsByLoginId" parameterType="string" resultType="boolean">
+        SELECT EXISTS(SELECT 1 FROM users WHERE login_id = #{loginId})
+    </select>
+
+    <!-- 신규 회원 저장. enabled/created_at/updated_at 은 DB 기본값 사용 -->
+    <insert id="insert" parameterType="User"
+            useGeneratedKeys="true" keyProperty="userId">
+        INSERT INTO users (user_name, login_id, password, gender, birth_date, age_group, email)
+        VALUES (#{userName}, #{loginId}, #{password}, #{gender}, #{birthDate}, #{ageGroup}, #{email})
+    </insert>
+
 </mapper>
