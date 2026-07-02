@@ -12,8 +12,6 @@ import com.hinsight.product.model.vo.Product;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-
-import java.io.IOException;
 import java.util.List;
 
 @Slf4j
@@ -48,22 +46,22 @@ public class ProductService {
 
         // 검색어가 있으면 ES(동의어·상품 키워드) 검색
         try {
-            List<Product> results = productEsSearchService.searchProducts(
+            // 1. 원본 키워드로 검색 (query+suggest 를 한 요청으로) — 정상어면 여기서 끝(왕복 1회)
+            ProductEsSearchService.SearchOutcome outcome = productEsSearchService.search(
                     keyword, categoryIds, condition.minPrice(), condition.maxPrice());
 
-            if (!results.isEmpty()) {
-                return ProductSearchResult.of(results);
+            if (!outcome.products().isEmpty()) {
+                return ProductSearchResult.of(outcome.products());
             }
 
-            // 결과 0건이면 오타 교정(did-you-mean)을 시도해 교정어로 재검색
-            String corrected = productEsSearchService.suggest(keyword);
+            // 2. 결과 0건 + 교정어가 있으면(오타) 교정어로 한 번 더 검색
+            String corrected = outcome.suggestion();
             if (corrected != null && !corrected.equalsIgnoreCase(keyword)) {
-
-                List<Product> alt = productEsSearchService.searchProducts(
+                ProductEsSearchService.SearchOutcome alt = productEsSearchService.search(
                         corrected, categoryIds, condition.minPrice(), condition.maxPrice());
 
-                if (!alt.isEmpty()) {
-                    return ProductSearchResult.corrected(alt, keyword, corrected);
+                if (!alt.products().isEmpty()) {
+                    return ProductSearchResult.corrected(alt.products(), keyword, corrected);
                 }
             }
             return ProductSearchResult.of(List.of());
