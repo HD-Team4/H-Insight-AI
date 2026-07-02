@@ -8,19 +8,19 @@
 
         <div class="filter-bar">
             <nav class="category-nav">
-                <a th:href="@{/products(keyword=${condition.keyword()}, minPrice=${condition.minPrice()}, maxPrice=${condition.maxPrice()})}"
+                <a th:href="@{/customer/products(keyword=${condition.keyword()}, minPrice=${condition.minPrice()}, maxPrice=${condition.maxPrice()})}"
                    class="category-tab"
                    th:classappend="${condition.categoryGroup() == null} ? 'active'">전체</a>
-                <a th:href="@{/products(categoryGroup='TOP', keyword=${condition.keyword()}, minPrice=${condition.minPrice()}, maxPrice=${condition.maxPrice()})}"
+                <a th:href="@{/customer/products(categoryGroup='TOP', keyword=${condition.keyword()}, minPrice=${condition.minPrice()}, maxPrice=${condition.maxPrice()})}"
                    class="category-tab"
                    th:classappend="${condition.categoryGroup() == 'TOP'} ? 'active'">상의</a>
-                <a th:href="@{/products(categoryGroup='BOTTOM', keyword=${condition.keyword()}, minPrice=${condition.minPrice()}, maxPrice=${condition.maxPrice()})}"
+                <a th:href="@{/customer/products(categoryGroup='BOTTOM', keyword=${condition.keyword()}, minPrice=${condition.minPrice()}, maxPrice=${condition.maxPrice()})}"
                    class="category-tab"
                    th:classappend="${condition.categoryGroup() == 'BOTTOM'} ? 'active'">하의</a>
-                <a th:href="@{/products(categoryGroup='OUTER', keyword=${condition.keyword()}, minPrice=${condition.minPrice()}, maxPrice=${condition.maxPrice()})}"
+                <a th:href="@{/customer/products(categoryGroup='OUTER', keyword=${condition.keyword()}, minPrice=${condition.minPrice()}, maxPrice=${condition.maxPrice()})}"
                    class="category-tab"
                    th:classappend="${condition.categoryGroup() == 'OUTER'} ? 'active'">아우터</a>
-                <a th:href="@{/products(categoryGroup='ACCESSORY', keyword=${condition.keyword()}, minPrice=${condition.minPrice()}, maxPrice=${condition.maxPrice()})}"
+                <a th:href="@{/customer/products(categoryGroup='ACCESSORY', keyword=${condition.keyword()}, minPrice=${condition.minPrice()}, maxPrice=${condition.maxPrice()})}"
                    class="category-tab"
                    th:classappend="${condition.categoryGroup() == 'ACCESSORY'} ? 'active'">악세서리</a>
             </nav>
@@ -32,7 +32,7 @@
                 <input type="number" id="maxPriceInput" class="price-input" placeholder="최대 금액" min="0"
                        th:value="${condition.maxPrice()}"/>
                 <button type="button" class="price-apply-btn" onclick="applyPriceFilter()">적용</button>
-                <a th:href="@{/products}" class="price-reset-btn">필터 초기화</a>
+                <a th:href="@{/customer/products}" class="price-reset-btn">필터 초기화</a>
             </div>
         </div>
 
@@ -42,7 +42,7 @@
 
         <div class="product-grid" th:unless="${#lists.isEmpty(products)}">
             <a th:each="product : ${products}"
-               th:href="@{/products/{id}(id=${product.productId})}"
+               th:href="@{/customer/products/{id}(id=${product.productId})}"
                class="product-card">
 
                 <div class="product-img">
@@ -68,7 +68,7 @@
             </svg>
             <p class="empty-title">조건에 맞는 상품이 없어요</p>
             <p class="empty-desc">검색어나 필터 조건을 바꿔보세요.</p>
-            <a th:href="@{/products}" class="empty-reset-btn">필터 초기화</a>
+            <a th:href="@{/customer/products}" class="empty-reset-btn">필터 초기화</a>
         </div>
 
     </div>
@@ -87,7 +87,7 @@
                 if (min !== '') { params.set('minPrice', min); } else { params.delete('minPrice'); }
                 if (max !== '') { params.set('maxPrice', max); } else { params.delete('maxPrice'); }
 
-                window.location.href = '/products?' + params.toString();
+                window.location.href = '/customer/products?' + params.toString();
             };
 
             [minInput, maxInput].forEach(function (el) {

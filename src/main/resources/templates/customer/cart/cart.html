@@ -49,7 +49,7 @@
         input.addEventListener('change', async (e) => {
             const cartId = e.target.dataset.cartId;
             const quantity = Number(e.target.value);
-            await fetch(`/cart/items/${cartId}`, {
+            await fetch(`/customer/cart/items/${cartId}`, {
                 method: 'PATCH',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({quantity})
@@ -62,7 +62,7 @@
     document.querySelectorAll('.remove-btn').forEach(btn => {
         btn.addEventListener('click', async (e) => {
             const cartId = e.target.dataset.cartId;
-            await fetch(`/cart/items/${cartId}`, {method: 'DELETE'});
+            await fetch(`/customer/cart/items/${cartId}`, {method: 'DELETE'});
             location.reload();
         });
     });
