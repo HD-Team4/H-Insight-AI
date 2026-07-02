@@ -223,11 +223,11 @@
             document.querySelector('.detail-action-secondary').addEventListener('click', async () => {
                 const res = await postJson('/customer/cart/items', {productId, quantity: getQuantity()});
                 if (res.ok) {
-                    if (confirm('장바구니에 담았습니다. 장바구니로 이동할까요?')) {
+                    if (await showConfirm('장바구니에 담았습니다. 장바구니로 이동할까요?', { title: '장바구니' })) {
                         location.href = '/customer/cart';
                     }
                 } else {
-                    alert('장바구니 담기에 실패했습니다.');
+                    await showAlert('장바구니 담기에 실패했습니다.');
                 }
             });
 
@@ -235,9 +235,9 @@
             document.querySelector('.detail-action-primary').addEventListener('click', async () => {
                 const res = await postJson('/customer/orders/direct', {productId, quantity: getQuantity()});
                 if (res.ok) {
-                    alert('주문이 완료되었습니다.');
+                    await showAlert('주문이 완료되었습니다.', { title: '주문 완료' });
                 } else {
-                    alert('주문에 실패했습니다.');
+                    await showAlert('주문에 실패했습니다.');
                 }
             });
         });
