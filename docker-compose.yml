@@ -1,31 +1,11 @@
-version: '3.8'
-
 services:
   # ==========================================
-  # 1. 데이터베이스 및 CDC 소스
-  # ==========================================
-  mysql:
-    image: mysql:8.0
-    container_name: hinsight-mysql
-    ports:
-      - "3307:3306"
-    environment:
-      - MYSQL_ROOT_PASSWORD=localpass
-      - MYSQL_DATABASE=hf4_db
-    command:
-      - --server-id=184054
-      - --log-bin=mysql-bin
-      - --binlog-format=ROW
-      - --binlog-row-image=FULL
-    networks:
-      - hinsight
-
-  # ==========================================
-  # 2. 카프카 에코시스템 (Kafka Ecosystem)
+  # 1. 카프카 에코시스템 (Kafka Ecosystem)
   # ==========================================
   zookeeper:
     image: quay.io/debezium/zookeeper:3.0
     container_name: hinsight-zookeeper
+    profiles: ["local"]
     ports:
       - "2181:2181"
     environment:
@@ -36,6 +16,7 @@ services:
   kafka:
     image: quay.io/debezium/kafka:3.0
     container_name: hinsight-kafka
+    profiles: ["local"]
     ports:
       - "9092:9092"
     depends_on:
@@ -50,29 +31,10 @@ services:
     networks:
       - hinsight
 
-  # Debezium Connect + Aiven S3 Sink (커스텀 이미지 빌드)
-  connect:
-    build:
-      context: ./docker/connect
-    container_name: hinsight-connect
-    ports:
-      - "8083:8083"
-    depends_on:
-      - kafka
-      - zookeeper
-      - mysql
-    environment:
-      - BOOTSTRAP_SERVERS=kafka:29092
-      - GROUP_ID=1
-      - CONFIG_STORAGE_TOPIC=my_connect_configs
-      - OFFSET_STORAGE_TOPIC=my_connect_offsets
-      - STATUS_STORAGE_TOPIC=my_connect_statuses
-    networks:
-      - hinsight
-
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
     container_name: hinsight-kafka-ui
+    profiles: ["local"]
     ports:
       - "8090:8080"
     depends_on:
@@ -83,37 +45,62 @@ services:
     networks:
       - hinsight
 
-  # S3 호환 로컬 스토리지 (MinIO)
-  minio:
-    image: minio/minio:latest
-    container_name: hinsight-minio
+  # 앱이 직접 produce 한 로그 토픽(purchase-history)을 S3(로컬은 MinIO)로 적재하는 Kafka Connect (Aiven S3 Sink)
+  connect:
+    build:
+      context: ./docker/connect
+    image: hinsight/kafka-connect-s3:3.0
+    container_name: hinsight-connect
+    profiles: ["local"]
     ports:
-      - "9000:9000"   # S3 API 엔드포인트
-      - "9001:9001"   # 웹 콘솔
+      - "8083:8083"
+    depends_on:
+      - kafka
+      - minio
     environment:
-      - MINIO_ROOT_USER=minioadmin
-      - MINIO_ROOT_PASSWORD=minioadmin
-    command: server /data --console-address ":9001"
+      - BOOTSTRAP_SERVERS=kafka:29092
+      - GROUP_ID=1
+      - CONFIG_STORAGE_TOPIC=my_connect_configs
+      - OFFSET_STORAGE_TOPIC=my_connect_offsets
+      - STATUS_STORAGE_TOPIC=my_connect_statuses
     networks:
       - hinsight
 
-  # MinIO 버킷 자동 생성 (한 번 실행되고 종료)
-  minio-init:
+  # 로컬 S3 대체 (데이터 레이크)
+  minio:
+    image: minio/minio:latest
+    container_name: hinsight-minio
+    profiles: ["local"]
+    command: server /data --console-address ":9001"
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin
+    ports:
+      - "9000:9000"   # S3 API
+      - "9001:9001"   # 웹 콘솔
+    volumes:
+      - minio-data:/data
+    networks:
+      - hinsight
+
+  # MinIO 버킷(hf4-datalake) 최초 1회 생성용 one-shot
+  minio-setup:
     image: minio/mc:latest
+    container_name: hinsight-minio-setup
+    profiles: ["local"]
     depends_on:
       - minio
     entrypoint: >
       /bin/sh -c "
-      until (/usr/bin/mc alias set local http://minio:9000 minioadmin minioadmin) do echo '...MinIO 대기중'; sleep 2; done;
-      /usr/bin/mc mb --ignore-existing local/hf4-datalake;
-      echo 'MinIO 버킷(hf4-datalake) 준비 완료';
+      until mc alias set local http://minio:9000 minioadmin minioadmin; do sleep 2; done;
+      mc mb -p local/hf4-datalake;
       exit 0;
       "
     networks:
       - hinsight
 
   # ==========================================
-  # 3. 엘라스틱 스택 (Elastic Stack)
+  # 2. 엘라스틱 스택 (Elastic Stack)
   # ==========================================
   elasticsearch:
     build:
@@ -122,15 +109,19 @@ services:
         ES_VERSION: 8.15.3
     image: hinsight/elasticsearch-nori:8.15.3
     container_name: hinsight-es
+    restart: unless-stopped                 # EC2 재부팅/크래시 시 자동 복구 (로컬에도 무해)
     environment:
       - discovery.type=single-node
-      - xpack.security.enabled=false        # 로컬 개발용: 보안(TLS) 비활성화
-      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+      - xpack.security.enabled=false        # 내부 공용(로컬/팀 EC2). 외부 공개 시 반드시 true + TLS
+      - ES_JAVA_OPTS=-Xms${ES_HEAP:-512m} -Xmx${ES_HEAP:-512m}  # 기본 512m, EC2에선 export ES_HEAP=2g
       - bootstrap.memory_lock=true
     ulimits:
       memlock:
         soft: -1
         hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
     ports:
       - "9200:9200"
     volumes:
@@ -146,6 +137,7 @@ services:
   kibana:
     image: docker.elastic.co/kibana/kibana:8.15.3
     container_name: hinsight-kibana
+    restart: unless-stopped
     environment:
       - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
     ports:
@@ -161,6 +153,7 @@ services:
 # ==========================================
 volumes:
   es-data:
+  minio-data:
 
 networks:
   hinsight:
