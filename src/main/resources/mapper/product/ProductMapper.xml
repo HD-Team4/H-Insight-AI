@@ -29,9 +29,7 @@
         WHERE p.product_id = #{productId}
     </select>
 
-    <select id="search" resultType="Product">
-        SELECT *
-        FROM products
+    <sql id="searchConditions">
         WHERE 1=1
         <if test="keyword != null and keyword != ''">
             AND product_name LIKE CONCAT('%', #{keyword}, '%')
@@ -51,6 +49,20 @@
         <if test="maxPrice != null">
             AND price <![CDATA[ <= ]]> #{maxPrice}
         </if>
+    </sql>
+
+    <select id="search" resultType="Product">
+        SELECT *
+        FROM products
+        <include refid="searchConditions"/>
+        ORDER BY product_id
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countSearch" resultType="long">
+        SELECT COUNT(*)
+        FROM products
+        <include refid="searchConditions"/>
     </select>
 
     <select id="findByIds" resultType="Product">

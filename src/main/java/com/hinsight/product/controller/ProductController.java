@@ -34,6 +34,16 @@ public class ProductController {
         return "customer/product/list";
     }
 
+    /**
+     * 무한스크롤| 요청한 페이지의 상품 카드 HTML 조각만 반환한다.
+     */
+    @GetMapping("/items")
+    public String productItems(ProductSearchCondition condition, Model model) {
+        ProductSearchResult result = productService.searchProducts(condition);
+        model.addAttribute("products", result.products());
+        return "customer/product/fragments/product-cards :: cards";
+    }
+
 
     @GetMapping("/{id}")
     public String getProduct(Model model, @PathVariable Long id) {

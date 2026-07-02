@@ -25,30 +25,31 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ProductEsDao {
 
-    private static final int MAX_RESULTS = 200;
-
     private final ElasticsearchClient esClient;
     private final RestClient restClient;
     private final ObjectMapper objectMapper;
 
-    /** ES 검색 결과: 상품 ID 목록 + (있다면) 오타 교정어 */
-    public record EsSearchResult(List<Long> ids, String suggestion) {}
+    /** ES 검색 결과: 상품 ID 목록 + (있다면) 오타 교정어 + 전체 매칭 건수 */
+    public record EsSearchResult(List<Long> ids, String suggestion, long total) {}
 
     /**
      * 조건에 맞는 상품 ID 목록과 오타 교정어를 한 번의 ES 요청으로 조회한다.
      * query 와 suggest 를 함께 실어 왕복(round trip)을 최소화한다.
      * (정상어: 히트 반환 & 교정어 없음 / 오타어: 히트 0건 & 교정어 반환)
+     * from/size 로 페이지네이션하며, 페이지 수 계산용 전체 건수는 total 로 반환한다.
      */
-    public EsSearchResult search(String keyword, List<Long> categoryIds, Integer minPrice, Integer maxPrice)
-            throws IOException {
+    public EsSearchResult search(String keyword, List<Long> categoryIds, Integer minPrice, Integer maxPrice,
+                                 int offset, int limit) throws IOException {
 
         Query query = buildQuery(keyword, categoryIds, minPrice, maxPrice);
         boolean hasKeyword = keyword != null && !keyword.isBlank();
 
         SearchResponse<Void> res = esClient.search(s -> {
             s.index(ProductEsConstants.INDEX)
-                    .size(MAX_RESULTS)
-                    .source(src -> src.fetch(false)) // _source: false 처리
+                    .from(offset)
+                    .size(limit)
+                    .trackTotalHits(t -> t.enabled(true))
+                    .source(src -> src.fetch(false))
                     .query(query);
 
             // 키워드가 있을 때만 오타 교정 suggester 를 같은 요청에 함께 실음
@@ -73,7 +74,9 @@ public class ProductEsDao {
                 .map(h -> Long.valueOf(h.id()))
                 .toList();
 
-        return new EsSearchResult(ids, extractSuggestion(res));
+        long total = (res.hits().total() != null) ? res.hits().total().value() : ids.size();
+
+        return new EsSearchResult(ids, extractSuggestion(res), total);
     }
 
     /**

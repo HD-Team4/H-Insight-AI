@@ -5,6 +5,7 @@ public record ProductSearchCondition(
         Long categoryId,
         String categoryGroup,   // "TOP", "BOTTOM", "OUTER", "ACCESSORY"
         Integer minPrice,
-        Integer maxPrice
+        Integer maxPrice,
+        Integer page            // 1-based, null 이면 1페이지
 ) {
 }
