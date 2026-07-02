@@ -4,6 +4,8 @@ spring:
     url: ${DB_URL}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
+  elasticsearch:
+    uris: ${ES_URIS:http://localhost:9200}
 
 logging:
   level:

@@ -16,5 +16,7 @@ public interface ProductDao {
     Product getProductById(Long productId);
     ProductDetailDto getProductDetailById(Long productId);
     List<Product> search(ProductSearchQuery query);
+    long countSearch(ProductSearchQuery query);
+    List<Product> findByIds(List<Long> productIds);
     PriceRange getPriceRange();
 }

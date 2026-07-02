@@ -25,3 +25,7 @@ server:
   error:
     include-stacktrace: never
     include-message: never
+
+product:
+  list:
+    page-size: 20

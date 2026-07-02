@@ -8,19 +8,19 @@
 
         <div class="filter-bar">
             <nav class="category-nav">
-                <a th:href="@{/customer/products(keyword=${condition.keyword()}, minPrice=${condition.minPrice()}, maxPrice=${condition.maxPrice()})}"
+                <a th:href="@{/products(keyword=${condition.keyword()}, minPrice=${condition.minPrice()}, maxPrice=${condition.maxPrice()})}"
                    class="category-tab"
                    th:classappend="${condition.categoryGroup() == null} ? 'active'">전체</a>
-                <a th:href="@{/customer/products(categoryGroup='TOP', keyword=${condition.keyword()}, minPrice=${condition.minPrice()}, maxPrice=${condition.maxPrice()})}"
+                <a th:href="@{/products(categoryGroup='TOP', keyword=${condition.keyword()}, minPrice=${condition.minPrice()}, maxPrice=${condition.maxPrice()})}"
                    class="category-tab"
                    th:classappend="${condition.categoryGroup() == 'TOP'} ? 'active'">상의</a>
-                <a th:href="@{/customer/products(categoryGroup='BOTTOM', keyword=${condition.keyword()}, minPrice=${condition.minPrice()}, maxPrice=${condition.maxPrice()})}"
+                <a th:href="@{/products(categoryGroup='BOTTOM', keyword=${condition.keyword()}, minPrice=${condition.minPrice()}, maxPrice=${condition.maxPrice()})}"
                    class="category-tab"
                    th:classappend="${condition.categoryGroup() == 'BOTTOM'} ? 'active'">하의</a>
-                <a th:href="@{/customer/products(categoryGroup='OUTER', keyword=${condition.keyword()}, minPrice=${condition.minPrice()}, maxPrice=${condition.maxPrice()})}"
+                <a th:href="@{/products(categoryGroup='OUTER', keyword=${condition.keyword()}, minPrice=${condition.minPrice()}, maxPrice=${condition.maxPrice()})}"
                    class="category-tab"
                    th:classappend="${condition.categoryGroup() == 'OUTER'} ? 'active'">아우터</a>
-                <a th:href="@{/customer/products(categoryGroup='ACCESSORY', keyword=${condition.keyword()}, minPrice=${condition.minPrice()}, maxPrice=${condition.maxPrice()})}"
+                <a th:href="@{/products(categoryGroup='ACCESSORY', keyword=${condition.keyword()}, minPrice=${condition.minPrice()}, maxPrice=${condition.maxPrice()})}"
                    class="category-tab"
                    th:classappend="${condition.categoryGroup() == 'ACCESSORY'} ? 'active'">악세서리</a>
             </nav>
@@ -32,7 +32,7 @@
                 <input type="number" id="maxPriceInput" class="price-input" placeholder="최대 금액" min="0"
                        th:value="${condition.maxPrice()}"/>
                 <button type="button" class="price-apply-btn" onclick="applyPriceFilter()">적용</button>
-                <a th:href="@{/customer/products}" class="price-reset-btn">필터 초기화</a>
+                <a th:href="@{/products}" class="price-reset-btn">필터 초기화</a>
             </div>
         </div>
 
@@ -40,24 +40,23 @@
             H-Insight 추천 픽
         </h2>
 
-        <div class="product-grid" th:unless="${#lists.isEmpty(products)}">
-            <a th:each="product : ${products}"
-               th:href="@{/customer/products/{id}(id=${product.productId})}"
-               class="product-card">
+        <p class="did-you-mean"
+           th:if="${searchResult != null and searchResult.corrected}"
+           style="margin: 8px 0 16px; color: #555;">
+            <span th:text="|'${searchResult.originalKeyword}'|">'검색어'</span>
+            검색 결과가 없어
+            <strong th:text="|'${searchResult.correctedKeyword}'|">'교정어'</strong>
+            (으)로 검색한 결과를 보여드릴게요
+        </p>
 
-                <div class="product-img">
-                    <img th:if="${product.imageUrl}"
-                         th:src="${product.imageUrl}"
-                         th:alt="${product.productName}"
-                         style="width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 12px;"/>
-                </div>
-
-                <div class="product-info">
-                    <div class="product-name" th:text="${product.productName}">상품명</div>
-                    <div class="product-price" th:text="${#numbers.formatInteger(product.price, 0, 'COMMA')} + '원'">0원</div>
-                </div>
-            </a>
+        <div class="product-grid" id="product-grid"
+             th:unless="${#lists.isEmpty(products)}"
+             th:attr="data-page=${searchResult.page().page()}, data-total-pages=${searchResult.page().totalPages()}">
+            <th:block th:replace="~{customer/product/fragments/product-cards :: cards}"></th:block>
         </div>
+
+        <!-- 무한스크롤 감지용 sentinel -->
+        <div id="scroll-sentinel" th:unless="${#lists.isEmpty(products)}" style="height: 1px;"></div>
 
         <div th:if="${#lists.isEmpty(products)}" class="empty-result">
             <svg class="empty-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
@@ -68,7 +67,7 @@
             </svg>
             <p class="empty-title">조건에 맞는 상품이 없어요</p>
             <p class="empty-desc">검색어나 필터 조건을 바꿔보세요.</p>
-            <a th:href="@{/customer/products}" class="empty-reset-btn">필터 초기화</a>
+            <a th:href="@{/products}" class="empty-reset-btn">필터 초기화</a>
         </div>
 
     </div>
@@ -87,7 +86,7 @@
                 if (min !== '') { params.set('minPrice', min); } else { params.delete('minPrice'); }
                 if (max !== '') { params.set('maxPrice', max); } else { params.delete('maxPrice'); }
 
-                window.location.href = '/customer/products?' + params.toString();
+                window.location.href = '/products?' + params.toString();
             };
 
             [minInput, maxInput].forEach(function (el) {
@@ -95,6 +94,46 @@
                     if (e.key === 'Enter') { applyPriceFilter(); }
                 });
             });
+        })();
+    </script>
+
+    <script>
+        // 무한스크롤: sentinel 이 보이면 다음 페이지 카드를 fetch 하여 grid 에 append
+        (function () {
+            const grid = document.getElementById('product-grid');
+            const sentinel = document.getElementById('scroll-sentinel');
+            if (!grid || !sentinel) return;
+
+            let currentPage = parseInt(grid.dataset.page || '1', 10);
+            const totalPages = parseInt(grid.dataset.totalPages || '1', 10);
+            let loading = false;
+
+            if (currentPage >= totalPages) return; // 더 불러올 페이지 없음
+
+            const observer = new IntersectionObserver(function (entries) {
+                if (entries[0].isIntersecting && !loading && currentPage < totalPages) {
+                    loadMore();
+                }
+            }, { rootMargin: '300px' });
+            observer.observe(sentinel);
+
+            async function loadMore() {
+                loading = true;
+                const params = new URLSearchParams(window.location.search);
+                params.set('page', currentPage + 1);
+                try {
+                    const res = await fetch('/products/items?' + params.toString());
+                    if (!res.ok) throw new Error('load failed: ' + res.status);
+                    const html = await res.text();
+                    grid.insertAdjacentHTML('beforeend', html);
+                    currentPage += 1;
+                    if (currentPage >= totalPages) observer.unobserve(sentinel);
+                } catch (e) {
+                    console.error('[무한스크롤] 추가 로드 실패', e);
+                } finally {
+                    loading = false;
+                }
+            }
         })();
     </script>
 </th:block>
