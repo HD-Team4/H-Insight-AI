@@ -4,7 +4,7 @@
 <!-- 상품 카드 목록 조각: 초기 렌더와 무한스크롤 추가 로드에서 공용으로 사용 -->
 <th:block th:fragment="cards">
     <a th:each="product : ${products}"
-       th:href="@{/products/{id}(id=${product.productId})}"
+       th:href="@{/customer/products/{id}(id=${product.productId})}"
        class="product-card">
 
         <div class="product-img">

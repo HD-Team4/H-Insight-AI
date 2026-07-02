@@ -221,10 +221,10 @@
 
             // 장바구니 담기
             document.querySelector('.detail-action-secondary').addEventListener('click', async () => {
-                const res = await postJson('/cart/items', {productId, quantity: getQuantity()});
+                const res = await postJson('/customer/cart/items', {productId, quantity: getQuantity()});
                 if (res.ok) {
                     if (confirm('장바구니에 담았습니다. 장바구니로 이동할까요?')) {
-                        location.href = '/cart';
+                        location.href = '/customer/cart';
                     }
                 } else {
                     alert('장바구니 담기에 실패했습니다.');
@@ -233,7 +233,7 @@
 
             // 바로구매
             document.querySelector('.detail-action-primary').addEventListener('click', async () => {
-                const res = await postJson('/orders/direct', {productId, quantity: getQuantity()});
+                const res = await postJson('/customer/orders/direct', {productId, quantity: getQuantity()});
                 if (res.ok) {
                     alert('주문이 완료되었습니다.');
                 } else {
