@@ -60,7 +60,13 @@
         <foreach collection="list" item="id" open="(" separator="," close=")">
             #{id}
         </foreach>
+        ORDER BY FIELD(product_id,
+        <foreach collection="list" item="id" separator=",">
+            #{id}
+        </foreach>
+        )
     </select>
+
 
     <select id="getPriceRange" resultType="PriceRange">
         SELECT MIN(price) AS minPrice, MAX(price) AS maxPrice
