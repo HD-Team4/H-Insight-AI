@@ -1,0 +1,14 @@
+{
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Spring Boot-HInsightAiApplication<H-Insight-AI>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "com.hinsight.HInsightAiApplication",
+            "projectName": "H-Insight-AI",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        }
+    ]
+}
