@@ -236,7 +236,6 @@
                 const res = await postJson('/orders/direct', {productId, quantity: getQuantity()});
                 if (res.ok) {
                     alert('주문이 완료되었습니다.');
-                    location.href = '/orders';
                 } else {
                     alert('주문에 실패했습니다.');
                 }
