@@ -24,12 +24,8 @@ public class ProductEsSearchService {
      */
     public List<Product> searchProducts(String keyword, List<Long> categoryIds, Integer minPrice, Integer maxPrice) {
         try {
-            // 1. 오타 교정어가 있다면 교정어 적용
-            String suggestedKeyword = productEsDao.suggest(keyword);
-            String finalKeyword = (suggestedKeyword != null) ? suggestedKeyword : keyword;
-
-            // 2. ES에서 스코어(정확도) 순으로 정렬된 ID 목록 조회
-            List<Long> productIds = productEsDao.searchIds(finalKeyword, categoryIds, minPrice, maxPrice);
+            // 주어진 키워드 그대로 검색 (오타 교정/did-you-mean 판단은 ProductService에서 담당)
+            List<Long> productIds = productEsDao.searchIds(keyword, categoryIds, minPrice, maxPrice);
 
             if (productIds.isEmpty()) {
                 return Collections.emptyList();
