@@ -6,6 +6,5 @@ import lombok.Data;
 @Data
 public class Category extends BaseTimeVo {
     private Long categoryId;
-    private Long parentCategoryId;
     private String categoryName;
 }

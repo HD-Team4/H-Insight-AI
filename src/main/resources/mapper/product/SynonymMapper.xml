@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hinsight.product.dao.SynonymDao">
+
+    <select id="findAll" resultType="SynonymSet">
+        SELECT *
+        FROM synonym_set
+        ORDER BY synonym_id
+    </select>
+
+    <select id="findAllActive" resultType="SynonymSet">
+        SELECT *
+        FROM synonym_set
+        WHERE is_active = 1
+        ORDER BY synonym_id
+    </select>
+
+    <insert id="insert" parameterType="SynonymSet"
+            useGeneratedKeys="true" keyProperty="synonymId">
+        INSERT INTO synonym_set (terms, is_active)
+        VALUES (#{terms}, #{isActive})
+    </insert>
+
+    <update id="update" parameterType="SynonymSet">
+        UPDATE synonym_set
+        SET terms = #{terms},
+            is_active = #{isActive}
+        WHERE synonym_id = #{synonymId}
+    </update>
+
+    <delete id="delete" parameterType="long">
+        DELETE FROM synonym_set
+        WHERE synonym_id = #{synonymId}
+    </delete>
+
+</mapper>

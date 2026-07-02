@@ -35,7 +35,7 @@ public class CartService {
     // 담기: 이미 있으면 수량 누적, 없으면 새로 insert
     @Transactional
     public CartResponse addItem(Long userId, CartAddRequest request) {
-        Product product = findProduct(request.productId());
+        findProduct(request.productId()); // 상품 존재 확인
 
         Cart existing = cartDao.findByUserIdAndProductId(userId, request.productId());
         int newQuantity = (existing == null ? 0 : existing.getQuantity()) + request.quantity();
@@ -92,6 +92,4 @@ public class CartService {
         }
         return cart;
     }
-
-
 }

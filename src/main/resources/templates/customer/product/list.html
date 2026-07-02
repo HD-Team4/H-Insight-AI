@@ -40,24 +40,23 @@
             H-Insight 추천 픽
         </h2>
 
-        <div class="product-grid" th:unless="${#lists.isEmpty(products)}">
-            <a th:each="product : ${products}"
-               th:href="@{/products/{id}(id=${product.productId})}"
-               class="product-card">
+        <p class="did-you-mean"
+           th:if="${searchResult != null and searchResult.corrected}"
+           style="margin: 8px 0 16px; color: #555;">
+            <span th:text="|'${searchResult.originalKeyword}'|">'검색어'</span>
+            검색 결과가 없어
+            <strong th:text="|'${searchResult.correctedKeyword}'|">'교정어'</strong>
+            (으)로 검색한 결과를 보여드릴게요
+        </p>
 
-                <div class="product-img">
-                    <img th:if="${product.imageUrl}"
-                         th:src="${product.imageUrl}"
-                         th:alt="${product.productName}"
-                         style="width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 12px;"/>
-                </div>
-
-                <div class="product-info">
-                    <div class="product-name" th:text="${product.productName}">상품명</div>
-                    <div class="product-price" th:text="${#numbers.formatInteger(product.price, 0, 'COMMA')} + '원'">0원</div>
-                </div>
-            </a>
+        <div class="product-grid" id="product-grid"
+             th:unless="${#lists.isEmpty(products)}"
+             th:attr="data-page=${searchResult.page().page()}, data-total-pages=${searchResult.page().totalPages()}">
+            <th:block th:replace="~{customer/product/fragments/product-cards :: cards}"></th:block>
         </div>
+
+        <!-- 무한스크롤 감지용 sentinel -->
+        <div id="scroll-sentinel" th:unless="${#lists.isEmpty(products)}" style="height: 1px;"></div>
 
         <div th:if="${#lists.isEmpty(products)}" class="empty-result">
             <svg class="empty-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
@@ -95,6 +94,46 @@
                     if (e.key === 'Enter') { applyPriceFilter(); }
                 });
             });
+        })();
+    </script>
+
+    <script>
+        // 무한스크롤: sentinel 이 보이면 다음 페이지 카드를 fetch 하여 grid 에 append
+        (function () {
+            const grid = document.getElementById('product-grid');
+            const sentinel = document.getElementById('scroll-sentinel');
+            if (!grid || !sentinel) return;
+
+            let currentPage = parseInt(grid.dataset.page || '1', 10);
+            const totalPages = parseInt(grid.dataset.totalPages || '1', 10);
+            let loading = false;
+
+            if (currentPage >= totalPages) return; // 더 불러올 페이지 없음
+
+            const observer = new IntersectionObserver(function (entries) {
+                if (entries[0].isIntersecting && !loading && currentPage < totalPages) {
+                    loadMore();
+                }
+            }, { rootMargin: '300px' });
+            observer.observe(sentinel);
+
+            async function loadMore() {
+                loading = true;
+                const params = new URLSearchParams(window.location.search);
+                params.set('page', currentPage + 1);
+                try {
+                    const res = await fetch('/products/items?' + params.toString());
+                    if (!res.ok) throw new Error('load failed: ' + res.status);
+                    const html = await res.text();
+                    grid.insertAdjacentHTML('beforeend', html);
+                    currentPage += 1;
+                    if (currentPage >= totalPages) observer.unobserve(sentinel);
+                } catch (e) {
+                    console.error('[무한스크롤] 추가 로드 실패', e);
+                } finally {
+                    loading = false;
+                }
+            }
         })();
     </script>
 </th:block>

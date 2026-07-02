@@ -5,6 +5,8 @@ public record ProductSearchQuery(
         String keyword,
         List<Long> categoryIds,
         Integer minPrice,
-        Integer maxPrice
+        Integer maxPrice,
+        Integer offset,
+        Integer limit
 ) {
 }
