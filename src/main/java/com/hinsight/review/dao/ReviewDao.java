@@ -1,12 +1,17 @@
 package com.hinsight.review.dao;
 
-import com.hinsight.review.model.vo.Review;
+import com.hinsight.review.model.dto.ReviewDto;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
 @Mapper
 public interface ReviewDao {
 
-    List<Review> findByProductId(Long productId);
+    List<ReviewDto> findPageByProductId(@Param("productId") Long productId,
+                                        @Param("offset") int offset,
+                                        @Param("limit") int limit);
+
+    long countByProductId(Long productId);
 }

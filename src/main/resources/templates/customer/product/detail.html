@@ -132,20 +132,52 @@
             </table>
         </section>
         <section id="productReviews" class="detail-review-section">
-            <h2>고객 리뷰</h2>
+            <div class="detail-review-heading">
+                <div>
+                    <h2>고객 리뷰</h2>
+                    <p th:text="'총 ' + ${reviewCount} + '개의 리뷰'">총 0개의 리뷰</p>
+                </div>
+            </div>
             <p class="detail-review-empty" th:if="${reviews == null or reviews.isEmpty()}">
                 등록된 리뷰가 없습니다.
             </p>
-            <div class="detail-review-card" th:each="review : ${reviews}">
-                <div>
-                    <strong th:text="${review.ratingStars}">★★★★★</strong>
-                    <span>고객</span>
-                    <time th:if="${review.createdAt != null}"
-                          th:datetime="${review.createdAt}"
-                          th:text="${#temporals.format(review.createdAt, 'yyyy.MM.dd')}">XXXX.XX.XX</time>
-                </div>
-                <p th:text="${review.content}">리뷰 내용</p>
+            <div class="detail-review-list" th:if="${reviews != null and !reviews.isEmpty()}">
+                <article class="detail-review-card" th:each="review : ${reviews}">
+                    <div class="detail-review-card-head">
+                        <div class="detail-review-user">
+                            <span class="detail-review-avatar"
+                                  th:text="${#strings.substring(review.maskedUserName, 0, 1)}">홍</span>
+                            <div>
+                                <strong th:text="${review.maskedUserName}">홍길동</strong>
+                                <span th:text="${review.ratingStars}">★★★★★</span>
+                            </div>
+                        </div>
+                        <time th:if="${review.createdAt != null}"
+                              th:datetime="${review.createdAt}"
+                              th:text="${#temporals.format(review.createdAt, 'yyyy.MM.dd')}">2026.07.01</time>
+                    </div>
+                    <p th:text="${review.content}">리뷰 내용</p>
+                </article>
             </div>
+            <nav class="detail-review-pagination"
+                 th:if="${reviewPage != null and reviewPage.totalPages() > 1}"
+                 aria-label="리뷰 페이지">
+                <a class="detail-review-page-control"
+                   th:classappend="${reviewPage.page() <= 1} ? ' is-disabled'"
+                   th:href="@{/products/{id}(id=${product.productId}, reviewPage=${reviewPage.page() - 1})}">
+                    이전
+                </a>
+                <a class="detail-review-page-number"
+                   th:each="pageNumber : ${#numbers.sequence(1, reviewPage.totalPages())}"
+                   th:classappend="${pageNumber == reviewPage.page()} ? ' is-active'"
+                   th:href="@{/products/{id}(id=${product.productId}, reviewPage=${pageNumber})}"
+                   th:text="${pageNumber}">1</a>
+                <a class="detail-review-page-control"
+                   th:classappend="${reviewPage.page() >= reviewPage.totalPages()} ? ' is-disabled'"
+                   th:href="@{/products/{id}(id=${product.productId}, reviewPage=${reviewPage.page() + 1})}">
+                    다음
+                </a>
+            </nav>
         </section>
     </div>
 </th:block>
