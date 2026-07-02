@@ -50,8 +50,10 @@ services:
     networks:
       - hinsight
 
+  # Debezium Connect + Aiven S3 Sink (커스텀 이미지 빌드)
   connect:
-    image: quay.io/debezium/connect:3.0
+    build:
+      context: ./docker/connect
     container_name: hinsight-connect
     ports:
       - "8083:8083"
@@ -78,6 +80,35 @@ services:
     environment:
       - KAFKA_CLUSTERS_0_NAME=local-kafka
       - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:29092
+    networks:
+      - hinsight
+
+  # S3 호환 로컬 스토리지 (MinIO)
+  minio:
+    image: minio/minio:latest
+    container_name: hinsight-minio
+    ports:
+      - "9000:9000"   # S3 API 엔드포인트
+      - "9001:9001"   # 웹 콘솔
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin
+    command: server /data --console-address ":9001"
+    networks:
+      - hinsight
+
+  # MinIO 버킷 자동 생성 (한 번 실행되고 종료)
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      until (/usr/bin/mc alias set local http://minio:9000 minioadmin minioadmin) do echo '...MinIO 대기중'; sleep 2; done;
+      /usr/bin/mc mb --ignore-existing local/hf4-datalake;
+      echo 'MinIO 버킷(hf4-datalake) 준비 완료';
+      exit 0;
+      "
     networks:
       - hinsight
 
@@ -133,4 +164,4 @@ volumes:
 
 networks:
   hinsight:
-    driver: bridges
+    driver: bridge
