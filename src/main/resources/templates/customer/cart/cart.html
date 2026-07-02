@@ -209,7 +209,7 @@
             const orderAllBtn = document.getElementById('orderAllBtn');
             if (orderAllBtn) {
                 orderAllBtn.addEventListener('click', async () => {
-                    if (!confirm('장바구니의 모든 상품을 주문할까요?')) {
+                    if (!await showConfirm('장바구니의 모든 상품을 주문할까요?', { title: '주문' })) {
                         return;
                     }
                     const res = await fetch('/customer/orders/cart', {
@@ -217,10 +217,10 @@
                         headers: withCsrf()
                     });
                     if (res.ok) {
-                        alert('주문이 완료되었습니다.');
+                        await showAlert('주문이 완료되었습니다.', { title: '주문 완료' });
                         location.reload();   // ← 새로고침 → 백엔드가 비운 장바구니가 그대로 보임
                     } else {
-                        alert('주문에 실패했습니다.');
+                        await showAlert('주문에 실패했습니다.');
                     }
                 });
             }

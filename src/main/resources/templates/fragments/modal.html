@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<div th:fragment="modalFragment">
+    <div id="commonModal" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true">
+        <div class="modal-card">
+            <h3 class="modal-title" id="commonModalTitle"></h3>
+            <p class="modal-message" id="commonModalMessage"></p>
+            <div class="modal-actions">
+                <button type="button" class="modal-btn modal-btn-cancel" id="commonModalCancel">취소</button>
+                <button type="button" class="modal-btn modal-btn-confirm" id="commonModalConfirm">확인</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            const overlay = document.getElementById('commonModal');
+            const titleEl = document.getElementById('commonModalTitle');
+            const messageEl = document.getElementById('commonModalMessage');
+            const confirmBtn = document.getElementById('commonModalConfirm');
+            const cancelBtn = document.getElementById('commonModalCancel');
+            let resolver = null;
+
+            function close(result) {
+                overlay.classList.remove('is-open');
+                overlay.setAttribute('aria-hidden', 'true');
+                document.removeEventListener('keydown', onKeydown);
+                if (resolver) {
+                    const done = resolver;
+                    resolver = null;
+                    done(result);
+                }
+            }
+
+            function onKeydown(e) {
+                if (e.key === 'Escape') {
+                    close(false);
+                } else if (e.key === 'Enter') {
+                    close(true);
+                }
+            }
+
+            function open(options) {
+                return new Promise((resolve) => {
+                    resolver = resolve;
+                    titleEl.textContent = options.title || '알림';
+                    titleEl.style.display = options.title === '' ? 'none' : '';
+                    messageEl.textContent = options.message || '';
+                    confirmBtn.textContent = options.confirmText || '확인';
+                    cancelBtn.textContent = options.cancelText || '취소';
+                    cancelBtn.style.display = options.showCancel ? '' : 'none';
+
+                    overlay.classList.add('is-open');
+                    overlay.setAttribute('aria-hidden', 'false');
+                    document.addEventListener('keydown', onKeydown);
+                    confirmBtn.focus();
+                });
+            }
+
+            confirmBtn.addEventListener('click', () => close(true));
+            cancelBtn.addEventListener('click', () => close(false));
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) {
+                    close(false);
+                }
+            });
+
+            // alert 대체: 확인 버튼만, Promise 반환
+            window.showAlert = function (message, options) {
+                options = options || {};
+                return open({
+                    message: message,
+                    title: options.title || '알림',
+                    confirmText: options.confirmText || '확인',
+                    showCancel: false
+                });
+            };
+
+            // confirm 대체: 확인/취소, Promise<boolean> 반환
+            window.showConfirm = function (message, options) {
+                options = options || {};
+                return open({
+                    message: message,
+                    title: options.title || '확인',
+                    confirmText: options.confirmText || '확인',
+                    cancelText: options.cancelText || '취소',
+                    showCancel: true
+                });
+            };
+        })();
+    </script>
+</div>
+</html>
