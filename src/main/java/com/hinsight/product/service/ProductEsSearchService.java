@@ -35,13 +35,16 @@ public class ProductEsSearchService {
                 return Collections.emptyList();
             }
 
-            // 보내주신 ProductDao의 findByIds 메서드로 DB에서 실제 상품 정보 일괄 조회
-            // (주의: MyBatis에서 IN 쿼리 조회 시, ES가 보장해 준 ID 정렬 순서가 깨지지 않도록
+            //  ProductDao의 findByIds 메서드로 DB에서 실제 상품 정보 일괄 조회
             return productDao.findByIds(productIds);
 
         } catch (IOException e) {
             log.error("Elasticsearch 검색 중 에러 발생", e);
             throw new RuntimeException("검색 시스템에 일시적인 오류가 발생했습니다.", e);
         }
+    }
+
+    public String suggest(String keyword) throws IOException {
+        return productEsDao.suggest(keyword);
     }
 }
