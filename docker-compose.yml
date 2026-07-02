@@ -1,4 +1,89 @@
+version: '3.8'
+
 services:
+  # ==========================================
+  # 1. 데이터베이스 및 CDC 소스
+  # ==========================================
+  mysql:
+    image: mysql:8.0
+    container_name: hinsight-mysql
+    ports:
+      - "3307:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=localpass
+      - MYSQL_DATABASE=hf4_db
+    command:
+      - --server-id=184054
+      - --log-bin=mysql-bin
+      - --binlog-format=ROW
+      - --binlog-row-image=FULL
+    networks:
+      - hinsight
+
+  # ==========================================
+  # 2. 카프카 에코시스템 (Kafka Ecosystem)
+  # ==========================================
+  zookeeper:
+    image: quay.io/debezium/zookeeper:3.0
+    container_name: hinsight-zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      - ZOOKEEPER_CLIENT_PORT=2181
+    networks:
+      - hinsight
+
+  kafka:
+    image: quay.io/debezium/kafka:3.0
+    container_name: hinsight-kafka
+    ports:
+      - "9092:9092"
+    depends_on:
+      - zookeeper
+    environment:
+      - ZOOKEEPER_CONNECT=zookeeper:2181
+      # 내부 통신용(INTERNAL:29092), 호스트 PC 접근용(EXTERNAL:9092)
+      - KAFKA_LISTENERS=INTERNAL://0.0.0.0:29092,EXTERNAL://0.0.0.0:9092
+      - KAFKA_ADVERTISED_LISTENERS=INTERNAL://kafka:29092,EXTERNAL://localhost:9092
+      - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+      - KAFKA_INTER_BROKER_LISTENER_NAME=INTERNAL
+    networks:
+      - hinsight
+
+  connect:
+    image: quay.io/debezium/connect:3.0
+    container_name: hinsight-connect
+    ports:
+      - "8083:8083"
+    depends_on:
+      - kafka
+      - zookeeper
+      - mysql
+    environment:
+      - BOOTSTRAP_SERVERS=kafka:29092
+      - GROUP_ID=1
+      - CONFIG_STORAGE_TOPIC=my_connect_configs
+      - OFFSET_STORAGE_TOPIC=my_connect_offsets
+      - STATUS_STORAGE_TOPIC=my_connect_statuses
+    networks:
+      - hinsight
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: hinsight-kafka-ui
+    ports:
+      - "8090:8080"
+    depends_on:
+      - kafka
+    environment:
+      - KAFKA_CLUSTERS_0_NAME=local-kafka
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:29092
+    networks:
+      - hinsight
+
+  # ==========================================
+  # 3. 엘라스틱 스택 (Elastic Stack)
+  # ==========================================
   elasticsearch:
     build:
       context: ./docker/elasticsearch
@@ -40,9 +125,12 @@ services:
     networks:
       - hinsight
 
+# ==========================================
+# 볼륨 및 네트워크 정의
+# ==========================================
 volumes:
   es-data:
 
 networks:
   hinsight:
-    driver: bridge
+    driver: bridges

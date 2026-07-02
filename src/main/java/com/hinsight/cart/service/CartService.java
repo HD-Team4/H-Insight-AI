@@ -62,7 +62,6 @@ public class CartService {
             return getCart(userId);
         }
 
-        findProduct(cart.getProductId()); // 상품 존재 확인
         cartDao.updateQuantity(cart.getCartId(), request.quantity());
         return getCart(userId);
     }
