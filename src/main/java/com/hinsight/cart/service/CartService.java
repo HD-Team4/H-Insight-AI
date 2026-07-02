@@ -7,7 +7,6 @@ import com.hinsight.cart.model.dto.CartResponse;
 import com.hinsight.cart.model.dto.CartUpdateRequest;
 import com.hinsight.cart.model.vo.Cart;
 import com.hinsight.exception.custom.cart.CartItemNotFoundException;
-import com.hinsight.exception.custom.order.OutOfStockException;
 import com.hinsight.exception.custom.product.ProductNotFoundException;
 import com.hinsight.product.dao.ProductDao;
 import com.hinsight.product.model.vo.Product;
@@ -40,7 +39,6 @@ public class CartService {
 
         Cart existing = cartDao.findByUserIdAndProductId(userId, request.productId());
         int newQuantity = (existing == null ? 0 : existing.getQuantity()) + request.quantity();
-        validateStock(product, newQuantity);
 
         if (existing == null) {
             Cart cart = new Cart();
@@ -64,7 +62,6 @@ public class CartService {
             return getCart(userId);
         }
 
-        validateStock(findProduct(cart.getProductId()), request.quantity());
         cartDao.updateQuantity(cart.getCartId(), request.quantity());
         return getCart(userId);
     }
@@ -96,9 +93,5 @@ public class CartService {
         return cart;
     }
 
-    private void validateStock(Product product, int requestedQuantity) {
-        if (product.getStockQuantity() == null || requestedQuantity > product.getStockQuantity()) {
-            throw new OutOfStockException();
-        }
-    }
+
 }
