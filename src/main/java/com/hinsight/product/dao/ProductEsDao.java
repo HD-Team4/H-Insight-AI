@@ -2,9 +2,14 @@ package com.hinsight.product.dao;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.FieldValue;
+import co.elastic.clients.elasticsearch._types.SuggestMode;
 import co.elastic.clients.elasticsearch._types.query_dsl.Operator;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
+import co.elastic.clients.elasticsearch.core.search.SuggestSort;
+import co.elastic.clients.elasticsearch.core.search.Suggestion;
+import co.elastic.clients.elasticsearch.core.search.TermSuggest;
+import co.elastic.clients.elasticsearch.core.search.TermSuggestOption;
 import co.elastic.clients.json.JsonData;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -57,44 +62,45 @@ public class ProductEsDao {
             return null;
         }
 
-        ObjectNode term = objectMapper.createObjectNode();
-        term.put("field", "productName");
-        term.put("analyzer", "standard");
-        term.put("suggest_mode", "missing");
-        term.put("min_word_length", 2);
-        term.put("sort", "frequency");
-        ObjectNode s = objectMapper.createObjectNode();
-        s.put("text", keyword);
-        s.set("term", term);
-        ObjectNode suggest = objectMapper.createObjectNode();
-        suggest.set("s", s);
-        ObjectNode body = objectMapper.createObjectNode();
-        body.put("size", 0);
-        body.set("suggest", suggest);
+        SearchResponse<Void> res = esClient.search(s -> s
+                .index(ProductEsConstants.INDEX)
+                .size(0)
+                .suggest(su -> su
+                        .text(keyword)
+                        .suggesters("s", fs -> fs
+                                .term(t -> t
+                                        .field("productName")
+                                        .analyzer("standard")
+                                        .suggestMode(SuggestMode.Missing)
+                                        .minWordLength(2)
+                                        .sort(SuggestSort.Frequency)
+                                )
+                        )
+                ), Void.class);
 
-        Request req = new Request("POST", "/" + ProductEsConstants.INDEX + "/_search");
-        req.setJsonEntity(body.toString());
-        Response resp = restClient.performRequest(req);
-        JsonNode entries = objectMapper.readTree(resp.getEntity().getContent())
-                .path("suggest").path("s");
-        if (!entries.isArray() || entries.isEmpty()) {
+        List<Suggestion<Void>> suggestions = res.suggest().get("s");
+        if (suggestions == null || suggestions.isEmpty()) {
             return null;
         }
 
         StringBuilder sb = new StringBuilder();
         boolean anyCorrection = false;
-        for (JsonNode entry : entries) {
-            String original = entry.path("text").asText();
+
+        for (Suggestion<Void> suggestion : suggestions) {
+            TermSuggest term = suggestion.term();
+            String original = term.text();
             String chosen = original;
-            JsonNode options = entry.path("options");
-            if (options.isArray() && !options.isEmpty()) {
-                String cand = options.get(0).path("text").asText(original);
-                if (!cand.equals(original)) {
-                    chosen = cand;
+
+            List<TermSuggestOption> options = term.options();
+            if (!options.isEmpty()) {
+                String candidate = options.get(0).text();
+                if (!candidate.equals(original)) {
+                    chosen = candidate;
                     anyCorrection = true;
                 }
             }
-            if (sb.length() > 0) sb.append(" ");
+
+            if (!sb.isEmpty()) sb.append(" ");
             sb.append(chosen);
         }
         return anyCorrection ? sb.toString() : null;
