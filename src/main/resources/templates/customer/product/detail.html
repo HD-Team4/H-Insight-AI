@@ -28,8 +28,8 @@
                 <p class="detail-brand"
                    th:text="${product.brandName != null and !product.brandName.isBlank()} ? ${product.brandName} : 'H-Insight-Brand'">
                     H-Insight-Brand
-                    </p>
-                    <h1 th:text="${product.productName}">상품명</h1>
+                </p>
+                <h1 th:text="${product.productName}">상품명</h1>
 
                 <div class="detail-rating-row">
                     <span class="detail-stars">★★★★★</span>
@@ -86,7 +86,7 @@
                     <strong th:unless="${product.price != null}">가격 문의</strong>
                 </div>
 
-                <div class="detail-action-row">
+                <div class="detail-action-row" th:data-product-id="${product.productId}">
                     <button class="detail-action detail-action-secondary" type="button">장바구니</button>
                     <button class="detail-action detail-action-primary" type="button">바로구매</button>
                 </div>
@@ -191,6 +191,55 @@
 
             input.addEventListener('change', () => {
                 setQuantity(Number(input.value) || 1);
+            });
+        });
+    </script>
+    <script th:inline="javascript">
+        // CSRF 토큰 (시큐리티 기본 설정에서도 POST가 동작하도록)
+        const csrfToken  = /*[[${_csrf != null ? _csrf.token : null}]]*/ null;
+        const csrfHeader = /*[[${_csrf != null ? _csrf.headerName : null}]]*/ null;
+
+        async function postJson(url, body) {
+            const headers = {'Content-Type': 'application/json'};
+            if (csrfToken) headers[csrfHeader] = csrfToken;
+            return fetch(url, {
+                method: 'POST',
+                headers,
+                body: body ? JSON.stringify(body) : undefined
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const actionRow = document.querySelector('.detail-action-row');
+            if (!actionRow) {
+                return;
+            }
+
+            const productId = Number(actionRow.dataset.productId);
+            const getQuantity = () =>
+                Number(document.querySelector('.detail-quantity input').value) || 1;
+
+            // 장바구니 담기
+            document.querySelector('.detail-action-secondary').addEventListener('click', async () => {
+                const res = await postJson('/cart/items', {productId, quantity: getQuantity()});
+                if (res.ok) {
+                    if (confirm('장바구니에 담았습니다. 장바구니로 이동할까요?')) {
+                        location.href = '/cart';
+                    }
+                } else {
+                    alert('장바구니 담기에 실패했습니다.');
+                }
+            });
+
+            // 바로구매
+            document.querySelector('.detail-action-primary').addEventListener('click', async () => {
+                const res = await postJson('/orders/direct', {productId, quantity: getQuantity()});
+                if (res.ok) {
+                    alert('주문이 완료되었습니다.');
+                    location.href = '/orders';
+                } else {
+                    alert('주문에 실패했습니다.');
+                }
             });
         });
     </script>
