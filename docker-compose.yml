@@ -23,9 +23,10 @@ services:
       - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
       - KAFKA_INTER_BROKER_LISTENER_NAME=INTERNAL
 
-  # 3. 데베지움 카프카 커넥트 (CDC 역할)
+  # 3. 데베지움 카프카 커넥트 (CDC + S3 Sink)
   connect:
-    image: quay.io/debezium/connect:3.0
+    build:
+      context: ./docker/connect
     ports:
       - "8083:8083"
     depends_on:
