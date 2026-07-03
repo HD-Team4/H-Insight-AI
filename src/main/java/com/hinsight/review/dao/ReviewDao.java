@@ -14,4 +14,6 @@ public interface ReviewDao {
                                         @Param("limit") int limit);
 
     long countByProductId(Long productId);
+
+    Double findAverageRatingByProductId(Long productId);
 }

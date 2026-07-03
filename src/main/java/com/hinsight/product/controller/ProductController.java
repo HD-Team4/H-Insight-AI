@@ -64,10 +64,13 @@ public class ProductController {
         Long userId = (user == null) ? null : user.getUserId();
         var product = productService.getProductDetailByIdWithLog(userId, id);
         var reviewPage = reviewService.getReviewPageByProductId(id, reviewPageNumber);
+        double reviewAverageRating = reviewService.getAverageRatingByProductId(id);
         model.addAttribute("product", product);
         model.addAttribute("productInfoRows", productInfoFormatter.toRows(product.productInfo()));
         model.addAttribute("reviewPage", reviewPage);
         model.addAttribute("reviewCount", reviewPage.totalElements());
+        model.addAttribute("reviewAverageRating", reviewAverageRating);
+        model.addAttribute("reviewAverageRatingStars", reviewService.toRatingStars(reviewAverageRating));
         return "customer/product/detail";
     }
 }

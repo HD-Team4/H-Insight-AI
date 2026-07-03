@@ -6,7 +6,7 @@
 
     <header class="container">
         <div class="header-main">
-            <a th:href="@{/customer/products}" class="logo">H-Insight-AI</a>
+            <a th:href="@{/customer/products}" class="logo"><span class="logo-accent">H</span>-Insight<span class="logo-accent">-AI</span></a>
 
             <div class="search-wrapper">
                 <form th:action="@{/customer/products}" method="get" class="search-bar">
@@ -25,6 +25,9 @@
             </div>
 
             <div class="header-utils">
+                <!-- AI 상품추천 챗봇 (모두에게 노출; 비로그인 클릭 시 로그인으로 유도) -->
+                <a th:href="@{/customer/chatbot}"
+                   style="color: var(--primary); font-weight: 700;">✨ AI 추천</a>
                 <!-- 비로그인: 로그인/회원가입 -->
                 <a sec:authorize="!isAuthenticated()" th:href="@{/customer/login}">로그인</a>
                 <a sec:authorize="!isAuthenticated()" th:href="@{/customer/users/signup}">회원가입</a>
@@ -39,7 +42,7 @@
                         </button>
                     </form>
                 </span>
-                <a th:href="@{/customer/cart}">장바구니 <span style="color: var(--accent); font-weight: 700;">(2)</span></a>
+                <a th:href="@{/customer/cart}">장바구니 </a>
             </div>
         </div>
     </header>
