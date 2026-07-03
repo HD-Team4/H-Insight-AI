@@ -34,7 +34,8 @@ public class ProductService {
     private final ProductDao productDao;
     private final CategoryService categoryService;
     private final ProductEsSearchService productEsSearchService;
-    private final ActivityEventPublisher activityEventPublisher; // 검색 로그 → 데이터레이크
+    private final ActivityEventPublisher activityEventPublisher; // 검색/클릭 로그 → 데이터레이크
+    private final RecentViewService recentViewService;           // 최근 본 상품 → Redis
 
     public List<Product> getAllProducts() {
         return productDao.getAllProducts();
@@ -48,10 +49,24 @@ public class ProductService {
         return product;
     }
 
+    /**
+     * 상품 상세 조회 후 진입 기록을 남긴다 — 클릭 로그(activity.click) 발행 + 최근 본 상품(Redis) 저장.
+     * 상세 페이지 진입(사용자가 상품을 클릭해 들어옴)에서만 호출.
+     */
     public ProductDetailDto getProductDetailByIdWithLog(Long userId, Long productId) {
         ProductDetailDto product = getProductDetailById(productId);
         publishClickLog(userId, product);
+        recentViewService.add(userId, productId);
         return product;
+    }
+
+    // 마이페이지 최근 본 상품 | Redis의 최근 조회순
+    public List<Product> getRecentViewedProducts(Long userId) {
+        List<Long> productIds = recentViewService.getRecentProductIds(userId);
+        if (productIds.isEmpty()) {
+            return List.of();
+        }
+        return productDao.findByIds(productIds);
     }
 
     /**
