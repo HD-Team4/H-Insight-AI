@@ -270,23 +270,25 @@
         <section class="mypage-section">
             <h2 class="mypage-section-title">최근 본 상품</h2>
 
-            <p class="mypage-empty" th:if="${#lists.isEmpty(recentViews)}">최근 본 상품이 없습니다.</p>
+            <div id="recentview-content" th:fragment="recentViewContent">
+                <p class="mypage-empty" th:if="${#lists.isEmpty(recentViews)}">최근 본 상품이 없습니다.</p>
 
-            <div class="recentview-carousel" th:unless="${#lists.isEmpty(recentViews)}">
-                <button type="button" class="recentview-nav prev" aria-label="이전" hidden>&lsaquo;</button>
-                <div class="recentview-track">
-                    <a th:each="item : ${recentViews}"
-                       th:href="@{/customer/products/{id}(id=${item.productId})}"
-                       class="recentview-card">
-                        <div class="recentview-thumb">
-                            <img th:if="${item.imageUrl}" th:src="${item.imageUrl}" th:alt="${item.productName}"/>
-                        </div>
-                        <div class="recentview-name" th:text="${item.productName}">상품명</div>
-                        <div class="recentview-price" th:if="${item.price != null}"
-                             th:text="${#numbers.formatInteger(item.price, 0, 'COMMA')} + '원'">0원</div>
-                    </a>
+                <div class="recentview-carousel" th:unless="${#lists.isEmpty(recentViews)}">
+                    <button type="button" class="recentview-nav prev" aria-label="이전" hidden>&lsaquo;</button>
+                    <div class="recentview-track">
+                        <a th:each="item : ${recentViews}"
+                           th:href="@{/customer/products/{id}(id=${item.productId})}"
+                           class="recentview-card">
+                            <div class="recentview-thumb">
+                                <img th:if="${item.imageUrl}" th:src="${item.imageUrl}" th:alt="${item.productName}"/>
+                            </div>
+                            <div class="recentview-name" th:text="${item.productName}">상품명</div>
+                            <div class="recentview-price" th:if="${item.price != null}"
+                                 th:text="${#numbers.formatInteger(item.price, 0, 'COMMA')} + '원'">0원</div>
+                        </a>
+                    </div>
+                    <button type="button" class="recentview-nav next" aria-label="다음" hidden>&rsaquo;</button>
                 </div>
-                <button type="button" class="recentview-nav next" aria-label="다음" hidden>&rsaquo;</button>
             </div>
         </section>
     </div>
@@ -294,7 +296,8 @@
 
 <th:block layout:fragment="script">
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
+        // 최근 본 상품 캐러셀 좌우 넘김 초기화
+        const initRecentViewCarousel = () => {
             const carousel = document.querySelector('.recentview-carousel');
             if (!carousel) {
                 return;
@@ -325,6 +328,35 @@
             track.addEventListener('scroll', update);
             window.addEventListener('resize', update);
             update();
+        };
+
+        // 최근 본 상품 영역만 비동기로 다시 받아 교체(전체 새로고침 없이 깜빡임 방지)
+        const refreshRecentViews = async () => {
+            try {
+                const res = await fetch('/customer/mypage/recent-views', {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                if (!res.ok) {
+                    return;
+                }
+                const html = await res.text();
+                const container = document.getElementById('recentview-content');
+                if (container) {
+                    container.outerHTML = html;
+                    initRecentViewCarousel();
+                }
+            } catch (e) {
+                // 실패 시 기존 화면 유지
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', initRecentViewCarousel);
+
+        // 상품 상세를 보고 뒤로가기로 돌아왔을 때(bfcache 복원) 최근 본 상품만 갱신
+        window.addEventListener('pageshow', (event) => {
+            if (event.persisted) {
+                refreshRecentViews();
+            }
         });
     </script>
 </th:block>

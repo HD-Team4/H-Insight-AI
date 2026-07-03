@@ -15,7 +15,7 @@ import java.util.List;
 public class RecentViewService {
 
     private static final String KEY_PREFIX = "recent:view:";
-    private static final int MAX_SIZE = 10;
+    private static final int MAX_SIZE = 30;
     private static final Duration TTL = Duration.ofDays(30);
 
     private final StringRedisTemplate redisTemplate;

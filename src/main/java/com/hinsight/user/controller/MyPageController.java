@@ -46,6 +46,13 @@ public class MyPageController {
         return "customer/mypage/profile";
     }
 
+    // 최근 본 상품 영역만 반환(뒤로가기 복귀 시 비동기 갱신용 프래그먼트)
+    @GetMapping("/recent-views")
+    public String recentViews(@AuthenticationPrincipal CustomerUserDetails principal, Model model) {
+        model.addAttribute("recentViews", productService.getRecentViewedProducts(principal.getUserId()));
+        return "customer/mypage/profile :: recentViewContent";
+    }
+
     // 비밀번호 변경 처리
     @PostMapping("/password")
     public String changePassword(@Valid @ModelAttribute("passwordChangeRequest") PasswordChangeRequest request,
