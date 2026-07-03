@@ -1,6 +1,8 @@
 package com.hinsight.user.controller;
 
 import com.hinsight.exception.custom.user.InvalidPasswordException;
+import com.hinsight.order.service.OrderService;
+import com.hinsight.product.service.ProductService;
 import com.hinsight.security.userdetails.CustomerUserDetails;
 import com.hinsight.user.model.dto.PasswordChangeRequest;
 import com.hinsight.user.service.UserService;
@@ -26,14 +28,29 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @RequestMapping("/customer/mypage")
 public class MyPageController {
 
-    private final UserService userService;
+    // 마이페이지 "최근 구매 상품" 에 노출할 상품 개수
+    private static final int RECENT_PURCHASE_LIMIT = 5;
 
-    // 마이페이지: 상단 개인정보 요약 + 비밀번호 변경 폼
+    private final UserService userService;
+    private final OrderService orderService;
+    private final ProductService productService;
+
+    // 마이페이지: 상단 개인정보 요약 + 최근 본 상품 + 최근 구매 상품 + 비밀번호 변경 폼
     @GetMapping
     public String myPage(@AuthenticationPrincipal CustomerUserDetails principal, Model model) {
         model.addAttribute("profile", userService.getMyProfile(principal.getUserId()));
+        model.addAttribute("recentViews", productService.getRecentViewedProducts(principal.getUserId()));
+        model.addAttribute("recentPurchases",
+                orderService.getRecentHistory(principal.getUserId(), RECENT_PURCHASE_LIMIT));
         model.addAttribute("passwordChangeRequest", new PasswordChangeRequest(null, null, null));
         return "customer/mypage/profile";
+    }
+
+    // 최근 본 상품 영역만 반환(뒤로가기 복귀 시 비동기 갱신용 프래그먼트)
+    @GetMapping("/recent-views")
+    public String recentViews(@AuthenticationPrincipal CustomerUserDetails principal, Model model) {
+        model.addAttribute("recentViews", productService.getRecentViewedProducts(principal.getUserId()));
+        return "customer/mypage/profile :: recentViewContent";
     }
 
     // 비밀번호 변경 처리
@@ -63,9 +80,12 @@ public class MyPageController {
         return "redirect:/customer/mypage?pwChanged";
     }
 
-    // 폼 재표시 시에도 상단 개인정보가 보이도록 profile 을 다시 실어준다
+    // 폼 재표시 시에도 상단 개인정보 + 최근 구매 상품이 보이도록 다시 실어준다
     private String renderWithProfile(CustomerUserDetails principal, Model model) {
         model.addAttribute("profile", userService.getMyProfile(principal.getUserId()));
+        model.addAttribute("recentViews", productService.getRecentViewedProducts(principal.getUserId()));
+        model.addAttribute("recentPurchases",
+                orderService.getRecentHistory(principal.getUserId(), RECENT_PURCHASE_LIMIT));
         return "customer/mypage/profile";
     }
 }

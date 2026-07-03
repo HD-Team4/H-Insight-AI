@@ -55,6 +55,107 @@
         .mypage-section-title { font-size: 18px; font-weight: 800; margin-bottom: 20px; }
         .mypage-password-form { max-width: 420px; }
 
+        /* 최근 구매 상품 목록 */
+        .mypage-purchase-list { display: flex; flex-direction: column; gap: 4px; }
+        .mypage-purchase-item + .mypage-purchase-item { border-top: 1px solid var(--border); }
+        .mypage-purchase-link {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 12px 8px;
+            border-radius: 12px;
+            text-decoration: none;
+            color: inherit;
+            transition: background 0.15s;
+        }
+        .mypage-purchase-link:hover { background: var(--bg-light); }
+        .mypage-purchase-img {
+            width: 56px;
+            height: 56px;
+            flex-shrink: 0;
+            border-radius: 10px;
+            background: var(--bg-light);
+            overflow: hidden;
+        }
+        .mypage-purchase-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .mypage-purchase-info { flex: 1; min-width: 0; }
+        .mypage-purchase-name {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .mypage-purchase-meta {
+            display: flex;
+            gap: 6px;
+            font-size: 13px;
+            color: var(--text-sub);
+        }
+
+        /* 최근 본 상품 캐러셀 */
+        .recentview-carousel { position: relative; }
+        .recentview-track {
+            display: flex;
+            gap: 16px;
+            overflow-x: auto;
+            scroll-behavior: smooth;
+            padding: 4px 2px;
+            scrollbar-width: none;            /* Firefox */
+        }
+        .recentview-track::-webkit-scrollbar { display: none; } /* Chrome/Safari */
+        .recentview-card {
+            flex: 0 0 140px;
+            width: 140px;
+            text-decoration: none;
+            color: inherit;
+        }
+        .recentview-thumb {
+            width: 140px;
+            height: 140px;
+            border-radius: 12px;
+            background: var(--bg-light);
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+        .recentview-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .recentview-name {
+            margin-top: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            line-height: 1.35;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .recentview-price { margin-top: 4px; font-size: 13px; color: var(--text-sub); }
+
+        /* 좌우 넘김 버튼 (썸네일 세로 중앙에 살짝 겹치게) */
+        .recentview-nav {
+            position: absolute;
+            top: 74px;
+            transform: translateY(-50%);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 1px solid var(--border);
+            background: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: var(--text-main);
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            z-index: 2;
+        }
+        .recentview-nav:hover { background: var(--bg-light); }
+        .recentview-nav.prev { left: -12px; }
+        .recentview-nav.next { right: -12px; }
+        .recentview-nav[hidden] { display: none; }
+
         /* 하단: 준비중 placeholder */
         .mypage-empty {
             color: var(--text-sub);
@@ -137,15 +238,126 @@
             </form>
         </section>
 
-        <!-- ===== 하단: 추후 구현 (최근 주문내역 / 최근 본 상품) ===== -->
+        <!-- ===== 최근 구매 상품 ===== -->
         <section class="mypage-section">
-            <h2 class="mypage-section-title">최근 주문 내역</h2>
-            <p class="mypage-empty">준비 중입니다.</p>
+            <h2 class="mypage-section-title">최근 구매 상품</h2>
+
+            <p class="mypage-empty" th:if="${#lists.isEmpty(recentPurchases)}">아직 구매한 상품이 없습니다.</p>
+
+            <ul class="mypage-purchase-list" th:unless="${#lists.isEmpty(recentPurchases)}">
+                <li th:each="item : ${recentPurchases}" class="mypage-purchase-item">
+                    <a th:href="@{/customer/products/{id}(id=${item.productId()})}" class="mypage-purchase-link">
+                        <div class="mypage-purchase-img">
+                            <img th:if="${item.imageUrl()}"
+                                 th:src="${item.imageUrl()}"
+                                 th:alt="${item.productName()}"/>
+                        </div>
+                        <div class="mypage-purchase-info">
+                            <div class="mypage-purchase-name" th:text="${item.productName()}">상품명</div>
+                            <div class="mypage-purchase-meta">
+                                <span th:text="${#numbers.formatInteger(item.price(), 0, 'COMMA')} + '원'">0원</span>
+                                <span>·</span>
+                                <span th:text="${item.quantity()} + '개'">1개</span>
+                                <span>·</span>
+                                <span th:text="${#temporals.format(item.createdAt(), 'yyyy.MM.dd')}">2026.01.01</span>
+                            </div>
+                        </div>
+                    </a>
+                </li>
+            </ul>
         </section>
+        <!-- ===== 최근 본 상품 ===== -->
         <section class="mypage-section">
             <h2 class="mypage-section-title">최근 본 상품</h2>
-            <p class="mypage-empty">준비 중입니다.</p>
+
+            <div id="recentview-content" th:fragment="recentViewContent">
+                <p class="mypage-empty" th:if="${#lists.isEmpty(recentViews)}">최근 본 상품이 없습니다.</p>
+
+                <div class="recentview-carousel" th:unless="${#lists.isEmpty(recentViews)}">
+                    <button type="button" class="recentview-nav prev" aria-label="이전" hidden>&lsaquo;</button>
+                    <div class="recentview-track">
+                        <a th:each="item : ${recentViews}"
+                           th:href="@{/customer/products/{id}(id=${item.productId})}"
+                           class="recentview-card">
+                            <div class="recentview-thumb">
+                                <img th:if="${item.imageUrl}" th:src="${item.imageUrl}" th:alt="${item.productName}"/>
+                            </div>
+                            <div class="recentview-name" th:text="${item.productName}">상품명</div>
+                            <div class="recentview-price" th:if="${item.price != null}"
+                                 th:text="${#numbers.formatInteger(item.price, 0, 'COMMA')} + '원'">0원</div>
+                        </a>
+                    </div>
+                    <button type="button" class="recentview-nav next" aria-label="다음" hidden>&rsaquo;</button>
+                </div>
+            </div>
         </section>
     </div>
+</th:block>
+
+<th:block layout:fragment="script">
+    <script>
+        // 최근 본 상품 캐러셀 좌우 넘김 초기화
+        const initRecentViewCarousel = () => {
+            const carousel = document.querySelector('.recentview-carousel');
+            if (!carousel) {
+                return;
+            }
+            const track = carousel.querySelector('.recentview-track');
+            const prev = carousel.querySelector('.recentview-nav.prev');
+            const next = carousel.querySelector('.recentview-nav.next');
+
+            // 카드 폭(140) + 간격(16)
+            const CARD_STEP = 156;
+
+            // 화면에 보이는 카드 개수만큼 스크롤
+            const getStep = () => {
+                const visibleCount = Math.max(1, Math.floor(track.clientWidth / CARD_STEP));
+                return CARD_STEP * visibleCount;
+            };
+
+            const update = () => {
+                const overflow = track.scrollWidth > track.clientWidth + 1;
+                const atStart = track.scrollLeft <= 0;
+                const atEnd = track.scrollLeft >= track.scrollWidth - track.clientWidth - 1;
+                prev.hidden = !overflow || atStart;
+                next.hidden = !overflow || atEnd;
+            };
+
+            prev.addEventListener('click', () => track.scrollBy({ left: -getStep(), behavior: 'smooth' }));
+            next.addEventListener('click', () => track.scrollBy({ left: getStep(), behavior: 'smooth' }));
+            track.addEventListener('scroll', update);
+            window.addEventListener('resize', update);
+            update();
+        };
+
+        // 최근 본 상품 영역만 비동기로 다시 받아 교체(전체 새로고침 없이 깜빡임 방지)
+        const refreshRecentViews = async () => {
+            try {
+                const res = await fetch('/customer/mypage/recent-views', {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                if (!res.ok) {
+                    return;
+                }
+                const html = await res.text();
+                const container = document.getElementById('recentview-content');
+                if (container) {
+                    container.outerHTML = html;
+                    initRecentViewCarousel();
+                }
+            } catch (e) {
+                // 실패 시 기존 화면 유지
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', initRecentViewCarousel);
+
+        // 상품 상세를 보고 뒤로가기로 돌아왔을 때(bfcache 복원) 최근 본 상품만 갱신
+        window.addEventListener('pageshow', (event) => {
+            if (event.persisted) {
+                refreshRecentViews();
+            }
+        });
+    </script>
 </th:block>
 </html>

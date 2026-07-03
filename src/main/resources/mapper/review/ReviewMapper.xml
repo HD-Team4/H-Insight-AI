@@ -3,18 +3,27 @@
         "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.hinsight.review.dao.ReviewDao">
 
-    <select id="findByProductId" parameterType="long" resultType="Review">
+    <select id="findPageByProductId" resultType="ReviewDto">
         SELECT
-            review_id,
-            product_id,
-            user_id,
-            content,
-            rating,
-            sentiment,
-            created_at,
-            updated_at
+            r.review_id,
+            r.product_id,
+            r.user_id,
+            r.rating,
+            r.content,
+            r.sentiment,
+            r.created_at,
+            r.updated_at,
+            u.name AS user_name
+        FROM reviews r
+        LEFT JOIN users u ON r.user_id = u.user_id
+        WHERE r.product_id = #{productId}
+        ORDER BY r.created_at DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countByProductId" parameterType="long" resultType="long">
+        SELECT COUNT(*)
         FROM reviews
         WHERE product_id = #{productId}
-        ORDER BY created_at DESC, review_id DESC
     </select>
 </mapper>

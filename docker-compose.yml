@@ -176,6 +176,22 @@ services:
       ollama pull bge-m3;
       exit 0;
       "
+  # 3. Redis (마이페이지 "최근 본 상품" 캐시)
+  # ==========================================
+  redis:
+    image: redis:7-alpine
+    container_name: hinsight-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]   # 재시작해도 최근 본 상품 유지
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
     networks:
       - hinsight
 
@@ -186,6 +202,7 @@ volumes:
   es-data:
   minio-data:
   ollama-data:
+  redis-data:
 
 networks:
   hinsight:

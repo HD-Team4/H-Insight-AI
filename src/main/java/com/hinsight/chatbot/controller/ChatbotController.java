@@ -6,6 +6,7 @@ import com.hinsight.chatbot.service.ChatbotService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.codec.ServerSentEvent;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,6 +22,7 @@ import java.util.Map;
  * 상품추천 챗봇 (일반고객 전용 — /customer/** 는 ROLE_CUSTOMER 필요).
  * 추천 응답은 SSE 스트림: 먼저 head(조건+상품), 이어서 추천멘트 토큰(delta), 마지막 done.
  */
+@Tag(name = "chatbot-controller", description = "챗봇 컨트롤러")
 @Controller
 @RequiredArgsConstructor
 @RequestMapping("/customer/chatbot")

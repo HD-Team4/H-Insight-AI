@@ -31,8 +31,21 @@ public class KafkaTopicConfig {
                 .build();
     }
 
-    // 이벤트 타입 추가 시 여기 한 줄씩. 예)
-    // @Bean NewTopic activitySearchTopic() {
-    //     return TopicBuilder.name("activity.search").partitions(partitions).replicas(replicas).build();
-    // }
+    @Bean
+    public NewTopic activitySearchTopic() {
+        return TopicBuilder.name("activity.search")
+                .partitions(partitions)
+                .replicas(replicas)
+                .build();
+    }
+
+    @Bean
+    public NewTopic activityClickTopic() {
+        return TopicBuilder.name("activity.click")
+                .partitions(partitions)
+                .replicas(replicas)
+                .build();
+    }
+
+    // 이벤트 타입 추가 시 여기 @Bean 한 개씩.
 }

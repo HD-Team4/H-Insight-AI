@@ -1,5 +1,7 @@
 package com.hinsight.product.service;
 
+import com.hinsight.common.event.ActivityEvent;
+import com.hinsight.common.event.ActivityEventPublisher;
 import com.hinsight.exception.custom.product.ProductNotFoundException;
 import com.hinsight.product.dao.ProductDao;
 import com.hinsight.product.model.dto.PageInfo;
@@ -7,6 +9,8 @@ import com.hinsight.product.model.dto.ProductDetailDto;
 import com.hinsight.product.model.dto.ProductSearchCondition;
 import com.hinsight.product.model.dto.ProductSearchQuery;
 import com.hinsight.product.model.dto.ProductSearchResult;
+import com.hinsight.product.model.dto.SearchLogPayload;
+import com.hinsight.product.model.dto.ClickLogPayload;
 import com.hinsight.product.model.vo.CategoryGroup;
 import com.hinsight.product.model.vo.PriceRange;
 import com.hinsight.product.model.vo.Product;
@@ -21,12 +25,17 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ProductService {
 
+    private static final String TOPIC_SEARCH = "activity.search";
+    private static final String TOPIC_CLICK = "activity.click";
+
     @Value("${product.list.page-size:20}")
     private int pageSize;
 
     private final ProductDao productDao;
     private final CategoryService categoryService;
     private final ProductEsSearchService productEsSearchService;
+    private final ActivityEventPublisher activityEventPublisher; // 검색/클릭 로그 → 데이터레이크
+    private final RecentViewService recentViewService;           // 최근 본 상품 → Redis
 
     public List<Product> getAllProducts() {
         return productDao.getAllProducts();
@@ -38,6 +47,36 @@ public class ProductService {
             throw new ProductNotFoundException();
         }
         return product;
+    }
+
+    /**
+     * 상품 상세 조회 후 진입 기록을 남긴다 — 클릭 로그(activity.click) 발행 + 최근 본 상품(Redis) 저장.
+     * 상세 페이지 진입(사용자가 상품을 클릭해 들어옴)에서만 호출.
+     */
+    public ProductDetailDto getProductDetailByIdWithLog(Long userId, Long productId) {
+        ProductDetailDto product = getProductDetailById(productId);
+        publishClickLog(userId, product);
+        recentViewService.add(userId, productId);
+        return product;
+    }
+
+    // 마이페이지 최근 본 상품 | Redis의 최근 조회순
+    public List<Product> getRecentViewedProducts(Long userId) {
+        List<Long> productIds = recentViewService.getRecentProductIds(userId);
+        if (productIds.isEmpty()) {
+            return List.of();
+        }
+        return productDao.findByIds(productIds);
+    }
+
+    /**
+     * 검색 후 결과를 검색 로그(activity.search)로 발행한다.
+     * 실제 검색 진입(목록 페이지)에서만 호출 — 무한스크롤 조각 요청은 같은 검색의 페이지네이션이라 발행 X
+     */
+    public ProductSearchResult searchProductsWithLog(Long userId, ProductSearchCondition condition) {
+        ProductSearchResult result = searchProducts(condition);
+        publishSearchLog(userId, condition, result);
+        return result;
     }
 
     public ProductSearchResult searchProducts(ProductSearchCondition condition) {
@@ -81,6 +120,45 @@ public class ProductService {
         }
     }
 
+
+    // 검색어/결과를 봉투에 담아 데이터레이크로 발행. 분석용이라 실패해도 검색 흐름은 막지 않는다.
+    private void publishSearchLog(Long userId, ProductSearchCondition condition, ProductSearchResult result) {
+        // 비회원 로깅 제외
+        if (userId == null) {
+            return;
+        }
+        // 검색어 기반 로그만 기록
+        if (condition.keyword() == null || condition.keyword().isBlank()) {
+            return;
+        }
+
+        // 오타인 경우 교정어, 아니면 입력키워드 기록 (추천용이기 때문에)
+        String keyword = result.corrected() ? result.correctedKeyword() : condition.keyword();
+
+        SearchLogPayload payload = SearchLogPayload.builder()
+                .keyword(keyword)
+                .page(result.page().page())
+                .resultCount(result.page().totalElements())
+                .build();
+
+        activityEventPublisher.publish(TOPIC_SEARCH, ActivityEvent.of("search", userId, payload));
+    }
+
+    private void publishClickLog(Long userId, ProductDetailDto product) {
+        // 비회원 로깅 제외
+        if (userId == null) {
+            return;
+        }
+
+        ClickLogPayload payload = ClickLogPayload.builder()
+                .productId(product.productId())
+                .productName(product.productName())
+                .brandName(product.brandName())
+                .price(product.price())
+                .build();
+
+        activityEventPublisher.publish(TOPIC_CLICK, ActivityEvent.of("click", userId, payload));
+    }
 
     private ProductSearchResult searchByDb(ProductSearchCondition condition, List<Long> categoryIds, int page, int offset) {
         ProductSearchQuery query = new ProductSearchQuery(

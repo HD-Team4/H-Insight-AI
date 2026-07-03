@@ -1,0 +1,658 @@
+{
+  "1w": {
+    "generatedAt": "2026-07-03T01:01:50+00:00",
+    "period": "1주",
+    "kpi": {
+      "totalSales": 43208000,
+      "orderCount": 876,
+      "totalQuantity": 1047,
+      "visitors": 0
+    },
+    "dailySales": [
+      {
+        "date": "06-26",
+        "sales": 7120400,
+        "orders": 138
+      },
+      {
+        "date": "06-27",
+        "sales": 5437300,
+        "orders": 120
+      },
+      {
+        "date": "06-28",
+        "sales": 4215900,
+        "orders": 95
+      },
+      {
+        "date": "06-29",
+        "sales": 6820400,
+        "orders": 142
+      },
+      {
+        "date": "06-30",
+        "sales": 6495600,
+        "orders": 132
+      },
+      {
+        "date": "07-01",
+        "sales": 5888100,
+        "orders": 115
+      },
+      {
+        "date": "07-02",
+        "sales": 7230300,
+        "orders": 134
+      }
+    ],
+    "categorySales": [
+      {
+        "category": "티셔츠",
+        "sales": 6109000
+      },
+      {
+        "category": "아우터",
+        "sales": 6108500
+      },
+      {
+        "category": "니트",
+        "sales": 6014700
+      },
+      {
+        "category": "팬츠",
+        "sales": 4936100
+      },
+      {
+        "category": "패션잡화",
+        "sales": 4097900
+      },
+      {
+        "category": "원피스",
+        "sales": 3541400
+      },
+      {
+        "category": "셔츠",
+        "sales": 3490300
+      },
+      {
+        "category": "재킷",
+        "sales": 3015900
+      },
+      {
+        "category": "재킷/베스트",
+        "sales": 1817300
+      },
+      {
+        "category": "셔츠/블라우스",
+        "sales": 1555300
+      },
+      {
+        "category": "스커트",
+        "sales": 1346600
+      },
+      {
+        "category": "쥬얼리/시계",
+        "sales": 840500
+      },
+      {
+        "category": "라운지/언더웨어",
+        "sales": 334500
+      }
+    ],
+    "topProducts": [
+      {
+        "productName": "[인플루언서 PICK] 파인터치 코튼 칼라넥 반소매 니트 - 블랙",
+        "category": "니트",
+        "unitsSold": 27,
+        "revenue": 1746500,
+        "growth": 106
+      },
+      {
+        "productName": "미니 그래픽 볼캡 - 애쉬",
+        "category": "패션잡화",
+        "unitsSold": 52,
+        "revenue": 1630200,
+        "growth": 70
+      },
+      {
+        "productName": "[인플루언서 PICK] 미니 체크 캐주얼 후드 재킷 - 스카이 블루",
+        "category": "아우터",
+        "unitsSold": 19,
+        "revenue": 1377700,
+        "growth": -18
+      },
+      {
+        "productName": "테일러드 페이크 레더 재킷 - 브라운",
+        "category": "재킷/베스트",
+        "unitsSold": 13,
+        "revenue": 1358300,
+        "growth": -48
+      },
+      {
+        "productName": "페이크 레더 탑스티치 블루종 - 베이지",
+        "category": "재킷",
+        "unitsSold": 10,
+        "revenue": 1278400,
+        "growth": 60
+      },
+      {
+        "productName": "[인플루언서 PICK] 리넨블렌디드 데님 맥시스커트 - 스카이 블루",
+        "category": "스커트",
+        "unitsSold": 26,
+        "revenue": 1276800,
+        "growth": -16
+      },
+      {
+        "productName": "내추럴 슬럽 반소매 데님 셔츠 - 블랙",
+        "category": "셔츠",
+        "unitsSold": 26,
+        "revenue": 1276800,
+        "growth": -22
+      },
+      {
+        "productName": "경량 에센셜 세미와이드핏 데님 팬츠 - 블루",
+        "category": "팬츠",
+        "unitsSold": 28,
+        "revenue": 1136200,
+        "growth": -3
+      },
+      {
+        "productName": "코튼 워시드 바이커 재킷 - 브라운",
+        "category": "재킷",
+        "unitsSold": 6,
+        "revenue": 699000,
+        "growth": 0
+      },
+      {
+        "productName": "멀티칼라 긴팔 카디건 - 블루",
+        "category": "니트",
+        "unitsSold": 10,
+        "revenue": 638400,
+        "growth": 78
+      }
+    ],
+    "searchRanking": []
+  },
+  "1m": {
+    "generatedAt": "2026-07-03T01:01:50+00:00",
+    "period": "1개월",
+    "kpi": {
+      "totalSales": 166492100,
+      "orderCount": 3131,
+      "totalQuantity": 3775,
+      "visitors": 0
+    },
+    "dailySales": [
+      {
+        "date": "1주차",
+        "sales": 31905500,
+        "orders": 602
+      },
+      {
+        "date": "2주차",
+        "sales": 37621700,
+        "orders": 655
+      },
+      {
+        "date": "3주차",
+        "sales": 39957300,
+        "orders": 746
+      },
+      {
+        "date": "4주차",
+        "sales": 43889200,
+        "orders": 879
+      },
+      {
+        "date": "5주차",
+        "sales": 13118400,
+        "orders": 249
+      }
+    ],
+    "categorySales": [
+      {
+        "category": "니트",
+        "sales": 21952800
+      },
+      {
+        "category": "아우터",
+        "sales": 21291100
+      },
+      {
+        "category": "티셔츠",
+        "sales": 20139600
+      },
+      {
+        "category": "팬츠",
+        "sales": 17908100
+      },
+      {
+        "category": "원피스",
+        "sales": 14943300
+      },
+      {
+        "category": "패션잡화",
+        "sales": 14766500
+      },
+      {
+        "category": "재킷",
+        "sales": 13761100
+      },
+      {
+        "category": "셔츠",
+        "sales": 12225700
+      },
+      {
+        "category": "재킷/베스트",
+        "sales": 11404100
+      },
+      {
+        "category": "스커트",
+        "sales": 8458700
+      },
+      {
+        "category": "셔츠/블라우스",
+        "sales": 5652600
+      },
+      {
+        "category": "쥬얼리/시계",
+        "sales": 2558900
+      },
+      {
+        "category": "라운지/언더웨어",
+        "sales": 1429600
+      }
+    ],
+    "topProducts": [
+      {
+        "productName": "테일러드 페이크 레더 재킷 - 브라운",
+        "category": "재킷/베스트",
+        "unitsSold": 80,
+        "revenue": 8789000,
+        "growth": 69
+      },
+      {
+        "productName": "[인플루언서 PICK] 리넨블렌디드 데님 맥시스커트 - 스카이 블루",
+        "category": "스커트",
+        "unitsSold": 143,
+        "revenue": 7940100,
+        "growth": 62
+      },
+      {
+        "productName": "[인플루언서 PICK] 미니 체크 캐주얼 후드 재킷 - 스카이 블루",
+        "category": "아우터",
+        "unitsSold": 74,
+        "revenue": 6109800,
+        "growth": 4
+      },
+      {
+        "productName": "[인플루언서 PICK] 파인터치 코튼 칼라넥 반소매 니트 - 블랙",
+        "category": "니트",
+        "unitsSold": 87,
+        "revenue": 5638700,
+        "growth": 85
+      },
+      {
+        "productName": "내추럴 슬럽 반소매 데님 셔츠 - 블랙",
+        "category": "셔츠",
+        "unitsSold": 105,
+        "revenue": 5386500,
+        "growth": 71
+      },
+      {
+        "productName": "경량 에센셜 세미와이드핏 데님 팬츠 - 블루",
+        "category": "팬츠",
+        "unitsSold": 98,
+        "revenue": 4245800,
+        "growth": 67
+      },
+      {
+        "productName": "미니 그래픽 볼캡 - 애쉬",
+        "category": "패션잡화",
+        "unitsSold": 135,
+        "revenue": 3908300,
+        "growth": 53
+      },
+      {
+        "productName": "페이크 레더 탑스티치 블루종 - 베이지",
+        "category": "재킷",
+        "unitsSold": 30,
+        "revenue": 3675400,
+        "growth": 10
+      },
+      {
+        "productName": "경량 바이커 데님 아우터 - 블랙",
+        "category": "아우터",
+        "unitsSold": 36,
+        "revenue": 3114800,
+        "growth": 206
+      },
+      {
+        "productName": "코튼 워시드 바이커 재킷 - 브라운",
+        "category": "재킷",
+        "unitsSold": 27,
+        "revenue": 2865900,
+        "growth": 32
+      }
+    ],
+    "searchRanking": []
+  },
+  "6m": {
+    "generatedAt": "2026-07-03T01:01:51+00:00",
+    "period": "6개월",
+    "kpi": {
+      "totalSales": 395588800,
+      "orderCount": 7473,
+      "totalQuantity": 8992,
+      "visitors": 0
+    },
+    "dailySales": [
+      {
+        "date": "2026-04",
+        "sales": 97433800,
+        "orders": 1765
+      },
+      {
+        "date": "2026-05",
+        "sales": 122964900,
+        "orders": 2399
+      },
+      {
+        "date": "2026-06",
+        "sales": 162071700,
+        "orders": 3060
+      },
+      {
+        "date": "2026-07",
+        "sales": 13118400,
+        "orders": 249
+      }
+    ],
+    "categorySales": [
+      {
+        "category": "니트",
+        "sales": 52530800
+      },
+      {
+        "category": "아우터",
+        "sales": 51685300
+      },
+      {
+        "category": "티셔츠",
+        "sales": 48197500
+      },
+      {
+        "category": "팬츠",
+        "sales": 41310800
+      },
+      {
+        "category": "원피스",
+        "sales": 36910100
+      },
+      {
+        "category": "패션잡화",
+        "sales": 34009600
+      },
+      {
+        "category": "재킷",
+        "sales": 31766400
+      },
+      {
+        "category": "셔츠",
+        "sales": 26944700
+      },
+      {
+        "category": "재킷/베스트",
+        "sales": 26373200
+      },
+      {
+        "category": "스커트",
+        "sales": 19271200
+      },
+      {
+        "category": "셔츠/블라우스",
+        "sales": 17286900
+      },
+      {
+        "category": "쥬얼리/시계",
+        "sales": 5787700
+      },
+      {
+        "category": "라운지/언더웨어",
+        "sales": 3514600
+      }
+    ],
+    "topProducts": [
+      {
+        "productName": "테일러드 페이크 레더 재킷 - 브라운",
+        "category": "재킷/베스트",
+        "unitsSold": 185,
+        "revenue": 20694100,
+        "growth": null
+      },
+      {
+        "productName": "[인플루언서 PICK] 리넨블렌디드 데님 맥시스커트 - 스카이 블루",
+        "category": "스커트",
+        "unitsSold": 322,
+        "revenue": 17396400,
+        "growth": null
+      },
+      {
+        "productName": "[인플루언서 PICK] 미니 체크 캐주얼 후드 재킷 - 스카이 블루",
+        "category": "아우터",
+        "unitsSold": 192,
+        "revenue": 16292800,
+        "growth": null
+      },
+      {
+        "productName": "[인플루언서 PICK] 파인터치 코튼 칼라넥 반소매 니트 - 블랙",
+        "category": "니트",
+        "unitsSold": 186,
+        "revenue": 11976000,
+        "growth": null
+      },
+      {
+        "productName": "내추럴 슬럽 반소매 데님 셔츠 - 블랙",
+        "category": "셔츠",
+        "unitsSold": 234,
+        "revenue": 11890200,
+        "growth": null
+      },
+      {
+        "productName": "페이크 레더 탑스티치 블루종 - 베이지",
+        "category": "재킷",
+        "unitsSold": 75,
+        "revenue": 8868900,
+        "growth": null
+      },
+      {
+        "productName": "경량 에센셜 세미와이드핏 데님 팬츠 - 블루",
+        "category": "팬츠",
+        "unitsSold": 208,
+        "revenue": 8611200,
+        "growth": null
+      },
+      {
+        "productName": "미니 그래픽 볼캡 - 애쉬",
+        "category": "패션잡화",
+        "unitsSold": 300,
+        "revenue": 8485400,
+        "growth": null
+      },
+      {
+        "productName": "코튼 워시드 바이커 재킷 - 브라운",
+        "category": "재킷",
+        "unitsSold": 62,
+        "revenue": 6151200,
+        "growth": null
+      },
+      {
+        "productName": "사틴 라이크 스모킹 롱원피스 - 블랙",
+        "category": "원피스",
+        "unitsSold": 107,
+        "revenue": 5705700,
+        "growth": null
+      }
+    ],
+    "searchRanking": []
+  },
+  "1y": {
+    "generatedAt": "2026-07-03T01:01:51+00:00",
+    "period": "1년",
+    "kpi": {
+      "totalSales": 395588800,
+      "orderCount": 7473,
+      "totalQuantity": 8992,
+      "visitors": 0
+    },
+    "dailySales": [
+      {
+        "date": "2026-04",
+        "sales": 97433800,
+        "orders": 1765
+      },
+      {
+        "date": "2026-05",
+        "sales": 122964900,
+        "orders": 2399
+      },
+      {
+        "date": "2026-06",
+        "sales": 162071700,
+        "orders": 3060
+      },
+      {
+        "date": "2026-07",
+        "sales": 13118400,
+        "orders": 249
+      }
+    ],
+    "categorySales": [
+      {
+        "category": "니트",
+        "sales": 52530800
+      },
+      {
+        "category": "아우터",
+        "sales": 51685300
+      },
+      {
+        "category": "티셔츠",
+        "sales": 48197500
+      },
+      {
+        "category": "팬츠",
+        "sales": 41310800
+      },
+      {
+        "category": "원피스",
+        "sales": 36910100
+      },
+      {
+        "category": "패션잡화",
+        "sales": 34009600
+      },
+      {
+        "category": "재킷",
+        "sales": 31766400
+      },
+      {
+        "category": "셔츠",
+        "sales": 26944700
+      },
+      {
+        "category": "재킷/베스트",
+        "sales": 26373200
+      },
+      {
+        "category": "스커트",
+        "sales": 19271200
+      },
+      {
+        "category": "셔츠/블라우스",
+        "sales": 17286900
+      },
+      {
+        "category": "쥬얼리/시계",
+        "sales": 5787700
+      },
+      {
+        "category": "라운지/언더웨어",
+        "sales": 3514600
+      }
+    ],
+    "topProducts": [
+      {
+        "productName": "테일러드 페이크 레더 재킷 - 브라운",
+        "category": "재킷/베스트",
+        "unitsSold": 185,
+        "revenue": 20694100,
+        "growth": null
+      },
+      {
+        "productName": "[인플루언서 PICK] 리넨블렌디드 데님 맥시스커트 - 스카이 블루",
+        "category": "스커트",
+        "unitsSold": 322,
+        "revenue": 17396400,
+        "growth": null
+      },
+      {
+        "productName": "[인플루언서 PICK] 미니 체크 캐주얼 후드 재킷 - 스카이 블루",
+        "category": "아우터",
+        "unitsSold": 192,
+        "revenue": 16292800,
+        "growth": null
+      },
+      {
+        "productName": "[인플루언서 PICK] 파인터치 코튼 칼라넥 반소매 니트 - 블랙",
+        "category": "니트",
+        "unitsSold": 186,
+        "revenue": 11976000,
+        "growth": null
+      },
+      {
+        "productName": "내추럴 슬럽 반소매 데님 셔츠 - 블랙",
+        "category": "셔츠",
+        "unitsSold": 234,
+        "revenue": 11890200,
+        "growth": null
+      },
+      {
+        "productName": "페이크 레더 탑스티치 블루종 - 베이지",
+        "category": "재킷",
+        "unitsSold": 75,
+        "revenue": 8868900,
+        "growth": null
+      },
+      {
+        "productName": "경량 에센셜 세미와이드핏 데님 팬츠 - 블루",
+        "category": "팬츠",
+        "unitsSold": 208,
+        "revenue": 8611200,
+        "growth": null
+      },
+      {
+        "productName": "미니 그래픽 볼캡 - 애쉬",
+        "category": "패션잡화",
+        "unitsSold": 300,
+        "revenue": 8485400,
+        "growth": null
+      },
+      {
+        "productName": "코튼 워시드 바이커 재킷 - 브라운",
+        "category": "재킷",
+        "unitsSold": 62,
+        "revenue": 6151200,
+        "growth": null
+      },
+      {
+        "productName": "사틴 라이크 스모킹 롱원피스 - 블랙",
+        "category": "원피스",
+        "unitsSold": 107,
+        "revenue": 5705700,
+        "growth": null
+      }
+    ],
+    "searchRanking": []
+  }
+}
