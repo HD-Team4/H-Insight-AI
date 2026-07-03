@@ -28,7 +28,8 @@
                 <!-- 비로그인: 로그인/회원가입 -->
                 <a sec:authorize="!isAuthenticated()" th:href="@{/customer/login}">로그인</a>
                 <a sec:authorize="!isAuthenticated()" th:href="@{/customer/users/signup}">회원가입</a>
-                <!-- 로그인: 아이디 표시 + 로그아웃(POST, CSRF 자동) -->
+                <!-- 로그인: 마이페이지 + 아이디 표시 + 로그아웃(POST, CSRF 자동) -->
+                <a sec:authorize="hasRole('CUSTOMER')" th:href="@{/customer/mypage}">마이페이지</a>
                 <span sec:authorize="isAuthenticated()">
                     <span sec:authentication="name">사용자</span>님
                     <form th:action="@{/customer/logout}" method="post" style="display:inline; margin:0;">

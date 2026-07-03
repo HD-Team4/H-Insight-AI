@@ -11,10 +11,25 @@
         WHERE login_id = #{loginId}
     </select>
 
+    <!-- PK로 회원 조회 (마이페이지 본인 조회) -->
+    <select id="findById" parameterType="long" resultType="User">
+        SELECT user_id, user_name, login_id, password, gender, birth_date, age_group,
+               email, enabled, created_at, updated_at
+        FROM users
+        WHERE user_id = #{userId}
+    </select>
+
     <!-- 아이디 중복 여부 (1/0 -> boolean) -->
     <select id="existsByLoginId" parameterType="string" resultType="boolean">
         SELECT EXISTS(SELECT 1 FROM users WHERE login_id = #{loginId})
     </select>
+
+    <!-- 비밀번호 변경 (updated_at 은 DB on update 로 자동 갱신) -->
+    <update id="updatePassword">
+        UPDATE users
+        SET password = #{password}
+        WHERE user_id = #{userId}
+    </update>
 
     <!-- 신규 회원 저장. enabled/created_at/updated_at 은 DB 기본값 사용 -->
     <insert id="insert" parameterType="User"
