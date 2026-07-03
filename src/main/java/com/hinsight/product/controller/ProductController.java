@@ -11,6 +11,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
 @RequiredArgsConstructor
@@ -46,13 +47,15 @@ public class ProductController {
 
 
     @GetMapping("/{id}")
-    public String getProduct(Model model, @PathVariable Long id) {
+    public String getProduct(Model model,
+                             @PathVariable Long id,
+                             @RequestParam(value = "reviewPage", required = false) Integer reviewPageNumber) {
         var product = productService.getProductDetailById(id);
-        var reviews = reviewService.getReviewsByProductId(id);
+        var reviewPage = reviewService.getReviewPageByProductId(id, reviewPageNumber);
         model.addAttribute("product", product);
         model.addAttribute("productInfoRows", productInfoFormatter.toRows(product.productInfo()));
-        model.addAttribute("reviews", reviews);
-        model.addAttribute("reviewCount", reviews.size());
+        model.addAttribute("reviewPage", reviewPage);
+        model.addAttribute("reviewCount", reviewPage.totalElements());
         return "customer/product/detail";
     }
 }
