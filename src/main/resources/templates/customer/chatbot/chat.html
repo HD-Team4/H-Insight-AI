@@ -84,6 +84,8 @@
         const csrfToken  = /*[[${_csrf != null ? _csrf.token : null}]]*/ null;
         const csrfHeader = /*[[${_csrf != null ? _csrf.headerName : null}]]*/ null;
 
+        // script 프래그먼트가 <head> 에서 실행되므로, DOM 준비 후에 요소 참조·핸들러를 등록한다.
+        document.addEventListener('DOMContentLoaded', () => {
         const form    = document.getElementById('chatbotForm');
         const input   = document.getElementById('chatbotInput');
         const sendBtn = document.getElementById('chatbotSend');
@@ -182,6 +184,7 @@
         form.addEventListener('submit', e => { e.preventDefault(); const q = input.value.trim(); if (q) ask(q); });
         document.querySelectorAll('.chatbot-examples button').forEach(b =>
             b.addEventListener('click', () => { input.value = b.dataset.q; ask(b.dataset.q); }));
+        });
     </script>
 </th:block>
 </html>

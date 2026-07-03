@@ -12,7 +12,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class AiConfig {
 
-    @Bean
+    @Bean   
     public ChatClient chatClient(ChatModel chatModel) {
         return ChatClient.create(chatModel);
     }
