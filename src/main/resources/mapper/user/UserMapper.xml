@@ -3,8 +3,13 @@
         "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.hinsight.user.dao.UserDao">
 
+    <resultMap id="UserResultMap" type="User" autoMapping="true">
+        <id column="user_id" property="userId"/>
+        <result column="name" property="userName"/>
+    </resultMap>
+
     <!-- 로그인 아이디로 회원 조회 (map-underscore-to-camel-case 로 컬럼 자동 매핑) -->
-    <select id="findByLoginId" parameterType="string" resultType="User">
+    <select id="findByLoginId" parameterType="string" resultMap="UserResultMap">
         SELECT user_id, name, login_id, password, gender, birth_date, age_group,
                email, enabled, created_at, updated_at
         FROM users
@@ -12,7 +17,7 @@
     </select>
 
     <!-- PK로 회원 조회 (마이페이지 본인 조회) -->
-    <select id="findById" parameterType="long" resultType="User">
+    <select id="findById" parameterType="long" resultMap="UserResultMap">
         SELECT user_id, name, login_id, password, gender, birth_date, age_group,
                email, enabled, created_at, updated_at
         FROM users
