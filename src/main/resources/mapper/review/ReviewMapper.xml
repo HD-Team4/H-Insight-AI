@@ -3,24 +3,7 @@
         "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.hinsight.review.dao.ReviewDao">
 
-    <select id="findByProductId" parameterType="long" resultType="com.hinsight.review.model.dto.ReviewDto">
-        SELECT
-            r.review_id,
-            r.product_id,
-            r.user_id,
-            r.rating,
-            r.content,
-            r.sentiment,
-            r.created_at,
-            r.updated_at,
-            u.name AS user_name
-        FROM reviews r
-        LEFT JOIN users u ON r.user_id = u.user_id
-        WHERE r.product_id = #{productId}
-        ORDER BY r.created_at DESC, r.review_id DESC
-    </select>
-
-    <select id="findPageByProductId" resultType="com.hinsight.review.model.dto.ReviewDto">
+    <select id="findPageByProductId" resultType="ReviewDto">
         SELECT
             r.review_id,
             r.product_id,
