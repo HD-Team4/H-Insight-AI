@@ -29,9 +29,6 @@
         .notion-btn:disabled { opacity:.55; cursor:progress; }
         .notion-btn .dot { width:16px; height:16px; border-radius:4px; background:#000; color:#fff;
             font-size:11px; font-weight:800; display:inline-flex; align-items:center; justify-content:center; }
-        .notion-status { font-size:13px; font-weight:600; }
-        .notion-status.ok { color:var(--primary); }
-        .notion-status.err { color:#c0392b; }
 
         .kpi-row { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:24px; }
         .kpi-card { background:var(--bg-base); border:1px solid var(--border); border-radius:14px; padding:22px 24px; }
@@ -83,9 +80,11 @@
     <div class="dash-head">
         <h1 class="section-title" style="margin:0;">비즈니스 대시보드</h1>
         <div class="dash-actions">
-            <span class="notion-status" id="notionStatus"></span>
-            <button type="button" class="notion-btn" id="notionBtn">
-                <span class="dot">N</span> 노션으로 보내기
+            <button type="button" class="notion-btn" id="notionBtn" title="리포트 블록 + 대시보드 이미지를 노션 페이지에 첨부">
+                <span class="dot">N</span> 노션 발송
+            </button>
+            <button type="button" class="notion-btn" id="mailBtn" title="노션과 동일한 리포트를 메일로 발송">
+                ✉ 메일 발송
             </button>
             <div class="period-tabs" id="periodTabs">
                 <button data-period="1w">1주</button>
@@ -150,6 +149,9 @@
         </div>
     </div>
 </main>
+
+<!-- 공통 모달 (window.showAlert / showConfirm) — 레이아웃 미사용 페이지라 직접 include -->
+<div th:replace="~{fragments/modal :: modalFragment}"></div>
 
 <script th:inline="none">
     const DATA_URL = '/biz/dashboard/data';
@@ -244,33 +246,32 @@
 
     load('1m');
 
-    // ── 노션으로 보내기: 대시보드를 이미지로 캡처해 서버로 전송 ──────────────
+    // ── 노션 발송 / 메일 발송: 대시보드를 이미지로 캡처해 각 채널로 전송 (내용 동일) ──
     const notionBtn = document.getElementById('notionBtn');
-    const notionStatus = document.getElementById('notionStatus');
-
-    function setStatus(msg, kind) {
-        notionStatus.textContent = msg || '';
-        notionStatus.className = 'notion-status' + (kind ? ' ' + kind : '');
-    }
+    const mailBtn = document.getElementById('mailBtn');
 
     function canvasToBlob(canvas) {
         return new Promise(res => canvas.toBlob(res, 'image/png'));
     }
 
-    notionBtn.addEventListener('click', async () => {
-        notionBtn.disabled = true;
-        setStatus('이미지 캡처 중…');
-        try {
-            const target = document.querySelector('main');
-            const canvas = await html2canvas(target, {
-                scale: 2,
-                useCORS: true,
-                backgroundColor: getComputedStyle(document.body).backgroundColor || '#ffffff'
-            });
-            const blob = await canvasToBlob(canvas);
-            if (!blob) throw new Error('캡처 실패');
+    async function captureDashboard() {
+        const target = document.querySelector('main');
+        const canvas = await html2canvas(target, {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: getComputedStyle(document.body).backgroundColor || '#ffffff'
+        });
+        const blob = await canvasToBlob(canvas);
+        if (!blob) throw new Error('캡처 실패');
+        return blob;
+    }
 
-            setStatus('노션으로 전송 중…');
+    // 대시보드 캡처 → 지정 URL 로 전송. 결과는 공통 모달(showAlert)로 안내.
+    async function sendCapture(url, label) {
+        [notionBtn, mailBtn].forEach(b => b.disabled = true);
+        try {
+            const blob = await captureDashboard();
+
             const form = new FormData();
             form.append('image', blob, 'dashboard.png');
 
@@ -279,21 +280,23 @@
             const headers = {};
             if (csrfHeader && csrfToken) headers[csrfHeader] = csrfToken;
 
-            const res = await fetch('/biz/dashboard/export/notion', {
-                method: 'POST', body: form, headers
-            });
+            const res = await fetch(url, { method: 'POST', body: form, headers });
             const data = await res.json().catch(() => ({}));
             if (res.ok && data.ok) {
-                setStatus(data.message || '노션으로 전송했습니다.', 'ok');
+                // 202: 백그라운드 발송 요청 접수됨
+                await showAlert(data.message || (label + ' 요청됨'), { title: label });
             } else {
-                setStatus(data.message || '전송에 실패했습니다.', 'err');
+                await showAlert(data.message || (label + ' 실패'), { title: label });
             }
         } catch (e) {
-            setStatus('오류: ' + (e.message || '전송 실패'), 'err');
+            await showAlert(e.message || '전송에 실패했습니다.', { title: label });
         } finally {
-            notionBtn.disabled = false;
+            [notionBtn, mailBtn].forEach(b => b.disabled = false);
         }
-    });
+    }
+
+    notionBtn.addEventListener('click', () => sendCapture('/biz/reports/send/notion', '노션 발송'));
+    mailBtn.addEventListener('click', () => sendCapture('/biz/reports/send/mail', '메일 발송'));
 </script>
 </body>
 </html>

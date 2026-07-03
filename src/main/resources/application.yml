@@ -48,6 +48,15 @@ notion:
   version: 2026-03-11
   base-url: https://api.notion.com/v1
 
+# 주간 리포트 자동 발송 (노션 블록 + 메일)
+report:
+  schedule:
+    enabled: ${REPORT_SCHEDULE_ENABLED:true}
+    cron: ${REPORT_SCHEDULE_CRON:0 0 8 * * MON}   # 매주 월요일 08:00
+    zone: Asia/Seoul
+  period: 1w                                        # 자동 발송 기준 기간
+  mail:
+    from: ${MAIL_FROM:}                             # 미설정(또는 spring.mail 미설정) 시 메일 skip
 
 springdoc:
   # 뷰(HTML 페이지) 컨트롤러까지 문서에 포함 시도.

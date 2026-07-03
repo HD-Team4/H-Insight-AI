@@ -11,11 +11,19 @@
         WHERE login_id = #{loginId}
     </select>
 
-    <!-- biz_id 로 노션 연동 정보만 조회 (대시보드 → 노션 전송) -->
+    <!-- biz_id 로 노션 연동 정보만 조회 (대시보드 → 노션 전송/리포트) -->
     <select id="findNotionTargetByBizId" parameterType="long" resultType="BizUser">
-        SELECT biz_id, company_name, notion_email, notion_page_id
+        SELECT biz_id, company_name, contact_emails, notion_email, notion_page_id
         FROM biz_users
         WHERE biz_id = #{bizId}
+    </select>
+
+    <!-- 노션 페이지가 연결된 모든 기업 (주간 리포트 자동 발송 대상) -->
+    <select id="findAllNotionTargets" resultType="BizUser">
+        SELECT biz_id, company_name, contact_emails, notion_email, notion_page_id
+        FROM biz_users
+        WHERE notion_page_id IS NOT NULL AND notion_page_id &lt;&gt; ''
+          AND is_active = 'Y'
     </select>
 
 </mapper>
