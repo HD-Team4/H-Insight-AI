@@ -11,4 +11,11 @@
         WHERE login_id = #{loginId}
     </select>
 
+    <!-- biz_id 로 노션 연동 정보만 조회 (대시보드 → 노션 전송) -->
+    <select id="findNotionTargetByBizId" parameterType="long" resultType="BizUser">
+        SELECT biz_id, company_name, notion_email, notion_page_id
+        FROM biz_users
+        WHERE biz_id = #{bizId}
+    </select>
+
 </mapper>

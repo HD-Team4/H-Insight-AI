@@ -16,6 +16,10 @@ spring:
         api-key: ${GEMINI_API_KEY:}
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9092}
+  servlet:
+    multipart:
+      max-file-size: 15MB
+      max-request-size: 15MB
     producer:
       acks: all
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
@@ -37,6 +41,12 @@ server:
 product:
   list:
     page-size: 20
+
+# 노션 연동 (대시보드 -> 노션 페이지 이미지 첨부)
+notion:
+  token: ${NOTION_TOKEN:}
+  version: 2026-03-11
+  base-url: https://api.notion.com/v1
 
 
 springdoc:
