@@ -14,7 +14,7 @@ import java.time.LocalDate;
 public class User extends BaseTimeVo {
 
     private Long userId;       // user_id (PK)
-    private String userName;   // user_name (NOT NULL, 표시 이름)
+    private String userName;   // name (표시 이름)
     private String loginId;    // login_id (UNIQUE)
     private String password;   // password (BCrypt 해시 저장)
     private String gender;     // gender char(1): 'M' / 'F' / null
