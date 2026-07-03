@@ -1,22 +1,31 @@
 # 매출 집계 마트 (KAN-63)
 
-S3 데이터레이크 **raw 존**(구매 이벤트 gz JSONL)을 집계해 Biz 대시보드가 소비하는
-**mart JSON**(`mart/dashboard/latest.json`)을 생성한다.
+S3 데이터레이크 **raw 존**(구매 이벤트 gz JSONL)을 **집계 테이블**로 적재하고,
+대시보드 JSON은 raw가 아니라 **집계 테이블에서 파생**한다 (2단계 구조).
 
 ```
-raw/purchase-history/year=/month=/day=/*.gz ──(집계)──> mart/dashboard/latest.json
-        (S3·로컬 MinIO)                                     (대시보드 fetch)
+raw/purchase-history/year=/month=/day=/*.gz        (원본, gz JSONL)
+   │ 1단계: 정제 + 집계
+   ├─> mart/sales_daily/year=/month=/day=/*.parquet   (일별×상품별)
+   └─> mart/sales_monthly/year=/*.parquet             (월별×상품별 롤업)
+          │ 2단계: 기간 슬라이스 + 차원 조인
+          └─> mart/dashboard/latest.json               (대시보드 fetch, JSON 계약)
 ```
 
+- **집계 테이블 = Parquet** (분석·Athena 표준), **서빙 = JSON** (화면 계약)
+- 대시보드 외 소비자(BI·분석)는 `sales_daily/monthly`를 직접 쿼리 가능
 - 로컬 검증은 **DuckDB**, 클라우드는 동일 SQL을 **Athena + Lambda**로 이식 (KAN-75/76)
 - 로컬 MinIO ↔ 클라우드 S3는 **엔드포인트/자격증명만 교체** (s3:// 프로토콜 동일)
+- 파생 무결성 검증: 집계 테이블 경유 KPI = raw 직접 집계 KPI 일치 확인
 
 ## 파일
 
 | 파일 | 용도 | 티켓 |
 |---|---|---|
 | `agg_validation.sql` | 정제 규칙 + 집계 5종 검증 쿼리 | KAN-73 |
-| `build_mart_json.py` | 집계 → 대시보드 계약 형식 mart JSON 생성 | KAN-74 |
+| `build_mart_json.py` | 1단계 집계 테이블(Parquet) 적재 + 2단계 대시보드 JSON 파생 | KAN-74 |
+
+`--skip-tables` 옵션으로 2단계만 재실행 가능 (집계 테이블 재사용).
 
 ## 정제 규칙 (프로파일링으로 확정)
 
