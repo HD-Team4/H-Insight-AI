@@ -1,2 +1,151 @@
-<!doctype html>
-<html lang="ko"><body></body></html>
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/default}">
+
+<th:block layout:fragment="css">
+    <style>
+        .mypage { padding: 40px 0 80px; }
+
+        /* 상단: 개인정보 요약 카드 */
+        .mypage-profile-card {
+            display: flex;
+            align-items: center;
+            gap: 28px;
+            padding: 32px;
+            background: var(--bg-light);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            margin-bottom: 32px;
+        }
+        .mypage-avatar {
+            width: 84px;
+            height: 84px;
+            flex-shrink: 0;
+            border-radius: 50%;
+            background: var(--primary);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 34px;
+            font-weight: 800;
+        }
+        .mypage-profile-body { flex: 1; min-width: 0; }
+        .mypage-name { font-size: 22px; font-weight: 800; }
+        .mypage-name span { color: var(--text-sub); font-weight: 500; font-size: 16px; }
+        .mypage-loginid { color: var(--text-sub); font-size: 14px; margin-bottom: 18px; }
+        .mypage-meta {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px 40px;
+        }
+        .mypage-meta > div { display: flex; gap: 14px; font-size: 14px; }
+        .mypage-meta dt { color: var(--text-sub); min-width: 64px; }
+        .mypage-meta dd { color: var(--text-main); font-weight: 600; }
+
+        /* 섹션 공통 */
+        .mypage-section {
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 28px 32px;
+            margin-bottom: 24px;
+        }
+        .mypage-section-title { font-size: 18px; font-weight: 800; margin-bottom: 20px; }
+        .mypage-password-form { max-width: 420px; }
+
+        /* 하단: 준비중 placeholder */
+        .mypage-empty {
+            color: var(--text-sub);
+            font-size: 14px;
+            text-align: center;
+            padding: 28px 0;
+        }
+
+        @media (max-width: 768px) {
+            .mypage-profile-card { flex-direction: column; text-align: center; gap: 18px; }
+            .mypage-meta { grid-template-columns: 1fr; }
+            .mypage-meta > div { justify-content: center; }
+        }
+    </style>
+</th:block>
+
+<th:block layout:fragment="content">
+    <div class="mypage container">
+        <h1 class="section-title">마이페이지</h1>
+
+        <!-- 비밀번호 변경 성공 안내 -->
+        <div class="auth-alert is-success" th:if="${param.pwChanged}">비밀번호가 변경되었습니다.</div>
+
+        <!-- ===== 상단: 개인정보 요약 ===== -->
+        <section class="mypage-profile-card">
+            <div class="mypage-avatar" th:text="${#strings.substring(profile.userName(), 0, 1)}">홍</div>
+            <div class="mypage-profile-body">
+                <p class="mypage-name">
+                    <span th:text="${profile.userName()}">홍길동</span> <span>님</span>
+                </p>
+                <p class="mypage-loginid" th:text="'@' + ${profile.loginId()}">@loginId</p>
+                <dl class="mypage-meta">
+                    <div>
+                        <dt>이메일</dt>
+                        <dd th:text="${profile.email() != null ? profile.email() : '미설정'}">-</dd>
+                    </div>
+                    <div>
+                        <dt>성별</dt>
+                        <dd th:text="${profile.genderLabel()}">-</dd>
+                    </div>
+                    <div>
+                        <dt>생년월일</dt>
+                        <dd th:text="${profile.birthDate() != null ? #temporals.format(profile.birthDate(), 'yyyy년 M월 d일') : '미설정'}">-</dd>
+                    </div>
+                    <div>
+                        <dt>연령대</dt>
+                        <dd th:text="${profile.ageGroup() != null ? profile.ageGroup() : '미설정'}">-</dd>
+                    </div>
+                </dl>
+            </div>
+        </section>
+
+        <!-- ===== 비밀번호 변경 ===== -->
+        <section class="mypage-section">
+            <h2 class="mypage-section-title">비밀번호 변경</h2>
+            <form th:action="@{/customer/mypage/password}" th:object="${passwordChangeRequest}" method="post"
+                  class="mypage-password-form">
+                <div class="auth-field">
+                    <label for="currentPassword">현재 비밀번호</label>
+                    <input type="password" id="currentPassword" name="currentPassword"
+                           placeholder="현재 비밀번호" required>
+                    <span class="auth-error" th:if="${#fields.hasErrors('currentPassword')}"
+                          th:errors="*{currentPassword}"></span>
+                </div>
+                <div class="auth-field">
+                    <label for="newPassword">새 비밀번호</label>
+                    <input type="password" id="newPassword" name="newPassword"
+                           placeholder="8자 이상" required>
+                    <span class="auth-error" th:if="${#fields.hasErrors('newPassword')}"
+                          th:errors="*{newPassword}"></span>
+                </div>
+                <div class="auth-field">
+                    <label for="confirmPassword">새 비밀번호 확인</label>
+                    <input type="password" id="confirmPassword" name="confirmPassword"
+                           placeholder="새 비밀번호 다시 입력" required>
+                    <span class="auth-error" th:if="${#fields.hasErrors('confirmPassword')}"
+                          th:errors="*{confirmPassword}"></span>
+                </div>
+                <button type="submit" class="auth-btn">비밀번호 변경</button>
+            </form>
+        </section>
+
+        <!-- ===== 하단: 추후 구현 (최근 주문내역 / 최근 본 상품) ===== -->
+        <section class="mypage-section">
+            <h2 class="mypage-section-title">최근 주문 내역</h2>
+            <p class="mypage-empty">준비 중입니다.</p>
+        </section>
+        <section class="mypage-section">
+            <h2 class="mypage-section-title">최근 본 상품</h2>
+            <p class="mypage-empty">준비 중입니다.</p>
+        </section>
+    </div>
+</th:block>
+</html>

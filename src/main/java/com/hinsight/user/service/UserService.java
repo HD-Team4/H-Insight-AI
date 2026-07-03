@@ -1,7 +1,10 @@
 package com.hinsight.user.service;
 
 import com.hinsight.exception.custom.user.DuplicateLoginIdException;
+import com.hinsight.exception.custom.user.InvalidPasswordException;
+import com.hinsight.exception.custom.user.UserNotFoundException;
 import com.hinsight.user.dao.UserDao;
+import com.hinsight.user.model.dto.MyProfileResponse;
 import com.hinsight.user.model.dto.SignupRequest;
 import com.hinsight.user.model.vo.User;
 import lombok.RequiredArgsConstructor;
@@ -38,6 +41,34 @@ public class UserService {
 
         userDao.insert(user);
         return user.getUserId();
+    }
+
+    /** 마이페이지 개인정보 요약 조회 */
+    @Transactional(readOnly = true)
+    public MyProfileResponse getMyProfile(Long userId) {
+        User user = findUserOrThrow(userId);
+        return MyProfileResponse.of(user);
+    }
+
+    /**
+     * 비밀번호 변경: 현재 비밀번호 확인 → 새 비밀번호 BCrypt 인코딩 후 저장.
+     * 현재 비밀번호가 틀리면 InvalidPasswordException.
+     */
+    @Transactional
+    public void changePassword(Long userId, String currentPassword, String newPassword) {
+        User user = findUserOrThrow(userId);
+        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+            throw new InvalidPasswordException();
+        }
+        userDao.updatePassword(userId, passwordEncoder.encode(newPassword));
+    }
+
+    private User findUserOrThrow(Long userId) {
+        User user = userDao.findById(userId);
+        if (user == null) {
+            throw new UserNotFoundException();
+        }
+        return user;
     }
 
     // 선택 입력값이 빈 문자열이면 null 로 정규화 (char(1) 등에 "" 저장 방지)
