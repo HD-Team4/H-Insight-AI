@@ -25,6 +25,8 @@ public class EsBootstrapRunner implements ApplicationRunner {
             if (created) {
                 log.info("[ES] 부팅 초기화: 인덱스 신규 생성됨 (재색인은 POST /api/es/reindex 로 수행)");
             }
+            int indexed = productIndexService.reindexAll();
+            log.info("[ES] boot reindex completed: {} docs", indexed);
         } catch (Exception e) {
             log.warn("[ES] 부팅 초기화 실패(무시하고 계속): {}", e.getMessage());
         }
