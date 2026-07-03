@@ -18,4 +18,13 @@
         ORDER BY created_at DESC
     </select>
 
+    <!-- 유저의 최근 구매이력 N건 (최신순, 마이페이지 요약용) -->
+    <select id="findRecentByUserId" resultType="PurchaseHistory">
+        SELECT *
+        FROM purchase_history
+        WHERE user_id = #{userId}
+        ORDER BY created_at DESC
+        LIMIT #{limit}
+    </select>
+
 </mapper>

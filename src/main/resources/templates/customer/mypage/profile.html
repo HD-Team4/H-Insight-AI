@@ -55,6 +55,45 @@
         .mypage-section-title { font-size: 18px; font-weight: 800; margin-bottom: 20px; }
         .mypage-password-form { max-width: 420px; }
 
+        /* 최근 구매 상품 목록 */
+        .mypage-purchase-list { display: flex; flex-direction: column; gap: 4px; }
+        .mypage-purchase-item + .mypage-purchase-item { border-top: 1px solid var(--border); }
+        .mypage-purchase-link {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 12px 8px;
+            border-radius: 12px;
+            text-decoration: none;
+            color: inherit;
+            transition: background 0.15s;
+        }
+        .mypage-purchase-link:hover { background: var(--bg-light); }
+        .mypage-purchase-img {
+            width: 56px;
+            height: 56px;
+            flex-shrink: 0;
+            border-radius: 10px;
+            background: var(--bg-light);
+            overflow: hidden;
+        }
+        .mypage-purchase-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .mypage-purchase-info { flex: 1; min-width: 0; }
+        .mypage-purchase-name {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .mypage-purchase-meta {
+            display: flex;
+            gap: 6px;
+            font-size: 13px;
+            color: var(--text-sub);
+        }
+
         /* 하단: 준비중 placeholder */
         .mypage-empty {
             color: var(--text-sub);
@@ -137,10 +176,33 @@
             </form>
         </section>
 
-        <!-- ===== 하단: 추후 구현 (최근 주문내역 / 최근 본 상품) ===== -->
+        <!-- ===== 최근 구매 상품 ===== -->
         <section class="mypage-section">
-            <h2 class="mypage-section-title">최근 주문 내역</h2>
-            <p class="mypage-empty">준비 중입니다.</p>
+            <h2 class="mypage-section-title">최근 구매 상품</h2>
+
+            <p class="mypage-empty" th:if="${#lists.isEmpty(recentPurchases)}">아직 구매한 상품이 없습니다.</p>
+
+            <ul class="mypage-purchase-list" th:unless="${#lists.isEmpty(recentPurchases)}">
+                <li th:each="item : ${recentPurchases}" class="mypage-purchase-item">
+                    <a th:href="@{/customer/products/{id}(id=${item.productId()})}" class="mypage-purchase-link">
+                        <div class="mypage-purchase-img">
+                            <img th:if="${item.imageUrl()}"
+                                 th:src="${item.imageUrl()}"
+                                 th:alt="${item.productName()}"/>
+                        </div>
+                        <div class="mypage-purchase-info">
+                            <div class="mypage-purchase-name" th:text="${item.productName()}">상품명</div>
+                            <div class="mypage-purchase-meta">
+                                <span th:text="${#numbers.formatInteger(item.price(), 0, 'COMMA')} + '원'">0원</span>
+                                <span>·</span>
+                                <span th:text="${item.quantity()} + '개'">1개</span>
+                                <span>·</span>
+                                <span th:text="${#temporals.format(item.createdAt(), 'yyyy.MM.dd')}">2026.01.01</span>
+                            </div>
+                        </div>
+                    </a>
+                </li>
+            </ul>
         </section>
         <section class="mypage-section">
             <h2 class="mypage-section-title">최근 본 상품</h2>

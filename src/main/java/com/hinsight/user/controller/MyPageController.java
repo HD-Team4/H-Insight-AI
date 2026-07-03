@@ -1,6 +1,7 @@
 package com.hinsight.user.controller;
 
 import com.hinsight.exception.custom.user.InvalidPasswordException;
+import com.hinsight.order.service.OrderService;
 import com.hinsight.security.userdetails.CustomerUserDetails;
 import com.hinsight.user.model.dto.PasswordChangeRequest;
 import com.hinsight.user.service.UserService;
@@ -26,12 +27,18 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @RequestMapping("/customer/mypage")
 public class MyPageController {
 
-    private final UserService userService;
+    // 마이페이지 "최근 구매 상품" 에 노출할 상품 개수
+    private static final int RECENT_PURCHASE_LIMIT = 5;
 
-    // 마이페이지: 상단 개인정보 요약 + 비밀번호 변경 폼
+    private final UserService userService;
+    private final OrderService orderService;
+
+    // 마이페이지: 상단 개인정보 요약 + 최근 구매 상품 + 비밀번호 변경 폼
     @GetMapping
     public String myPage(@AuthenticationPrincipal CustomerUserDetails principal, Model model) {
         model.addAttribute("profile", userService.getMyProfile(principal.getUserId()));
+        model.addAttribute("recentPurchases",
+                orderService.getRecentHistory(principal.getUserId(), RECENT_PURCHASE_LIMIT));
         model.addAttribute("passwordChangeRequest", new PasswordChangeRequest(null, null, null));
         return "customer/mypage/profile";
     }
@@ -63,9 +70,11 @@ public class MyPageController {
         return "redirect:/customer/mypage?pwChanged";
     }
 
-    // 폼 재표시 시에도 상단 개인정보가 보이도록 profile 을 다시 실어준다
+    // 폼 재표시 시에도 상단 개인정보 + 최근 구매 상품이 보이도록 다시 실어준다
     private String renderWithProfile(CustomerUserDetails principal, Model model) {
         model.addAttribute("profile", userService.getMyProfile(principal.getUserId()));
+        model.addAttribute("recentPurchases",
+                orderService.getRecentHistory(principal.getUserId(), RECENT_PURCHASE_LIMIT));
         return "customer/mypage/profile";
     }
 }
