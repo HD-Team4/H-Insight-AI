@@ -10,6 +10,7 @@ import com.hinsight.product.model.dto.ProductSearchCondition;
 import com.hinsight.product.model.dto.ProductSearchQuery;
 import com.hinsight.product.model.dto.ProductSearchResult;
 import com.hinsight.product.model.dto.SearchLogPayload;
+import com.hinsight.product.model.dto.ClickLogPayload;
 import com.hinsight.product.model.vo.CategoryGroup;
 import com.hinsight.product.model.vo.PriceRange;
 import com.hinsight.product.model.vo.Product;
@@ -25,6 +26,7 @@ import java.util.List;
 public class ProductService {
 
     private static final String TOPIC_SEARCH = "activity.search";
+    private static final String TOPIC_CLICK = "activity.click";
 
     @Value("${product.list.page-size:20}")
     private int pageSize;
@@ -43,6 +45,12 @@ public class ProductService {
         if (product == null) {
             throw new ProductNotFoundException();
         }
+        return product;
+    }
+
+    public ProductDetailDto getProductDetailByIdWithLog(Long userId, Long productId) {
+        ProductDetailDto product = getProductDetailById(productId);
+        publishClickLog(userId, product);
         return product;
     }
 
@@ -119,6 +127,22 @@ public class ProductService {
                 .build();
 
         activityEventPublisher.publish(TOPIC_SEARCH, ActivityEvent.of("search", userId, payload));
+    }
+
+    private void publishClickLog(Long userId, ProductDetailDto product) {
+        // 비회원 로깅 제외
+        if (userId == null) {
+            return;
+        }
+
+        ClickLogPayload payload = ClickLogPayload.builder()
+                .productId(product.productId())
+                .productName(product.productName())
+                .brandName(product.brandName())
+                .price(product.price())
+                .build();
+
+        activityEventPublisher.publish(TOPIC_CLICK, ActivityEvent.of("click", userId, payload));
     }
 
     private ProductSearchResult searchByDb(ProductSearchCondition condition, List<Long> categoryIds, int page, int offset) {

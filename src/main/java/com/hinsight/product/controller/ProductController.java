@@ -58,9 +58,11 @@ public class ProductController {
     @Operation(summary = "상품 상세 조회", description = "상품 상세 정보와 리뷰 목록을 조회해 상세 페이지를 렌더링한다")
     @GetMapping("/{id}")
     public String getProduct(Model model,
+                             @AuthenticationPrincipal CustomerUserDetails user,   // 비로그인 시 null
                              @PathVariable Long id,
                              @RequestParam(value = "reviewPage", required = false) Integer reviewPageNumber) {
-        var product = productService.getProductDetailById(id);
+        Long userId = (user == null) ? null : user.getUserId();
+        var product = productService.getProductDetailByIdWithLog(userId, id);
         var reviewPage = reviewService.getReviewPageByProductId(id, reviewPageNumber);
         model.addAttribute("product", product);
         model.addAttribute("productInfoRows", productInfoFormatter.toRows(product.productInfo()));

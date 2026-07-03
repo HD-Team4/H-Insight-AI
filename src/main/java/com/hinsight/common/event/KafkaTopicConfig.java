@@ -39,5 +39,13 @@ public class KafkaTopicConfig {
                 .build();
     }
 
+    @Bean
+    public NewTopic activityClickTopic() {
+        return TopicBuilder.name("activity.click")
+                .partitions(partitions)
+                .replicas(replicas)
+                .build();
+    }
+
     // 이벤트 타입 추가 시 여기 @Bean 한 개씩.
 }
