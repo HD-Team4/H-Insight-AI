@@ -54,7 +54,6 @@ public class ProductController {
         var reviewPage = reviewService.getReviewPageByProductId(id, reviewPageNumber);
         model.addAttribute("product", product);
         model.addAttribute("productInfoRows", productInfoFormatter.toRows(product.productInfo()));
-        model.addAttribute("reviews", reviewPage.content());
         model.addAttribute("reviewPage", reviewPage);
         model.addAttribute("reviewCount", reviewPage.totalElements());
         return "customer/product/detail";

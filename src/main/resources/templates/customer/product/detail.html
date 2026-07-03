@@ -138,11 +138,11 @@
                     <p th:text="'총 ' + ${reviewCount} + '개의 리뷰'">총 0개의 리뷰</p>
                 </div>
             </div>
-            <p class="detail-review-empty" th:if="${reviews == null or reviews.isEmpty()}">
+            <p class="detail-review-empty" th:if="${reviewPage.content().isEmpty()}">
                 등록된 리뷰가 없습니다.
             </p>
-            <div class="detail-review-list" th:if="${reviews != null and !reviews.isEmpty()}">
-                <article class="detail-review-card" th:each="review : ${reviews}">
+            <div class="detail-review-list" th:if="${!reviewPage.content().isEmpty()}">
+                <article class="detail-review-card" th:each="review : ${reviewPage.content()}">
                     <div class="detail-review-card-head">
                         <div class="detail-review-user">
                             <span class="detail-review-avatar"
