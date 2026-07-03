@@ -453,6 +453,7 @@ footer {
     display: flex;
     align-items: center;
     justify-content: center;
+    text-decoration: none;
     transition: transform 0.3s ease;
     z-index: 100;
 }

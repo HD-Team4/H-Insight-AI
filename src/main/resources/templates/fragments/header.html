@@ -25,6 +25,9 @@
             </div>
 
             <div class="header-utils">
+                <!-- AI 상품추천 챗봇 (모두에게 노출; 비로그인 클릭 시 로그인으로 유도) -->
+                <a th:href="@{/customer/chatbot}"
+                   style="color: var(--primary); font-weight: 700;">✨ AI 추천</a>
                 <!-- 비로그인: 로그인/회원가입 -->
                 <a sec:authorize="!isAuthenticated()" th:href="@{/customer/login}">로그인</a>
                 <a sec:authorize="!isAuthenticated()" th:href="@{/customer/users/signup}">회원가입</a>
