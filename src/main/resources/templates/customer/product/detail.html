@@ -32,7 +32,9 @@
                 <h1 th:text="${product.productName}">상품명</h1>
 
                 <div class="detail-rating-row">
-                    <span class="detail-stars">★★★★★</span>
+                    <span class="detail-stars" th:text="${reviewAverageRatingStars}">☆☆☆☆☆</span>
+                    <span class="detail-rating-score"
+                          th:text="${#numbers.formatDecimal(reviewAverageRating, 1, 1)}">0.0</span>
                     <a href="#productReviews" th:text="'리뷰 ' + ${reviewCount} + '건'">리뷰 0건</a>
                 </div>
 
@@ -164,17 +166,17 @@
                  aria-label="리뷰 페이지">
                 <a class="detail-review-page-control"
                    th:classappend="${reviewPage.page() <= 1} ? ' is-disabled'"
-                   th:href="@{/products/{id}(id=${product.productId}, reviewPage=${reviewPage.page() - 1})}">
+                   th:href="@{/customer/products/{id}(id=${product.productId}, reviewPage=${reviewPage.page() - 1})} + '#productReviews'">
                     이전
                 </a>
                 <a class="detail-review-page-number"
                    th:each="pageNumber : ${#numbers.sequence(1, reviewPage.totalPages())}"
                    th:classappend="${pageNumber == reviewPage.page()} ? ' is-active'"
-                   th:href="@{/products/{id}(id=${product.productId}, reviewPage=${pageNumber})}"
+                   th:href="@{/customer/products/{id}(id=${product.productId}, reviewPage=${pageNumber})} + '#productReviews'"
                    th:text="${pageNumber}">1</a>
                 <a class="detail-review-page-control"
                    th:classappend="${reviewPage.page() >= reviewPage.totalPages()} ? ' is-disabled'"
-                   th:href="@{/products/{id}(id=${product.productId}, reviewPage=${reviewPage.page() + 1})}">
+                   th:href="@{/customer/products/{id}(id=${product.productId}, reviewPage=${reviewPage.page() + 1})} + '#productReviews'">
                     다음
                 </a>
             </nav>
