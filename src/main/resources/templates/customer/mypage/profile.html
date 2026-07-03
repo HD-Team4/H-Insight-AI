@@ -303,8 +303,14 @@
             const prev = carousel.querySelector('.recentview-nav.prev');
             const next = carousel.querySelector('.recentview-nav.next');
 
-            // 한 번에 카드 폭(140) + 간격(16) 만큼 스크롤
-            const step = 156 * 2;
+            // 카드 폭(140) + 간격(16)
+            const CARD_STEP = 156;
+
+            // 화면에 보이는 카드 개수만큼 스크롤
+            const getStep = () => {
+                const visibleCount = Math.max(1, Math.floor(track.clientWidth / CARD_STEP));
+                return CARD_STEP * visibleCount;
+            };
 
             const update = () => {
                 const overflow = track.scrollWidth > track.clientWidth + 1;
@@ -314,8 +320,8 @@
                 next.hidden = !overflow || atEnd;
             };
 
-            prev.addEventListener('click', () => track.scrollBy({ left: -step, behavior: 'smooth' }));
-            next.addEventListener('click', () => track.scrollBy({ left: step, behavior: 'smooth' }));
+            prev.addEventListener('click', () => track.scrollBy({ left: -getStep(), behavior: 'smooth' }));
+            next.addEventListener('click', () => track.scrollBy({ left: getStep(), behavior: 'smooth' }));
             track.addEventListener('scroll', update);
             window.addEventListener('resize', update);
             update();
