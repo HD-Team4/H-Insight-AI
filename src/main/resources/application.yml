@@ -26,16 +26,16 @@ spring:
     password: ${VECTOR_DB_PASSWORD}
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9092}
-  servlet:
-    multipart:
-      max-file-size: 15MB
-      max-request-size: 15MB
     producer:
       acks: all
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
       properties:
         enable.idempotence: true   # at-least-once + 브로커측 중복 방지
+  servlet:
+    multipart:
+      max-file-size: 15MB
+      max-request-size: 15MB
 
 mybatis:
   mapper-locations: classpath:/mapper/**/*.xml
