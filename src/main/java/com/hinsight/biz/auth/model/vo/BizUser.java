@@ -16,5 +16,7 @@ public class BizUser extends BaseTimeVo {
     private String companyName;  // company_name
     private String managerName;  // manager_name
     private String contactEmails; // contact_emails (json, 문자열 매핑 — 로그인엔 미사용)
+    private String notionEmail;   // notion_email: 노션 페이지 공유 대상 이메일 (사람 식별용)
+    private String notionPageId;  // notion_page_id: 대시보드 이미지를 첨부할 노션 페이지 ID
     private String isActive;     // is_active char(1): 'Y' / 'N'
 }
