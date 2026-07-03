@@ -14,6 +14,16 @@ spring:
     google:
       genai:
         api-key: ${GEMINI_API_KEY:}
+        chat:
+          options:
+            # 기본값 gemini-2.0-flash 는 무료 티어 쿼터가 0 이라 429 → 무료 쿼터가 있는 2.5-flash 사용
+            model: ${GEMINI_MODEL:gemini-2.5-flash}
+  # 벡터DB (Postgres/pgvector) — 상품추천 챗봇 검색용 두 번째 데이터소스 (MySQL 이 primary)
+  vector-datasource:
+    driver-class-name: org.postgresql.Driver
+    url: ${VECTOR_DB_URL}
+    username: ${VECTOR_DB_USERNAME}
+    password: ${VECTOR_DB_PASSWORD}
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9092}
     producer:
@@ -37,6 +47,11 @@ server:
 product:
   list:
     page-size: 20
+
+# Ollama (BGE-M3 임베딩 서버) — 상품추천 챗봇 쿼리 임베딩
+ollama:
+  base-url: http://localhost:11434
+  embedding-model: bge-m3
 
 
 springdoc:

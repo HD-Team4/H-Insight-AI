@@ -1,2 +1,190 @@
-<!doctype html>
-<html lang="ko"><body></body></html>
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/default}">
+
+<th:block layout:fragment="css">
+    <style>
+        .chatbot-page { padding: 40px 0 80px; max-width: 860px; }
+        .chatbot-intro { color: var(--text-sub); margin-bottom: 24px; }
+        .chatbot-form { display: flex; gap: 10px; margin-bottom: 8px; }
+        .chatbot-input {
+            flex: 1; height: 52px; padding: 0 18px;
+            border: 1.5px solid #C4C8CC; border-radius: 26px; font-size: 15px; outline: none;
+        }
+        .chatbot-input:focus { border-color: var(--primary); }
+        .chatbot-send {
+            height: 52px; padding: 0 26px; border: none; border-radius: 26px;
+            background: var(--primary); color: #fff; font-size: 15px; font-weight: 700; cursor: pointer;
+        }
+        .chatbot-send:hover { background: var(--primary-hover); }
+        .chatbot-send:disabled { opacity: 0.5; cursor: default; }
+        .chatbot-examples { font-size: 13px; color: var(--text-sub); margin-bottom: 28px; }
+        .chatbot-examples button {
+            border: 1px solid var(--border); background: var(--bg-base); color: var(--text-sub);
+            border-radius: 16px; padding: 5px 12px; margin: 4px 6px 0 0; cursor: pointer; font-size: 13px;
+        }
+        .chatbot-examples button:hover { border-color: var(--primary); color: var(--primary); }
+
+        .chatbot-status { color: var(--text-sub); font-size: 14px; padding: 16px 0; }
+        .chatbot-reply {
+            background: var(--bg-light); border: 1px solid var(--border); border-radius: 14px;
+            padding: 14px 18px; margin: 8px 0 4px; font-size: 15px; line-height: 1.6; color: var(--text-main);
+        }
+        .chatbot-parsed {
+            display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+            margin: 8px 0 20px; font-size: 13px; color: var(--text-sub);
+        }
+        .chatbot-chip {
+            background: var(--bg-light); border: 1px solid var(--border);
+            border-radius: 14px; padding: 4px 12px; font-weight: 600; color: var(--text-main);
+        }
+
+        .chatbot-results { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 20px; }
+        .chatbot-card { border-radius: 12px; overflow: hidden; transition: transform .2s ease; }
+        .chatbot-card:hover { transform: translateY(-4px); }
+        .chatbot-card .thumb {
+            width: 100%; aspect-ratio: 1/1; background: var(--bg-light);
+            border-radius: 12px; overflow: hidden; display: flex; align-items: center; justify-content: center;
+        }
+        .chatbot-card .thumb img { width: 100%; height: 100%; object-fit: cover; }
+        .chatbot-card .cat { font-size: 12px; color: var(--text-sub); margin: 12px 4px 4px; }
+        .chatbot-card .nm { font-size: 14px; margin: 0 4px 6px; }
+        .chatbot-card .pr { font-size: 16px; font-weight: 700; margin: 0 4px; }
+        .chatbot-card .sc { font-size: 11px; color: var(--primary); margin: 4px 4px 0; }
+    </style>
+</th:block>
+
+<th:block layout:fragment="content">
+    <div class="chatbot-page container">
+        <h1 class="section-title" style="margin-top:0;">상품 추천 챗봇</h1>
+        <p class="chatbot-intro">원하는 스타일을 말로 설명해 주세요. 성별·카테고리·가격은 자동으로 걸러 드려요.</p>
+
+        <form class="chatbot-form" id="chatbotForm">
+            <input type="text" id="chatbotInput" class="chatbot-input"
+                   placeholder="예) 엄마 사줄 5만원대 원피스" autocomplete="off" required>
+            <button type="submit" class="chatbot-send" id="chatbotSend">추천받기</button>
+        </form>
+        <div class="chatbot-examples">
+            <button type="button" data-q="엄마 사줄 5만원대 원피스">엄마 사줄 5만원대 원피스</button>
+            <button type="button" data-q="가볍게 입을 남성 봄 바람막이">가볍게 입을 남성 봄 바람막이</button>
+            <button type="button" data-q="오피스룩에 어울리는 검정 슬랙스">오피스룩에 어울리는 검정 슬랙스</button>
+        </div>
+
+        <div id="chatbotStatus" class="chatbot-status" style="display:none;"></div>
+        <div id="chatbotReply" class="chatbot-reply" style="display:none;"></div>
+        <div id="chatbotParsed" class="chatbot-parsed" style="display:none;"></div>
+        <div id="chatbotResults" class="chatbot-results"></div>
+    </div>
+</th:block>
+
+<th:block layout:fragment="script">
+    <script th:inline="javascript">
+        const csrfToken  = /*[[${_csrf != null ? _csrf.token : null}]]*/ null;
+        const csrfHeader = /*[[${_csrf != null ? _csrf.headerName : null}]]*/ null;
+
+        // script 프래그먼트가 <head> 에서 실행되므로, DOM 준비 후에 요소 참조·핸들러를 등록한다.
+        document.addEventListener('DOMContentLoaded', () => {
+        const form    = document.getElementById('chatbotForm');
+        const input   = document.getElementById('chatbotInput');
+        const sendBtn = document.getElementById('chatbotSend');
+        const statusEl = document.getElementById('chatbotStatus');
+        const replyEl  = document.getElementById('chatbotReply');
+        const parsedEl = document.getElementById('chatbotParsed');
+        const resultsEl = document.getElementById('chatbotResults');
+
+        const won = n => (n == null ? '' : Number(n).toLocaleString('ko-KR') + '원');
+
+        async function ask(message) {
+            sendBtn.disabled = true;
+            replyEl.style.display = 'none';
+            replyEl.textContent = '';
+            parsedEl.style.display = 'none';
+            resultsEl.innerHTML = '';
+            statusEl.style.display = 'block';
+            statusEl.textContent = '어울리는 상품을 찾고 있어요...';
+
+            let replyText = '';
+            try {
+                const headers = {'Content-Type': 'application/json', 'Accept': 'text/event-stream'};
+                if (csrfToken) headers[csrfHeader] = csrfToken;
+                const res = await fetch('/customer/chatbot/ask', {
+                    method: 'POST', headers, body: JSON.stringify({message})
+                });
+                if (!res.ok || !res.body) throw new Error('요청 실패');
+
+                // SSE 스트림 수동 파싱: 이벤트 블록은 빈 줄(\n\n)로 구분, data 는 JSON.
+                const reader = res.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+                while (true) {
+                    const {value, done} = await reader.read();
+                    if (done) break;
+                    buffer += decoder.decode(value, {stream: true});
+                    let sep;
+                    while ((sep = buffer.indexOf('\n\n')) >= 0) {
+                        const evt = parseEvent(buffer.slice(0, sep));
+                        buffer = buffer.slice(sep + 2);
+                        if (evt.event === 'head') {
+                            renderHead(JSON.parse(evt.data));
+                        } else if (evt.event === 'delta') {
+                            replyText += JSON.parse(evt.data).t;
+                            replyEl.textContent = replyText;
+                            replyEl.style.display = 'block';
+                        }
+                    }
+                }
+            } catch (e) {
+                if (!replyText) statusEl.textContent = '추천을 가져오지 못했어요. 잠시 후 다시 시도해 주세요.';
+            } finally {
+                sendBtn.disabled = false;
+            }
+        }
+
+        // 한 SSE 이벤트 블록에서 event 이름과 data(JSON 문자열) 추출
+        function parseEvent(chunk) {
+            let event = 'message', data = '';
+            for (const line of chunk.split('\n')) {
+                if (line.startsWith('event:'))      event = line.slice(6).trim();
+                else if (line.startsWith('data:'))  data += line.slice(5).trimStart();
+            }
+            return {event, data};
+        }
+
+        function renderHead(head) {
+            const p = head.parsed || {};
+            const chips = [];
+            if (p.gender)   chips.push(p.gender);
+            if (p.subcat)   chips.push(p.subcat);
+            if (p.minPrice || p.maxPrice) chips.push((won(p.minPrice) || '0원') + ' ~ ' + (won(p.maxPrice) || '제한없음'));
+            if (p.semanticText) chips.push('“' + p.semanticText + '”');
+
+            parsedEl.innerHTML = '이렇게 이해했어요: ' +
+                chips.map(c => `<span class="chatbot-chip">${c}</span>`).join('');
+            parsedEl.style.display = chips.length ? 'flex' : 'none';
+
+            const items = head.products || [];
+            if (items.length === 0) {
+                statusEl.style.display = 'block';
+                statusEl.textContent = '조건에 맞는 상품을 찾지 못했어요. 조건을 바꿔보세요.';
+                return;
+            }
+            statusEl.style.display = 'none';
+            resultsEl.innerHTML = items.map(it => `
+                <a class="chatbot-card" href="/customer/products/${it.productId}">
+                    <div class="thumb">${it.imageUrl ? `<img src="${it.imageUrl}" alt="">` : ''}</div>
+                    <div class="cat">${it.category ?? ''}</div>
+                    <div class="nm">${it.name ?? ''}</div>
+                    <div class="pr">${won(it.price)}</div>
+                    <div class="sc">유사도 ${(it.score * 100).toFixed(0)}%</div>
+                </a>`).join('');
+        }
+
+        form.addEventListener('submit', e => { e.preventDefault(); const q = input.value.trim(); if (q) ask(q); });
+        document.querySelectorAll('.chatbot-examples button').forEach(b =>
+            b.addEventListener('click', () => { input.value = b.dataset.q; ask(b.dataset.q); }));
+        });
+    </script>
+</th:block>
+</html>
