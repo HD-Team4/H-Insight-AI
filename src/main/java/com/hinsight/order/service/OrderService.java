@@ -67,6 +67,14 @@ public class OrderService {
                 .toList();
     }
 
+    // === 최근 구매이력 N건 (마이페이지 요약용) ===
+    @Transactional(readOnly = true)
+    public List<PurchaseHistoryResponse> getRecentHistory(Long userId, int limit) {
+        return purchaseHistoryDao.findRecentByUserId(userId, limit).stream()
+                .map(h -> PurchaseHistoryResponse.of(h, findProduct(h.getProductId())))
+                .toList();
+    }
+
     // === 공통 코어: 상품별로 구매이력 쌓기 ===
     private OrderResponse createOrder(Long userId, List<OrderLine> lines) {
         List<PurchaseHistoryResponse> items = new ArrayList<>();
