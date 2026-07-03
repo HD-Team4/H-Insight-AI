@@ -14,7 +14,7 @@
         WHERE product_id = #{productId}
     </select>
 
-    <select id="getProductDetailById" parameterType="long" resultType="com.hinsight.product.model.dto.ProductDetailDto">
+    <select id="getProductDetailById" parameterType="long" resultType="ProductDetailDto">
         SELECT
             p.product_id,
             b.company_name AS brand_name,
