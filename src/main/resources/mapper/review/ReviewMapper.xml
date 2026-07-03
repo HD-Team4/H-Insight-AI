@@ -26,4 +26,10 @@
         FROM reviews
         WHERE product_id = #{productId}
     </select>
+
+    <select id="findAverageRatingByProductId" parameterType="long" resultType="double">
+        SELECT AVG(rating)
+        FROM reviews
+        WHERE product_id = #{productId}
+    </select>
 </mapper>

@@ -32,4 +32,15 @@ public class ReviewService {
 
         return new PageResponse<>(content, page, size, total, totalPages);
     }
+
+    public double getAverageRatingByProductId(Long productId) {
+        Double averageRating = reviewDao.findAverageRatingByProductId(productId);
+        return averageRating == null ? 0.0 : averageRating;
+    }
+
+    public String toRatingStars(double rating) {
+        int starCount = (int) Math.round(rating);
+        starCount = Math.max(0, Math.min(starCount, 5));
+        return "★".repeat(starCount) + "☆".repeat(5 - starCount);
+    }
 }
