@@ -6,7 +6,7 @@
 
     <header class="container">
         <div class="header-main">
-            <a th:href="@{/customer/products}" class="logo">H-Insight-AI</a>
+            <a th:href="@{/customer/products}" class="logo"><span class="logo-accent">H</span>-Insight<span class="logo-accent">-AI</span></a>
 
             <div class="search-wrapper">
                 <form th:action="@{/customer/products}" method="get" class="search-bar">
@@ -39,7 +39,7 @@
                         </button>
                     </form>
                 </span>
-                <a th:href="@{/customer/cart}">장바구니 <span style="color: var(--accent); font-weight: 700;">(2)</span></a>
+                <a th:href="@{/customer/cart}">장바구니 </a>
             </div>
         </div>
     </header>
