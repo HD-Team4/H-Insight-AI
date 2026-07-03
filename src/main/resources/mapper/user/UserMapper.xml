@@ -5,7 +5,7 @@
 
     <!-- 로그인 아이디로 회원 조회 (map-underscore-to-camel-case 로 컬럼 자동 매핑) -->
     <select id="findByLoginId" parameterType="string" resultType="User">
-        SELECT user_id, user_name, login_id, password, gender, birth_date, age_group,
+        SELECT user_id, name, login_id, password, gender, birth_date, age_group,
                email, enabled, created_at, updated_at
         FROM users
         WHERE login_id = #{loginId}
@@ -13,7 +13,7 @@
 
     <!-- PK로 회원 조회 (마이페이지 본인 조회) -->
     <select id="findById" parameterType="long" resultType="User">
-        SELECT user_id, user_name, login_id, password, gender, birth_date, age_group,
+        SELECT user_id, name, login_id, password, gender, birth_date, age_group,
                email, enabled, created_at, updated_at
         FROM users
         WHERE user_id = #{userId}
@@ -34,7 +34,7 @@
     <!-- 신규 회원 저장. enabled/created_at/updated_at 은 DB 기본값 사용 -->
     <insert id="insert" parameterType="User"
             useGeneratedKeys="true" keyProperty="userId">
-        INSERT INTO users (user_name, login_id, password, gender, birth_date, age_group, email)
+        INSERT INTO users (name, login_id, password, gender, birth_date, age_group, email)
         VALUES (#{userName}, #{loginId}, #{password}, #{gender}, #{birthDate}, #{ageGroup}, #{email})
     </insert>
 
