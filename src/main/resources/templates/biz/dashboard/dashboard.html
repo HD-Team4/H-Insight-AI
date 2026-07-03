@@ -9,9 +9,44 @@
     <link rel="stylesheet" as="style" crossorigin
           href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css"/>
     <link rel="stylesheet" th:href="@{/css/style.css}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        .dash-head { display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:16px; margin-top:8px; }
+        .period-tabs { display:flex; gap:6px; background:var(--bg-light); border:1px solid var(--border); border-radius:10px; padding:4px; }
+        .period-tabs button { border:none; background:none; padding:8px 18px; border-radius:7px; font-size:14px; font-weight:600; color:var(--text-sub); cursor:pointer; }
+        .period-tabs button.active { background:var(--primary); color:#fff; }
+        .gen-at { color:var(--text-sub); font-size:13px; margin:6px 0 24px; }
+
+        .kpi-row { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:24px; }
+        .kpi-card { background:var(--bg-base); border:1px solid var(--border); border-radius:14px; padding:22px 24px; }
+        .kpi-label { font-size:14px; color:var(--text-sub); }
+        .kpi-value { display:block; margin-top:10px; font-size:30px; font-weight:800; color:var(--text-main); letter-spacing:-.02em; }
+        .kpi-value small { font-size:16px; font-weight:600; color:var(--text-sub); margin-left:2px; }
+        .kpi-card.muted .kpi-value { color:var(--border); }
+        .kpi-note { font-size:11px; color:var(--accent); margin-top:6px; }
+
+        .chart-grid { display:grid; grid-template-columns:2fr 1fr; gap:16px; margin-bottom:16px; }
+        .panel { background:var(--bg-base); border:1px solid var(--border); border-radius:14px; padding:20px 24px; }
+        .panel h3 { font-size:16px; font-weight:800; margin:0 0 16px; }
+        .panel .canvas-wrap { position:relative; height:280px; }
+
+        table.top-table { width:100%; border-collapse:collapse; }
+        .top-table th, .top-table td { padding:11px 8px; font-size:14px; text-align:right; border-bottom:1px solid var(--border); }
+        .top-table th { color:var(--text-sub); font-weight:700; font-size:13px; }
+        .top-table th:nth-child(2), .top-table td:nth-child(2) { text-align:left; }
+        .top-table td.name { font-weight:600; color:var(--text-main); }
+        .top-table td.cat { color:var(--text-sub); font-size:13px; }
+        .growth-up { color:#c0392b; font-weight:700; }     /* 매출 상승 = 빨강(상승) */
+        .growth-down { color:#2471a3; font-weight:700; }
+        .growth-new { color:var(--accent); font-weight:700; font-size:12px; }
+
+        .placeholder { display:flex; flex-direction:column; align-items:center; justify-content:center; height:280px; color:var(--text-sub); text-align:center; gap:8px; }
+        .placeholder .tag { background:var(--bg-light); border:1px dashed var(--border); border-radius:8px; padding:4px 12px; font-size:12px; }
+
+        @media (max-width:900px){ .kpi-row{grid-template-columns:repeat(2,1fr)} .chart-grid{grid-template-columns:1fr} }
+    </style>
 </head>
 <body>
-<!-- biz 전용 헤더 (고객 헤더와 분리). 공유 CSS 클래스만 재사용 -->
 <div class="top-bar"></div>
 <header class="container">
     <div class="header-main">
@@ -28,13 +63,164 @@
     </div>
 </header>
 
-<!-- 기업 로그인 성공 확인용 임시 랜딩. 대시보드 실제 내용은 별도 작업. -->
-<main class="container" style="padding-top: 40px;">
-    <h1 class="section-title" style="margin-top: 0;">비즈니스 대시보드</h1>
-    <p style="color: var(--text-sub);">
-        <span sec:authentication="name">기업</span> 계정으로 로그인되었습니다. (ROLE_BIZ)
-    </p>
-    <p style="color: var(--text-sub); margin-top: 8px;">대시보드 콘텐츠는 준비 중입니다.</p>
+<main class="container" style="padding-top: 32px; padding-bottom:64px;">
+    <div class="dash-head">
+        <h1 class="section-title" style="margin:0;">비즈니스 대시보드</h1>
+        <div class="period-tabs" id="periodTabs">
+            <button data-period="1w">1주</button>
+            <button data-period="1m" class="active">1개월</button>
+            <button data-period="6m">6개월</button>
+            <button data-period="1y">1년</button>
+        </div>
+    </div>
+    <p class="gen-at" id="genAt">집계 데이터 로딩 중…</p>
+
+    <!-- KPI -->
+    <div class="kpi-row">
+        <div class="kpi-card">
+            <span class="kpi-label">총 매출</span>
+            <span class="kpi-value" id="kpiSales">–</span>
+        </div>
+        <div class="kpi-card">
+            <span class="kpi-label">주문 수</span>
+            <span class="kpi-value" id="kpiOrders">–</span>
+        </div>
+        <div class="kpi-card">
+            <span class="kpi-label">판매 수량</span>
+            <span class="kpi-value" id="kpiQty">–</span>
+        </div>
+        <div class="kpi-card muted">
+            <span class="kpi-label">방문자</span>
+            <span class="kpi-value" id="kpiVisitors">–</span>
+            <div class="kpi-note">조회 로그 연동 예정</div>
+        </div>
+    </div>
+
+    <!-- 매출 추이 + 카테고리 -->
+    <div class="chart-grid">
+        <div class="panel">
+            <h3>일별 매출 추이</h3>
+            <div class="canvas-wrap"><canvas id="dailyChart"></canvas></div>
+        </div>
+        <div class="panel">
+            <h3>카테고리 점유율</h3>
+            <div class="canvas-wrap"><canvas id="categoryChart"></canvas></div>
+        </div>
+    </div>
+
+    <!-- 상품 TOP + 인기 검색어 -->
+    <div class="chart-grid">
+        <div class="panel">
+            <h3>상품 매출 TOP 10</h3>
+            <table class="top-table">
+                <thead>
+                <tr><th>#</th><th>상품</th><th>판매량</th><th>매출</th><th>증감</th></tr>
+                </thead>
+                <tbody id="topBody"></tbody>
+            </table>
+        </div>
+        <div class="panel">
+            <h3>인기 검색어</h3>
+            <div class="placeholder" id="searchBox">
+                <div class="tag">검색 로그(activity.search) 연동 예정</div>
+                <div style="font-size:13px;">검색어 집계가 쌓이면 워드클라우드로 표시됩니다.</div>
+            </div>
+        </div>
+    </div>
 </main>
+
+<script th:inline="none">
+    const DATA_URL = '/biz/dashboard/data';
+    const TEAL = '#008982', GOLD = '#E2A807', SUB = '#666';
+    const DONUT = ['#008982','#00706a','#E2A807','#4dabf7','#f783ac','#9775fa','#69db7c','#ffa94d'];
+    const won = n => (n ?? 0).toLocaleString('ko-KR');
+    let dailyChart, categoryChart;
+
+    async function load(period) {
+        const res = await fetch(`${DATA_URL}?period=${period}`);
+        if (!res.ok) { document.getElementById('genAt').textContent = '데이터를 불러오지 못했습니다.'; return; }
+        render(await res.json());
+    }
+
+    function render(d) {
+        document.getElementById('genAt').textContent =
+            `${d.period} 기준 · 생성 ${new Date(d.generatedAt).toLocaleString('ko-KR')}`;
+
+        // KPI
+        document.getElementById('kpiSales').innerHTML = `${won(d.kpi.totalSales)}<small>원</small>`;
+        document.getElementById('kpiOrders').innerHTML = `${won(d.kpi.orderCount)}<small>건</small>`;
+        document.getElementById('kpiQty').innerHTML = `${won(d.kpi.totalQuantity)}<small>개</small>`;
+        document.getElementById('kpiVisitors').innerHTML = d.kpi.visitors
+            ? `${won(d.kpi.visitors)}<small>명</small>` : '–';
+
+        // 일별 매출 (라인)
+        dailyChart?.destroy();
+        dailyChart = new Chart(document.getElementById('dailyChart'), {
+            type: 'line',
+            data: {
+                labels: d.dailySales.map(x => x.date),
+                datasets: [{
+                    label: '매출', data: d.dailySales.map(x => x.sales),
+                    borderColor: TEAL, backgroundColor: 'rgba(0,137,130,.08)',
+                    fill: true, tension: .3, pointRadius: 2, borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false },
+                    tooltip: { callbacks: { label: c => `${won(c.parsed.y)}원` } } },
+                scales: { y: { ticks: { callback: v => (v/10000).toLocaleString() + '만' } } }
+            }
+        });
+
+        // 카테고리 (도넛)
+        categoryChart?.destroy();
+        categoryChart = new Chart(document.getElementById('categoryChart'), {
+            type: 'doughnut',
+            data: {
+                labels: d.categorySales.map(x => x.category),
+                datasets: [{ data: d.categorySales.map(x => x.sales), backgroundColor: DONUT, borderWidth: 0 }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false, cutout: '62%',
+                plugins: { legend: { position: 'right', labels: { boxWidth: 12, font: { size: 12 } } },
+                    tooltip: { callbacks: { label: c => `${c.label}: ${won(c.parsed)}원` } } }
+            }
+        });
+
+        // 상품 TOP (표)
+        document.getElementById('topBody').innerHTML = d.topProducts.map((p, i) => {
+            let g;
+            if (p.growth === null || p.growth === undefined) g = '<span class="growth-new">신규</span>';
+            else if (p.growth >= 0) g = `<span class="growth-up">▲ ${p.growth}%</span>`;
+            else g = `<span class="growth-down">▼ ${Math.abs(p.growth)}%</span>`;
+            return `<tr>
+                <td>${i + 1}</td>
+                <td class="name">${p.productName}<div class="cat">${p.category}</div></td>
+                <td>${won(p.unitsSold)}</td>
+                <td>${won(p.revenue)}원</td>
+                <td>${g}</td></tr>`;
+        }).join('');
+
+        // 인기 검색어 (searchRanking 채워지면 표시)
+        const box = document.getElementById('searchBox');
+        if (d.searchRanking && d.searchRanking.length) {
+            box.className = '';
+            box.innerHTML = d.searchRanking.map(s =>
+                `<span style="font-size:${12 + s.count / 20}px; margin:4px 8px; display:inline-block;">${s.keyword}</span>`
+            ).join('');
+        }
+    }
+
+    // 기간 탭
+    document.getElementById('periodTabs').addEventListener('click', e => {
+        const btn = e.target.closest('button'); if (!btn) return;
+        document.querySelectorAll('#periodTabs button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        load(btn.dataset.period);
+    });
+
+    load('1m');
+</script>
 </body>
 </html>
