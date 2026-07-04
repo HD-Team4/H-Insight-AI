@@ -14,6 +14,7 @@
     <link rel="stylesheet" th:href="@{/css/style.css}">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/wordcloud@1.2.2/src/wordcloud2.js"></script>
     <style>
         .biz-nav { display:flex; gap:4px; margin-left:28px; }
         .biz-nav a { padding:8px 14px; border-radius:8px; font-size:14px; font-weight:600; color:var(--text-sub); text-decoration:none; }
@@ -42,7 +43,7 @@
         .kpi-card.muted .kpi-value { color:var(--border); }
         .kpi-note { font-size:11px; color:var(--accent); margin-top:6px; }
 
-        .chart-grid { display:grid; grid-template-columns:2fr 1fr; gap:16px; margin-bottom:16px; }
+        .chart-grid { display:grid; grid-template-columns:2fr 1fr; gap:16px; margin-bottom:16px; align-items:start; }
         .panel { background:var(--bg-base); border:1px solid var(--border); border-radius:14px; padding:20px 24px; }
         .panel h3 { font-size:16px; font-weight:800; margin:0 0 16px; }
         .panel .canvas-wrap { position:relative; height:280px; }
@@ -120,10 +121,9 @@
             <span class="kpi-label">판매 수량</span>
             <span class="kpi-value" id="kpiQty">–</span>
         </div>
-        <div class="kpi-card muted">
+        <div class="kpi-card">
             <span class="kpi-label">방문자</span>
             <span class="kpi-value" id="kpiVisitors">–</span>
-            <div class="kpi-note">조회 로그 연동 예정</div>
         </div>
     </div>
 
@@ -152,10 +152,7 @@
         </div>
         <div class="panel">
             <h3>인기 검색어</h3>
-            <div class="placeholder" id="searchBox">
-                <div class="tag">검색 로그(activity.search) 연동 예정</div>
-                <div style="font-size:13px;">검색어 집계가 쌓이면 워드클라우드로 표시됩니다.</div>
-            </div>
+            <div class="canvas-wrap" id="searchWrap"><canvas id="searchCloud"></canvas></div>
         </div>
     </div>
 </main>
@@ -167,6 +164,7 @@
     const DATA_URL = '/biz/dashboard/data';
     const TEAL = '#008982', GOLD = '#E2A807', SUB = '#666';
     const DONUT = ['#008982','#00706a','#E2A807','#4dabf7','#f783ac','#9775fa','#69db7c','#ffa94d'];
+    const CLOUD_COLORS = ['#008982','#00706a','#E2A807','#b8860b','#4dabf7','#9775fa','#f783ac'];
     const won = n => (n ?? 0).toLocaleString('ko-KR');
     let dailyChart, categoryChart;
 
@@ -207,17 +205,23 @@
             }
         });
 
-        // 카테고리 (도넛)
+        // 카테고리 (도넛) — 상위 8개 + 나머지 '기타'로 묶어 범례 정리
+        const catsSorted = [...d.categorySales].sort((a, b) => b.sales - a.sales);
+        const catTop = catsSorted.slice(0, 8);
+        const catRest = catsSorted.slice(8).reduce((s, x) => s + x.sales, 0);
+        const catLabels = catTop.map(x => x.category);
+        const catValues = catTop.map(x => x.sales);
+        if (catRest > 0) { catLabels.push('기타'); catValues.push(catRest); }
         categoryChart?.destroy();
         categoryChart = new Chart(document.getElementById('categoryChart'), {
             type: 'doughnut',
             data: {
-                labels: d.categorySales.map(x => x.category),
-                datasets: [{ data: d.categorySales.map(x => x.sales), backgroundColor: DONUT, borderWidth: 0 }]
+                labels: catLabels,
+                datasets: [{ data: catValues, backgroundColor: [...DONUT, '#ced4da'], borderWidth: 0 }]
             },
             options: {
                 responsive: true, maintainAspectRatio: false, cutout: '62%',
-                plugins: { legend: { position: 'right', labels: { boxWidth: 12, font: { size: 12 } } },
+                plugins: { legend: { position: 'right', labels: { boxWidth: 12, padding: 8, font: { size: 12 } } },
                     tooltip: { callbacks: { label: c => `${c.label}: ${won(c.parsed)}원` } } }
             }
         });
@@ -236,13 +240,31 @@
                 <td>${g}</td></tr>`;
         }).join('');
 
-        // 인기 검색어 (searchRanking 채워지면 표시)
-        const box = document.getElementById('searchBox');
-        if (d.searchRanking && d.searchRanking.length) {
-            box.className = '';
-            box.innerHTML = d.searchRanking.map(s =>
-                `<span style="font-size:${12 + s.count / 20}px; margin:4px 8px; display:inline-block;">${s.keyword}</span>`
-            ).join('');
+        // 인기 검색어 — 워드클라우드 (검색 빈도 = 글자 크기)
+        const cloud = document.getElementById('searchCloud');
+        const cloudWrap = document.getElementById('searchWrap');
+        if (cloud && cloudWrap && d.searchRanking && d.searchRanking.length) {
+            if (window.WordCloud) {
+                cloud.width = cloudWrap.clientWidth;
+                cloud.height = cloudWrap.clientHeight;
+                WordCloud(cloud, {
+                    list: d.searchRanking.map(s => [s.keyword, s.count]),
+                    gridSize: 4,
+                    weightFactor: n => Math.sqrt(n) * 3,
+                    minSize: 12,
+                    fontFamily: 'Pretendard, sans-serif',
+                    color: () => CLOUD_COLORS[Math.floor(Math.random() * CLOUD_COLORS.length)],
+                    rotateRatio: 0.25, rotationSteps: 2,
+                    backgroundColor: 'transparent',
+                    drawOutOfBound: false, shrinkToFit: true
+                });
+            } else {
+                // 라이브러리 미로드 폴백: 빈도=글자크기 태그 목록
+                cloudWrap.innerHTML = d.searchRanking.map(s =>
+                    `<span style="display:inline-block;margin:6px 10px;font-weight:700;` +
+                    `color:${CLOUD_COLORS[s.rank % CLOUD_COLORS.length]};` +
+                    `font-size:${Math.round(14 + Math.sqrt(s.count) * 1.6)}px;">${s.keyword}</span>`).join('');
+            }
         }
     }
 
