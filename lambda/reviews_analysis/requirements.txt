@@ -1,0 +1,5 @@
+# arm64(Graviton) Lambda용 CPU 의존성. torch는 PyPI aarch64 휠이 CPU 전용이라 그대로 설치.
+torch==2.4.1
+transformers==4.44.2
+pymysql==1.1.1
+# boto3는 Lambda 베이스 이미지에 내장 → 미포함

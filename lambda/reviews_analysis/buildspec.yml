@@ -1,0 +1,27 @@
+# KAN-79: CodeBuild가 클라우드에서 이미지 빌드 → ECR 푸시 (로컬 도커 불필요).
+# CodeBuild 프로젝트: ARM 환경 + 특권(privileged) 모드 ON. 서비스 역할에 ECR 권한 필요.
+# ECR 리포는 아래 pre_build에서 없으면 자동 생성.
+version: 0.2
+
+env:
+  variables:
+    IMAGE_REPO_NAME: hf4-reviews-analysis
+    IMAGE_TAG: latest
+
+phases:
+  pre_build:
+    commands:
+      - ACCOUNT=$(aws sts get-caller-identity --query Account --output text)
+      - REPO_URI=$ACCOUNT.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME
+      - echo "ECR 로그인 → $REPO_URI"
+      - aws ecr describe-repositories --repository-names $IMAGE_REPO_NAME --region $AWS_DEFAULT_REGION || aws ecr create-repository --repository-name $IMAGE_REPO_NAME --region $AWS_DEFAULT_REGION
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ACCOUNT.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
+  build:
+    commands:
+      - echo "이미지 빌드 (모델 다운로드 포함, 수 분 소요)..."
+      - docker build -t $REPO_URI:$IMAGE_TAG .
+  post_build:
+    commands:
+      - echo "ECR 푸시..."
+      - docker push $REPO_URI:$IMAGE_TAG
+      - echo "완료 → $REPO_URI:$IMAGE_TAG"

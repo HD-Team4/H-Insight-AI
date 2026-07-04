@@ -1,0 +1,762 @@
+{
+  "reviewSentiment": {
+    "positive": 51,
+    "neutral": 10,
+    "negative": 39
+  },
+  "sentimentAccuracy": 96.5,
+  "model": "Copycats/koelectra-base-v3-generalized-sentiment-analysis",
+  "totalReviews": 3000,
+  "products": [
+    {
+      "productId": 1,
+      "productName": "[인플루언서 PICK] 립스탑 후드 윈드브레이커 - 애쉬",
+      "reviewCount": 100,
+      "reviewSentiment": {
+        "positive": 85,
+        "neutral": 4,
+        "negative": 11
+      },
+      "keywords": [
+        "원단/소재",
+        "색상",
+        "봉제/마감",
+        "사이즈",
+        "가성비",
+        "배송"
+      ],
+      "painPoints": [
+        "원단/소재",
+        "세탁",
+        "봉제/마감",
+        "가성비"
+      ],
+      "avgRating": 4.3
+    },
+    {
+      "productId": 2,
+      "productName": "[4WAY STRETCH] 와이드핏 밴딩 슬랙스 - 블랙",
+      "reviewCount": 100,
+      "reviewSentiment": {
+        "positive": 58,
+        "neutral": 12,
+        "negative": 30
+      },
+      "keywords": [
+        "원단/소재",
+        "가성비",
+        "색상",
+        "봉제/마감",
+        "사이즈",
+        "세탁"
+      ],
+      "painPoints": [
+        "세탁",
+        "원단/소재",
+        "냄새",
+        "가성비"
+      ],
+      "avgRating": 3.3
+    },
+    {
+      "productId": 3,
+      "productName": "데일리 피케 반소매티 - 네이비",
+      "reviewCount": 100,
+      "reviewSentiment": {
+        "positive": 22,
+        "neutral": 4,
+        "negative": 74
+      },
+      "keywords": [
+        "원단/소재",
+        "색상",
+        "세탁",
+        "사이즈",
+        "보풀",
+        "봉제/마감"
+      ],
+      "painPoints": [
+        "원단/소재",
+        "보풀",
+        "세탁",
+        "색상"
+      ],
+      "avgRating": 2.2
+    },
+    {
+      "productId": 4,
+      "productName": "[올데이 크리즈] 와이드 팬츠 - 블랙",
+      "reviewCount": 100,
+      "reviewSentiment": {
+        "positive": 84,
+        "neutral": 7,
+        "negative": 9
+      },
+      "keywords": [
+        "원단/소재",
+        "색상",
+        "사이즈",
+        "가성비",
+        "봉제/마감",
+        "세탁"
+      ],
+      "painPoints": [
+        "색상",
+        "세탁",
+        "원단/소재",
+        "냄새"
+      ],
+      "avgRating": 4.3
+    },
+    {
+      "productId": 5,
+      "productName": "나시 셋업 카디건형 블라우스 - 브라운",
+      "reviewCount": 100,
+      "reviewSentiment": {
+        "positive": 49,
+        "neutral": 12,
+        "negative": 39
+      },
+      "keywords": [
+        "원단/소재",
+        "색상",
+        "봉제/마감",
+        "가성비",
+        "세탁",
+        "사이즈"
+      ],
+      "painPoints": [
+        "세탁",
+        "원단/소재",
+        "봉제/마감",
+        "가성비"
+      ],
+      "avgRating": 3.2
+    },
+    {
+      "productId": 6,
+      "productName": "시어 주름지 롱스커트 - 브라운",
+      "reviewCount": 100,
+      "reviewSentiment": {
+        "positive": 27,
+        "neutral": 8,
+        "negative": 65
+      },
+      "keywords": [
+        "원단/소재",
+        "가성비",
+        "색상",
+        "냄새",
+        "세탁",
+        "배송"
+      ],
+      "painPoints": [
+        "원단/소재",
+        "냄새",
+        "세탁",
+        "가성비"
+      ],
+      "avgRating": 2.4
+    },
+    {
+      "productId": 7,
+      "productName": "[올데이 크리즈] 반소매 셔츠 - 블랙",
+      "reviewCount": 100,
+      "reviewSentiment": {
+        "positive": 86,
+        "neutral": 5,
+        "negative": 9
+      },
+      "keywords": [
+        "원단/소재",
+        "색상",
+        "사이즈",
+        "가성비",
+        "봉제/마감",
+        "배송"
+      ],
+      "painPoints": [
+        "가성비",
+        "사이즈",
+        "보풀",
+        "세탁"
+      ],
+      "avgRating": 4.3
+    },
+    {
+      "productId": 8,
+      "productName": "조직감 코튼 다잉 카라티 - 애쉬",
+      "reviewCount": 100,
+      "reviewSentiment": {
+        "positive": 47,
+        "neutral": 15,
+        "negative": 38
+      },
+      "keywords": [
+        "원단/소재",
+        "가성비",
+        "세탁",
+        "색상",
+        "사이즈",
+        "봉제/마감"
+      ],
+      "painPoints": [
+        "원단/소재",
+        "세탁",
+        "보풀",
+        "가성비"
+      ],
+      "avgRating": 3.1
+    },
+    {
+      "productId": 9,
+      "productName": "조직감코튼 캡틴 반소매티 - 애쉬",
+      "reviewCount": 100,
+      "reviewSentiment": {
+        "positive": 20,
+        "neutral": 8,
+        "negative": 72
+      },
+      "keywords": [
+        "원단/소재",
+        "가성비",
+        "색상",
+        "세탁",
+        "보풀",
+        "냄새"
+      ],
+      "painPoints": [
+        "원단/소재",
+        "세탁",
+        "가성비",
+        "보풀"
+      ],
+      "avgRating": 2.1
+    },
+    {
+      "productId": 10,
+      "productName": "[올데이 크리즈] 반소매 셔츠 - 네이비",
+      "reviewCount": 100,
+      "reviewSentiment": {
+        "positive": 84,
+        "neutral": 9,
+        "negative": 7
+      },
+      "keywords": [
+        "원단/소재",
+        "색상",
+        "사이즈",
+        "가성비",
+        "봉제/마감",
+        "세탁"
+      ],
+      "painPoints": [
+        "봉제/마감",
+        "색상",
+        "원단/소재",
+        "냄새"
+      ],
+      "avgRating": 4.3
+    },
+    {
+      "productId": 11,
+      "productName": "더블레이어드 헨리넥 티셔츠 - 블랙",
+      "reviewCount": 100,
+      "reviewSentiment": {
+        "positive": 51,
+        "neutral": 9,
+        "negative": 40
+      },
+      "keywords": [
+        "원단/소재",
+        "색상",
+        "사이즈",
+        "세탁",
+        "가성비",
+        "봉제/마감"
+      ],
+      "painPoints": [
+        "세탁",
+        "원단/소재",
+        "사이즈",
+        "보풀"
+      ],
+      "avgRating": 3.2
+    },
+    {
+      "productId": 12,
+      "productName": "멀티 스트라이프 반소매티 - 블랙",
+      "reviewCount": 100,
+      "reviewSentiment": {
+        "positive": 17,
+        "neutral": 10,
+        "negative": 73
+      },
+      "keywords": [
+        "원단/소재",
+        "세탁",
+        "가성비",
+        "색상",
+        "사이즈",
+        "보풀"
+      ],
+      "painPoints": [
+        "세탁",
+        "원단/소재",
+        "보풀",
+        "사이즈"
+      ],
+      "avgRating": 2.2
+    },
+    {
+      "productId": 13,
+      "productName": "코튼 가먼트다잉 반팔티 - 블루",
+      "reviewCount": 100,
+      "reviewSentiment": {
+        "positive": 89,
+        "neutral": 6,
+        "negative": 5
+      },
+      "keywords": [
+        "원단/소재",
+        "봉제/마감",
+        "색상",
+        "사이즈",
+        "가성비",
+        "배송"
+      ],
+      "painPoints": [
+        "사이즈",
+        "가성비",
+        "세탁",
+        "배송"
+      ],
+      "avgRating": 4.4
+    },
+    {
+      "productId": 14,
+      "productName": "가먼트다잉 오션 모티브 티셔츠 - 애쉬",
+      "reviewCount": 100,
+      "reviewSentiment": {
+        "positive": 43,
+        "neutral": 13,
+        "negative": 44
+      },
+      "keywords": [
+        "원단/소재",
+        "색상",
+        "사이즈",
+        "가성비",
+        "봉제/마감",
+        "배송"
+      ],
+      "painPoints": [
+        "배송",
+        "사이즈",
+        "색상",
+        "원단/소재"
+      ],
+      "avgRating": 3.0
+    },
+    {
+      "productId": 15,
+      "productName": "데일리 피케 반소매티 - 그린",
+      "reviewCount": 100,
+      "reviewSentiment": {
+        "positive": 16,
+        "neutral": 10,
+        "negative": 74
+      },
+      "keywords": [
+        "원단/소재",
+        "사이즈",
+        "가성비",
+        "봉제/마감",
+        "세탁",
+        "색상"
+      ],
+      "painPoints": [
+        "원단/소재",
+        "사이즈",
+        "봉제/마감",
+        "가성비"
+      ],
+      "avgRating": 2.0
+    },
+    {
+      "productId": 16,
+      "productName": "[Woody Woodpecker] 우디 우드페커 가먼트다잉 그래픽 티셔츠 - 블루",
+      "reviewCount": 100,
+      "reviewSentiment": {
+        "positive": 88,
+        "neutral": 6,
+        "negative": 6
+      },
+      "keywords": [
+        "원단/소재",
+        "색상",
+        "사이즈",
+        "봉제/마감",
+        "가성비",
+        "핏"
+      ],
+      "painPoints": [
+        "배송",
+        "사이즈",
+        "보풀",
+        "세탁"
+      ],
+      "avgRating": 4.4
+    },
+    {
+      "productId": 17,
+      "productName": "데일리 슬리브리스 - 화이트",
+      "reviewCount": 100,
+      "reviewSentiment": {
+        "positive": 54,
+        "neutral": 16,
+        "negative": 30
+      },
+      "keywords": [
+        "원단/소재",
+        "색상",
+        "봉제/마감",
+        "사이즈",
+        "가성비",
+        "배송"
+      ],
+      "painPoints": [
+        "원단/소재",
+        "색상",
+        "배송",
+        "냄새"
+      ],
+      "avgRating": 3.3
+    },
+    {
+      "productId": 18,
+      "productName": "헤비코튼 세미 크롭 반소매 티셔츠 - 그레이",
+      "reviewCount": 100,
+      "reviewSentiment": {
+        "positive": 17,
+        "neutral": 12,
+        "negative": 71
+      },
+      "keywords": [
+        "원단/소재",
+        "가성비",
+        "색상",
+        "세탁",
+        "봉제/마감",
+        "사이즈"
+      ],
+      "painPoints": [
+        "원단/소재",
+        "세탁",
+        "가성비",
+        "색상"
+      ],
+      "avgRating": 2.1
+    },
+    {
+      "productId": 19,
+      "productName": "코튼 가먼트다잉 반팔티 - 라이트 그레이",
+      "reviewCount": 100,
+      "reviewSentiment": {
+        "positive": 84,
+        "neutral": 5,
+        "negative": 11
+      },
+      "keywords": [
+        "원단/소재",
+        "색상",
+        "봉제/마감",
+        "가성비",
+        "사이즈",
+        "세탁"
+      ],
+      "painPoints": [
+        "봉제/마감",
+        "보풀",
+        "사이즈",
+        "색상"
+      ],
+      "avgRating": 4.3
+    },
+    {
+      "productId": 20,
+      "productName": "멀티 스트라이프 반소매티 - 레드",
+      "reviewCount": 100,
+      "reviewSentiment": {
+        "positive": 50,
+        "neutral": 14,
+        "negative": 36
+      },
+      "keywords": [
+        "원단/소재",
+        "색상",
+        "가성비",
+        "세탁",
+        "사이즈",
+        "봉제/마감"
+      ],
+      "painPoints": [
+        "세탁",
+        "원단/소재",
+        "보풀",
+        "가성비"
+      ],
+      "avgRating": 3.3
+    },
+    {
+      "productId": 21,
+      "productName": "옥스포드 오버핏 반소매 셔츠 - 화이트",
+      "reviewCount": 100,
+      "reviewSentiment": {
+        "positive": 17,
+        "neutral": 14,
+        "negative": 69
+      },
+      "keywords": [
+        "원단/소재",
+        "가성비",
+        "색상",
+        "봉제/마감",
+        "사이즈",
+        "냄새"
+      ],
+      "painPoints": [
+        "원단/소재",
+        "냄새",
+        "세탁",
+        "가성비"
+      ],
+      "avgRating": 2.2
+    },
+    {
+      "productId": 22,
+      "productName": "다잉 조직감코튼 오브제 반소매티 - 애쉬",
+      "reviewCount": 100,
+      "reviewSentiment": {
+        "positive": 89,
+        "neutral": 4,
+        "negative": 7
+      },
+      "keywords": [
+        "원단/소재",
+        "사이즈",
+        "가성비",
+        "색상",
+        "봉제/마감",
+        "세탁"
+      ],
+      "painPoints": [
+        "세탁",
+        "원단/소재",
+        "배송",
+        "가성비"
+      ],
+      "avgRating": 4.5
+    },
+    {
+      "productId": 23,
+      "productName": "[리오더][인플루언서 PICK][JAWS] 죠스 그래픽 티셔츠 - 화이트",
+      "reviewCount": 100,
+      "reviewSentiment": {
+        "positive": 52,
+        "neutral": 10,
+        "negative": 38
+      },
+      "keywords": [
+        "원단/소재",
+        "사이즈",
+        "가성비",
+        "색상",
+        "세탁",
+        "배송"
+      ],
+      "painPoints": [
+        "원단/소재",
+        "세탁",
+        "사이즈",
+        "배송"
+      ],
+      "avgRating": 3.3
+    },
+    {
+      "productId": 24,
+      "productName": "다잉 해비코튼 바이크 반소매티 - 애쉬",
+      "reviewCount": 100,
+      "reviewSentiment": {
+        "positive": 12,
+        "neutral": 14,
+        "negative": 74
+      },
+      "keywords": [
+        "원단/소재",
+        "세탁",
+        "색상",
+        "가성비",
+        "봉제/마감",
+        "배송"
+      ],
+      "painPoints": [
+        "원단/소재",
+        "세탁",
+        "색상",
+        "봉제/마감"
+      ],
+      "avgRating": 2.0
+    },
+    {
+      "productId": 25,
+      "productName": "[인플루언서 PICK] 크로쉐 반소매 셔츠 - 브라운",
+      "reviewCount": 100,
+      "reviewSentiment": {
+        "positive": 83,
+        "neutral": 8,
+        "negative": 9
+      },
+      "keywords": [
+        "원단/소재",
+        "색상",
+        "가성비",
+        "봉제/마감",
+        "사이즈",
+        "세탁"
+      ],
+      "painPoints": [
+        "색상",
+        "원단/소재",
+        "가성비",
+        "보풀"
+      ],
+      "avgRating": 4.3
+    },
+    {
+      "productId": 26,
+      "productName": "가먼트다잉 모티브 반소매티 - 네이비",
+      "reviewCount": 100,
+      "reviewSentiment": {
+        "positive": 50,
+        "neutral": 12,
+        "negative": 38
+      },
+      "keywords": [
+        "원단/소재",
+        "색상",
+        "가성비",
+        "봉제/마감",
+        "세탁",
+        "사이즈"
+      ],
+      "painPoints": [
+        "원단/소재",
+        "세탁",
+        "배송",
+        "봉제/마감"
+      ],
+      "avgRating": 3.2
+    },
+    {
+      "productId": 27,
+      "productName": "[인플루언서 PICK] 헤비코튼 세미 크롭 반소매 티셔츠 - 화이트",
+      "reviewCount": 100,
+      "reviewSentiment": {
+        "positive": 16,
+        "neutral": 12,
+        "negative": 72
+      },
+      "keywords": [
+        "원단/소재",
+        "세탁",
+        "가성비",
+        "사이즈",
+        "색상",
+        "배송"
+      ],
+      "painPoints": [
+        "원단/소재",
+        "세탁",
+        "배송",
+        "보풀"
+      ],
+      "avgRating": 2.2
+    },
+    {
+      "productId": 28,
+      "productName": "데일리 슬리브리스 - 블랙",
+      "reviewCount": 100,
+      "reviewSentiment": {
+        "positive": 83,
+        "neutral": 7,
+        "negative": 10
+      },
+      "keywords": [
+        "원단/소재",
+        "가성비",
+        "색상",
+        "봉제/마감",
+        "사이즈",
+        "세탁"
+      ],
+      "painPoints": [
+        "세탁",
+        "색상",
+        "사이즈",
+        "보풀"
+      ],
+      "avgRating": 4.3
+    },
+    {
+      "productId": 29,
+      "productName": "옥스포드 오버핏 반소매 셔츠 - 네이비",
+      "reviewCount": 100,
+      "reviewSentiment": {
+        "positive": 49,
+        "neutral": 20,
+        "negative": 31
+      },
+      "keywords": [
+        "원단/소재",
+        "색상",
+        "가성비",
+        "봉제/마감",
+        "세탁",
+        "사이즈"
+      ],
+      "painPoints": [
+        "원단/소재",
+        "보풀",
+        "세탁",
+        "봉제/마감"
+      ],
+      "avgRating": 3.3
+    },
+    {
+      "productId": 30,
+      "productName": "가먼트다잉 오션 모티브 티셔츠 - 핑크",
+      "reviewCount": 100,
+      "reviewSentiment": {
+        "positive": 14,
+        "neutral": 12,
+        "negative": 74
+      },
+      "keywords": [
+        "원단/소재",
+        "가성비",
+        "사이즈",
+        "색상",
+        "세탁",
+        "배송"
+      ],
+      "painPoints": [
+        "원단/소재",
+        "색상",
+        "세탁",
+        "배송"
+      ],
+      "avgRating": 2.0
+    }
+  ]
+}
