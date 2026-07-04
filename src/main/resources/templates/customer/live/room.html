@@ -109,8 +109,8 @@
                 webSocketFactory: () => new SockJS('/ws-live'),
                 reconnectDelay: 3000,
                 onConnect: async (frame) => {
-                    // 서버가 정한 내 표시 이름(로그인=회원명 / 익명=게스트-XXXX)
-                    myName = frame.headers['user-name'] || null;
+                    // 서버가 정한 유일 id (user-name 헤더에 실려 옴)
+                    myId = frame.headers['user-name'] || null;
                     await loadHistory();
                     stompClient.subscribe(`/topic/live/${liveSessionId}`, (message) => {
                         appendMessage(JSON.parse(message.body));

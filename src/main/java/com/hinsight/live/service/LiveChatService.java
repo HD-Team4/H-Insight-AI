@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -22,6 +23,7 @@ import java.util.List;
 public class LiveChatService {
 
     private static final int MAX_HISTORY = 50;
+    private static final Duration GUEST_NAME_TTL = Duration.ofHours(12);
 
     private final StringRedisTemplate redisTemplate;
     private final ObjectMapper objectMapper;
@@ -56,7 +58,42 @@ public class LiveChatService {
         }
     }
 
+    /**
+     * 익명 시청자의 방별 표시명을 배정한다.
+     * 같은 senderId(연결)면 항상 같은 이름을, 방 안에서 서로 다른 게스트는 순번으로 서로 다른 이름을 받는다.
+     * → "게스트1", "게스트2", ... 로 겹치지 X
+     */
+    public String resolveGuestName(Long liveSessionId, String senderId) {
+        try {
+            String nameKey = guestNameKey(liveSessionId, senderId);
+            String existing = redisTemplate.opsForValue().get(nameKey);
+            if (existing != null) {
+                return existing;
+            }
+            Long seq = redisTemplate.opsForValue().increment(guestSeqKey(liveSessionId)); // 원자적 순번
+            String name = "게스트 " + (seq == null ? "" : seq);
+            // 동시에 같은 senderId 가 두 번 들어오는 경쟁을 대비: 먼저 넣은 값이 이기고 여분 순번은 버린다.
+            Boolean set = redisTemplate.opsForValue().setIfAbsent(nameKey, name, GUEST_NAME_TTL);
+            if (Boolean.FALSE.equals(set)) {
+                String winner = redisTemplate.opsForValue().get(nameKey);
+                return winner == null ? name : winner;
+            }
+            return name;
+        } catch (RuntimeException e) {
+            log.warn("[LIVE] guest name resolve failed. liveSessionId={}, message={}", liveSessionId, e.getMessage());
+            return "게스트";
+        }
+    }
+
     private String chatKey(Long liveSessionId) {
         return "live:session:" + liveSessionId + ":chat";
+    }
+
+    private String guestSeqKey(Long liveSessionId) {
+        return "live:session:" + liveSessionId + ":guestSeq";
+    }
+
+    private String guestNameKey(Long liveSessionId, String senderId) {
+        return "live:session:" + liveSessionId + ":guestName:" + senderId;
     }
 }

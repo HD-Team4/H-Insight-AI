@@ -3,27 +3,30 @@ package com.hinsight.live.config;
 import java.security.Principal;
 
 /**
- * 라이브 채팅 발신자.
- * 표시명(displayName)과 식별자(id)를 분리한다.
- * - id: 연결마다 유일(회원=userId 기반, 익명=UUID). "is-me" 판정·중복 구분의 기준.
- * - displayName: 화면에 보여줄 이름(회원명 / "게스트-XXXX"). 겹쳐도 무방.
- *
- * getName() 은 유일한 id 를 돌려주며, 이 값이 STOMP CONNECTED 프레임의
- * user-name 헤더로 클라이언트에 전달된다(클라이언트가 자기 id 를 알게 됨).
+ * 라이브 채팅 발신자. 식별자(id)와 표시명을 분리한다.
+ * - id: 연결마다 유일(회원=u{userId}, 익명=g-{UUID}). "is-me" 판정 기준. getName() 이 반환.
+ * - guest: 익명이면 true. 표시명은 방별 순번(게스트N)으로 컨트롤러에서 배정하므로 여기선 비워둔다.
+ * - displayName: 회원의 표시명(회원 이름). 익명은 null.
  */
 public final class LiveChatPrincipal implements Principal {
 
     private final String id;
+    private final boolean guest;
     private final String displayName;
 
-    public LiveChatPrincipal(String id, String displayName) {
+    public LiveChatPrincipal(String id, boolean guest, String displayName) {
         this.id = id;
+        this.guest = guest;
         this.displayName = displayName;
     }
 
     @Override
     public String getName() {
         return id;
+    }
+
+    public boolean isGuest() {
+        return guest;
     }
 
     public String getDisplayName() {

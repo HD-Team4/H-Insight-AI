@@ -49,7 +49,10 @@ public class LiveChatController {
         String sender;
         if (principal instanceof LiveChatPrincipal p) {
             senderId = p.getName();          // 유일 id
-            sender = p.getDisplayName();     // 표시명
+            // 익명은 방별 순번(게스트N)으로, 회원은 회원명으로 표시
+            sender = p.isGuest()
+                    ? liveChatService.resolveGuestName(liveSessionId, senderId)
+                    : p.getDisplayName();
         } else if (principal != null) {
             senderId = principal.getName();
             sender = principal.getName();
