@@ -9,6 +9,11 @@ import java.util.List;
 @Mapper
 public interface ReviewDao {
 
+    int insert(@Param("productId") Long productId,
+               @Param("userId") Long userId,
+               @Param("rating") Integer rating,
+               @Param("content") String content);
+
     List<ReviewDto> findPageByProductId(@Param("productId") Long productId,
                                         @Param("offset") int offset,
                                         @Param("limit") int limit);
