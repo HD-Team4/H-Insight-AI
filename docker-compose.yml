@@ -195,6 +195,95 @@ services:
     networks:
       - hinsight
 
+  # ==========================================
+  # 4. 모니터링 Exporter (별도 모니터링 EC2 의 Prometheus 가 스크레이프)
+  #    - Prometheus/Grafana 는 이 프로젝트에 없음 → monitoring/ 폴더의 별도 스택에서 수집
+  #    - 아래 ports 는 모니터링 EC2 가 접근하도록 호스트에 노출.
+  #      운영(EC2)에선 보안그룹으로 "모니터링 EC2 IP" 만 각 포트 허용할 것.
+  #    - 각 포트 용도는 README 의 "모니터링" 표 참고.
+  # ==========================================
+
+  # 호스트(대상 서버) 자원 지표: CPU/메모리/디스크/네트워크 → :9100
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    container_name: hinsight-node-exporter
+    restart: unless-stopped
+    command:
+      - '--path.rootfs=/host'
+    pid: host
+    volumes:
+      - '/:/host:ro,rslave'
+    ports:
+      - "9100:9100"
+    networks:
+      - hinsight
+
+  # 컨테이너별 리소스 지표 → 컨테이너 내부 8080, 앱과 충돌 피하려 호스트는 8085 로 노출
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    container_name: hinsight-cadvisor
+    restart: unless-stopped
+    privileged: true
+    ports:
+      - "8085:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    devices:
+      - /dev/kmsg
+    networks:
+      - hinsight
+
+  # Redis 지표(메모리/커맨드/키스페이스) → :9121. 내부적으로 redis 컨테이너에 접속
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.62.0
+    container_name: hinsight-redis-exporter
+    restart: unless-stopped
+    environment:
+      - REDIS_ADDR=redis://redis:6379
+    ports:
+      - "9121:9121"
+    depends_on:
+      - redis
+    networks:
+      - hinsight
+
+  # MySQL 서버 지표(QPS/스레드/버퍼풀 등) → :9104. 외부 매니지드 MySQL 대상.
+  #  ※ .env 에 MYSQLD_EXPORTER_DSN 을 채워야 실제로 수집됨(계정은 나중에):
+  #     MYSQLD_EXPORTER_DSN=모니터유저:비번@(호스트:3306)/
+  #     (모니터 계정 권한: GRANT PROCESS, REPLICATION CLIENT, SELECT)
+  #  DSN 미설정 시 이 컨테이너만 기동 실패로 뜸 — 나머지 스택엔 영향 없음.
+  mysqld-exporter:
+    image: prom/mysqld-exporter:v0.14.0
+    container_name: hinsight-mysqld-exporter
+    restart: unless-stopped
+    environment:
+      - DATA_SOURCE_NAME=${MYSQLD_EXPORTER_DSN:-}
+    ports:
+      - "9104:9104"
+    networks:
+      - hinsight
+
+  # Kafka 지표(토픽/컨슈머 랙 등) → :9308.
+  #  Kafka 가 local 프로파일이라 exporter 도 동일하게 local 로 묶음
+  #  → `docker compose --profile local up` 일 때만 기동/수집됨.
+  kafka-exporter:
+    image: danielqsj/kafka-exporter:v1.8.0
+    container_name: hinsight-kafka-exporter
+    profiles: ["local"]
+    restart: unless-stopped
+    command:
+      - '--kafka.server=kafka:29092'
+    ports:
+      - "9308:9308"
+    depends_on:
+      - kafka
+    networks:
+      - hinsight
+
 # ==========================================
 # 볼륨 및 네트워크 정의
 # ==========================================
