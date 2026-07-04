@@ -43,7 +43,7 @@
         .kpi-card.muted .kpi-value { color:var(--border); }
         .kpi-note { font-size:11px; color:var(--accent); margin-top:6px; }
 
-        .chart-grid { display:grid; grid-template-columns:2fr 1fr; gap:16px; margin-bottom:16px; }
+        .chart-grid { display:grid; grid-template-columns:2fr 1fr; gap:16px; margin-bottom:16px; align-items:start; }
         .panel { background:var(--bg-base); border:1px solid var(--border); border-radius:14px; padding:20px 24px; }
         .panel h3 { font-size:16px; font-weight:800; margin:0 0 16px; }
         .panel .canvas-wrap { position:relative; height:280px; }
@@ -249,8 +249,8 @@
                 cloud.height = cloudWrap.clientHeight;
                 WordCloud(cloud, {
                     list: d.searchRanking.map(s => [s.keyword, s.count]),
-                    gridSize: 6,
-                    weightFactor: n => Math.sqrt(n) * 2.4,
+                    gridSize: 4,
+                    weightFactor: n => Math.sqrt(n) * 3,
                     minSize: 12,
                     fontFamily: 'Pretendard, sans-serif',
                     color: () => CLOUD_COLORS[Math.floor(Math.random() * CLOUD_COLORS.length)],
