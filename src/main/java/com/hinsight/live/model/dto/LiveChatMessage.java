@@ -12,4 +12,9 @@ public record LiveChatMessage(
     public static LiveChatMessage chat(String senderId, String sender, String message) {
         return new LiveChatMessage(senderId, sender, message, "CHAT", System.currentTimeMillis());
     }
+
+    /** 리뷰봇 자동 답변 메시지. senderId 는 시청자 id 와 겹치지 않는 고정값. */
+    public static LiveChatMessage bot(String message) {
+        return new LiveChatMessage("review-bot", "🤖 리뷰봇", message, "BOT", System.currentTimeMillis());
+    }
 }

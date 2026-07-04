@@ -1,5 +1,6 @@
 package com.hinsight.live.controller;
 
+import com.hinsight.ai.rag.LiveQuestionBotService;
 import com.hinsight.live.config.LiveChatPrincipal;
 import com.hinsight.live.model.dto.LiveChatMessage;
 import com.hinsight.live.model.dto.LiveChatRequest;
@@ -29,6 +30,7 @@ public class LiveChatController {
     private static final int MAX_MESSAGE_LENGTH = 500;
 
     private final LiveChatService liveChatService;
+    private final LiveQuestionBotService liveQuestionBotService;
 
     /** 클라이언트 SEND /app/live/{id}/chat → 방 구독자(/topic/live/{id}) 전원에게 전달. */
     @MessageMapping("/live/{liveSessionId}/chat")
@@ -63,6 +65,10 @@ public class LiveChatController {
 
         LiveChatMessage message = LiveChatMessage.chat(senderId, sender, body);
         liveChatService.save(liveSessionId, message);
+
+        // 자주 묻는 질문 탐지 → 리뷰봇 자동 답변(별도 스레드, 실패해도 채팅엔 영향 없음)
+        liveQuestionBotService.onUserMessage(liveSessionId, body);
+
         return message;
     }
 

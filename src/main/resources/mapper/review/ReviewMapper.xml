@@ -41,7 +41,7 @@
             r.created_at
         FROM reviews r
         WHERE r.review_id > #{lastId}
-          AND r.content IS NOT NULL AND r.content <> ''
+          AND r.content IS NOT NULL AND r.content != ''
         ORDER BY r.review_id
         LIMIT #{limit}
     </select>

@@ -19,6 +19,7 @@ import reactor.core.scheduler.Schedulers;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -44,9 +45,15 @@ public class RagController {
                     Map.of("message", "productId 와 question 은 필수입니다.")).event("error").build());
         }
 
-        OffsetDateTime cutoff = parseCutoff(request.cutoff());
+        OffsetDateTime explicit = parseCutoff(request.cutoff());
 
         return Flux.defer(() -> {
+            // 요청에 cutoff 가 없으면 공식 스펙 게시일로 자동 결정
+            OffsetDateTime cutoff = ragService.resolveCutoff(request.productId(), explicit);
+
+            Flux<ServerSentEvent<Object>> metaEvent = Flux.just(ServerSentEvent.<Object>builder(
+                    metaPayload(cutoff, explicit != null)).event("meta").build());
+
             Flux<ServerSentEvent<Object>> deltaEvents =
                     ragService.answer(request.productId(), request.question(), cutoff)
                             .map(token -> ServerSentEvent.<Object>builder(Map.of("t", token))
@@ -55,8 +62,16 @@ public class RagController {
             Flux<ServerSentEvent<Object>> doneEvent = Flux.just(
                     ServerSentEvent.<Object>builder(Map.of()).event("done").build());
 
-            return Flux.concat(deltaEvents, doneEvent);
+            return Flux.concat(metaEvent, deltaEvents, doneEvent);
         }).subscribeOn(Schedulers.boundedElastic());  // 블로킹 임베딩/검색을 요청 스레드 밖에서 수행
+    }
+
+    /** 적용된 컷오프 정보(clients 가 어떤 기준으로 필터됐는지 표시용). */
+    private Map<String, Object> metaPayload(OffsetDateTime cutoff, boolean explicit) {
+        Map<String, Object> m = new HashMap<>();
+        m.put("cutoff", cutoff != null ? cutoff.toString() : null);
+        m.put("cutoffSource", explicit ? "request" : (cutoff != null ? "official-spec" : "none"));
+        return m;
     }
 
     /** "2026-03-01" 또는 ISO offset datetime 을 허용. 파싱 실패/공백이면 null(필터 없음). */

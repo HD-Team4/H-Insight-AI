@@ -12,6 +12,7 @@ import org.springframework.util.StringUtils;
 import reactor.core.publisher.Flux;
 
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,6 +30,8 @@ public class RagService {
 
     private static final Logger log = LoggerFactory.getLogger(RagService.class);
     private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    // 컷오프 없음(공식 스펙 미등록)일 때 쓸 안전한 하한. OffsetDateTime.MIN 은 Postgres timestamptz 범위 밖이라 사용 불가.
+    private static final OffsetDateTime NO_CUTOFF = OffsetDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC);
 
     private final EmbeddingService embeddingService;
     private final ReviewSearchService reviewSearchService;
@@ -70,16 +73,28 @@ public class RagService {
             """;
 
     /**
+     * 리뉴얼 컷오프 결정. 우선순위: 요청 명시값 > 공식 스펙 게시일(자동) > null(필터 없음).
+     *
+     * @param explicit 요청에서 넘어온 명시 컷오프(없으면 null)
+     * @return 실제 적용할 컷오프. null 이면 날짜 필터 없이 전체 리뷰 대상.
+     */
+    public OffsetDateTime resolveCutoff(long productId, OffsetDateTime explicit) {
+        if (explicit != null) return explicit;
+        return reviewSearchService.findRenewalCutoff(productId);   // 공식 스펙 없으면 null
+    }
+
+    /**
      * 질문에 대한 답변을 토큰 스트림으로 생성.
      *
      * @param productId 방송 중인 상품 ID
      * @param question  방송 댓글에서 탐지된 질문
-     * @param cutoff    리뉴얼 기준일(이전 리뷰 차단). null 이면 필터 없이 전체 리뷰 대상.
+     * @param cutoff    적용할 리뉴얼 기준일(이전 리뷰 차단). null 이면 필터 없이 전체 리뷰 대상.
+     *                  {@link #resolveCutoff}로 미리 결정해 넘긴다.
      */
     public Flux<String> answer(long productId, String question, OffsetDateTime cutoff) {
         float[] qVec = embeddingService.embed(question);
 
-        OffsetDateTime effectiveCutoff = (cutoff != null) ? cutoff : OffsetDateTime.MIN;
+        OffsetDateTime effectiveCutoff = (cutoff != null) ? cutoff : NO_CUTOFF;
         List<ReviewMatch> official = reviewSearchService.searchOfficial(productId, qVec, officialTopK);
         List<ReviewMatch> reviews  = reviewSearchService.searchReviews(
                 productId, qVec, effectiveCutoff, reviewTopK, halfLifeDays, wSim, wRec);

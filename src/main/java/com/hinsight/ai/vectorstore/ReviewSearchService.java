@@ -30,11 +30,23 @@ public class ReviewSearchService {
         this.jdbc = vectorJdbcTemplate;
     }
 
+    /**
+     * 상품의 리뉴얼 컷오프 자동 조회 = 가장 최근 공식 스펙의 게시일.
+     * 공식 스펙(is_official)을 적재하면 그 written_at 이 곧 리뉴얼 기준점이 된다.
+     *
+     * @return 최신 공식 스펙 게시일. 공식 스펙이 없으면 null(= 컷오프 없음).
+     */
+    public OffsetDateTime findRenewalCutoff(long productId) {
+        return jdbc.queryForObject(
+                "SELECT max(written_at) FROM review_vectors WHERE product_id = ? AND is_official = TRUE",
+                OffsetDateTime.class, productId);
+    }
+
     /** 공식 스펙 트랙: 날짜 무관하게 항상 후보. 제품의 '현재 사실'. */
     public List<ReviewMatch> searchOfficial(long productId, float[] queryVector, int limit) {
         String vec = toVectorLiteral(queryVector);
         String sql =
-                "SELECT id, product_id, content, is_official, written_at, " +
+                "SELECT review_id, product_id, content, is_official, written_at, " +
                 "       1 - (embedding <=> CAST(? AS vector)) AS sim " +
                 "FROM review_vectors " +
                 "WHERE product_id = ? AND is_official = TRUE " +
@@ -56,13 +68,13 @@ public class ReviewSearchService {
         String vec = toVectorLiteral(queryVector);
         String sql =
                 "WITH scored AS ( " +
-                "  SELECT id, product_id, content, is_official, written_at, " +
+                "  SELECT review_id, product_id, content, is_official, written_at, " +
                 "         1 - (embedding <=> CAST(? AS vector)) AS sim, " +
                 "         POWER(0.5, EXTRACT(EPOCH FROM (now() - written_at)) / (86400.0 * ?)) AS recency " +
                 "  FROM review_vectors " +
                 "  WHERE product_id = ? AND is_official = FALSE AND written_at >= ? " +
                 ") " +
-                "SELECT id, product_id, content, is_official, written_at, sim, recency, " +
+                "SELECT review_id, product_id, content, is_official, written_at, sim, recency, " +
                 "       (? * sim + ? * recency) AS final_score " +
                 "FROM scored " +
                 "ORDER BY final_score DESC " +
@@ -73,7 +85,7 @@ public class ReviewSearchService {
 
     private RowMapper<ReviewMatch> officialRowMapper() {
         return (rs, i) -> new ReviewMatch(
-                rs.getLong("id"),
+                rs.getLong("review_id"),
                 (Long) rs.getObject("product_id"),
                 rs.getString("content"),
                 rs.getBoolean("is_official"),
@@ -85,7 +97,7 @@ public class ReviewSearchService {
 
     private RowMapper<ReviewMatch> reviewRowMapper() {
         return (rs, i) -> new ReviewMatch(
-                rs.getLong("id"),
+                rs.getLong("review_id"),
                 (Long) rs.getObject("product_id"),
                 rs.getString("content"),
                 rs.getBoolean("is_official"),
