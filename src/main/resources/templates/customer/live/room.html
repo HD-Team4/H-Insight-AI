@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/default}">
+<th:block layout:fragment="content">
+    <div class="live-room" th:data-live-session-id="${liveSession.liveSessionId}">
+        <section class="live-stage">
+            <div class="live-video-shell">
+                <div class="live-video-topbar">
+                    <span class="live-status-pill"
+                          th:classappend="${liveSession.status == 'ON_AIR'} ? ' is-onair'"
+                          th:text="${liveStatusLabel}">방송중</span>
+                    <span class="live-viewers">시청자 <strong id="liveViewerCount" th:text="${viewerCount}">0</strong></span>
+                </div>
+                <div class="live-dummy-stream">
+                    <video autoplay muted loop playsinline preload="metadata">
+                        <source th:src="@{/videos/live_demo.mp4}" type="video/mp4">
+                    </video>
+                </div>
+            </div>
+
+            <div class="live-product-strip">
+                <div>
+                    <p th:text="${product.brandName != null and !product.brandName.isBlank()} ? ${product.brandName} : 'H-Insight'">H-Insight</p>
+                    <h1 th:text="${product.productName}">상품명</h1>
+                </div>
+                <a class="live-product-link"
+                   th:href="@{/customer/products/{id}(id=${product.productId})}">상품 보기</a>
+            </div>
+        </section>
+
+        <aside class="live-side">
+            <section class="live-assistant-panel">
+                <div class="live-panel-head">
+                    <h2>라이브 도우미</h2>
+                    <span th:text="${#temporals.format(liveSession.startedAt, 'MM.dd')}">07.04</span>
+                </div>
+                <div class="live-helper-card">
+                    <strong>방송 상태</strong>
+                    <p th:text="${liveStatusLabel}">방송중</p>
+                </div>
+                <div class="live-helper-card">
+                    <strong>현재 상품</strong>
+                    <p th:text="${product.productName}">상품명</p>
+                </div>
+            </section>
+
+            <section class="live-chat-panel">
+                <div class="live-panel-head">
+                    <h2>채팅</h2>
+                    <span>Demo</span>
+                </div>
+                <div class="live-chat-list" id="liveChatList">
+                    <div class="live-chat-message is-host">
+                        <strong>Host</strong>
+                        <span>어서오세요. 오늘 라이브 혜택을 채팅으로 안내드릴게요.</span>
+                    </div>
+                    <div class="live-chat-message">
+                        <strong>Guest</strong>
+                        <span>지금 구매 가능한가요?</span>
+                    </div>
+                </div>
+                <form class="live-chat-form" id="liveChatForm">
+                    <input type="text" id="liveChatInput" placeholder="메시지를 입력하세요" autocomplete="off">
+                    <button type="submit">전송</button>
+                </form>
+            </section>
+        </aside>
+    </div>
+</th:block>
+
+<th:block layout:fragment="script">
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const room = document.querySelector('.live-room');
+            if (!room) return;
+
+            const liveSessionId = room.dataset.liveSessionId;
+            const viewerCount = document.getElementById('liveViewerCount');
+            const chatForm = document.getElementById('liveChatForm');
+            const chatInput = document.getElementById('liveChatInput');
+            const chatList = document.getElementById('liveChatList');
+
+            const updateStatus = async (url, options = {}) => {
+                try {
+                    const response = await fetch(url, options);
+                    if (!response.ok) return;
+                    const data = await response.json();
+                    if (viewerCount && typeof data.viewerCount === 'number') {
+                        viewerCount.textContent = data.viewerCount.toLocaleString('ko-KR');
+                    }
+                } catch (error) {
+                    console.warn('[LIVE] status update failed', error);
+                }
+            };
+
+            updateStatus(`/live/${liveSessionId}/viewers/enter`, { method: 'POST' });
+            const poll = window.setInterval(() => updateStatus(`/live/${liveSessionId}/status`), 3000);
+
+            window.addEventListener('pagehide', () => {
+                window.clearInterval(poll);
+                navigator.sendBeacon(`/live/${liveSessionId}/viewers/leave`, new Blob([], { type: 'application/json' }));
+            });
+
+            chatForm.addEventListener('submit', (event) => {
+                event.preventDefault();
+                const message = chatInput.value.trim();
+                if (!message) return;
+
+                const node = document.createElement('div');
+                node.className = 'live-chat-message is-me';
+                node.innerHTML = '<strong>Me</strong><span></span>';
+                node.querySelector('span').textContent = message;
+                chatList.appendChild(node);
+                chatList.scrollTop = chatList.scrollHeight;
+                chatInput.value = '';
+            });
+        });
+    </script>
+</th:block>
+</html>

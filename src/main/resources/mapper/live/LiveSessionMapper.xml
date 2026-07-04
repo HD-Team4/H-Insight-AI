@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hinsight.live.dao.LiveSessionDao">
+
+    <select id="findAll" resultType="LiveSession">
+        SELECT live_session_id, product_id, status, started_at
+        FROM live_session
+        ORDER BY started_at DESC, live_session_id DESC
+    </select>
+
+    <select id="findById" parameterType="long" resultType="LiveSession">
+        SELECT live_session_id, product_id, status, started_at
+        FROM live_session
+        WHERE live_session_id = #{liveSessionId}
+    </select>
+
+    <select id="findOnAirByProductId" parameterType="long" resultType="LiveSession">
+        SELECT live_session_id, product_id, status, started_at
+        FROM live_session
+        WHERE product_id = #{productId}
+          AND status = 'ON_AIR'
+        ORDER BY started_at DESC, live_session_id DESC
+        LIMIT 1
+    </select>
+
+    <select id="findCurrentOnAir" resultType="LiveSession">
+        SELECT live_session_id, product_id, status, started_at
+        FROM live_session
+        WHERE status = 'ON_AIR'
+        ORDER BY started_at DESC, live_session_id DESC
+        LIMIT 1
+    </select>
+
+    <insert id="insert" parameterType="LiveSession" useGeneratedKeys="true" keyProperty="liveSessionId">
+        INSERT INTO live_session (product_id, status, started_at)
+        VALUES (#{productId}, #{status}, #{startedAt})
+    </insert>
+
+    <update id="update" parameterType="LiveSession">
+        UPDATE live_session
+        SET product_id = #{productId},
+            status = #{status},
+            started_at = #{startedAt}
+        WHERE live_session_id = #{liveSessionId}
+    </update>
+
+    <update id="updateStatus">
+        UPDATE live_session
+        SET status = #{status}
+        WHERE live_session_id = #{liveSessionId}
+    </update>
+
+    <delete id="deleteById" parameterType="long">
+        DELETE FROM live_session
+        WHERE live_session_id = #{liveSessionId}
+    </delete>
+</mapper>
