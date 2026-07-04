@@ -80,3 +80,28 @@ springdoc:
   swagger-ui:
     operations-sorter: method   # HTTP 메서드 순 정렬
     tags-sorter: alpha          # 컨트롤러(태그) 이름 순 정렬
+
+# ==========================================
+# 모니터링 (Actuator + Prometheus)
+#  - 별도 모니터링 EC2의 Prometheus 가 http://<이 서버>:8080/actuator/prometheus 를 스크레이프
+#  - 앱은 호스트에서 실행(컨테이너 아님). 운영에선 보안그룹으로 모니터링 EC2 IP 만 8080 허용 권장
+#  - HikariCP / JVM 힙·GC / 스레드풀 지표는 actuator 추가만으로 자동 수집됨
+# ==========================================
+management:
+  endpoints:
+    web:
+      exposure:
+        include: prometheus,health,metrics   # /actuator/prometheus, /actuator/health, /actuator/metrics 만 노출
+  endpoint:
+    health:
+      show-details: always                    # 내부망 baseline 용. 외부 공개 시 when-authorized 로 낮출 것
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}  # 모든 지표에 application 라벨 부여(대시보드 필터용)
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true             # p95/p99 계산용 히스토그램 버킷 활성화

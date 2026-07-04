@@ -1,0 +1,17 @@
+# Grafana 대시보드 자동 프로비저닝
+# json/ 폴더의 모든 대시보드 JSON 을 부팅 시 자동 로드한다.
+#  - 기성: JVM(Micrometer 4701), Node Exporter Full(1860), cadvisor(14282), Spring Boot 3.x(19004)
+#  - 커스텀: loadtest-baseline.json (부하테스트 한 화면)
+apiVersion: 1
+
+providers:
+  - name: 'H-Insight dashboards'
+    orgId: 1
+    folder: ''                 # 최상위(General) 폴더
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true       # UI 에서 임시 편집 허용(파일이 원본 유지)
+    options:
+      path: /etc/grafana/provisioning/dashboards/json
+      foldersFromFilesStructure: false
