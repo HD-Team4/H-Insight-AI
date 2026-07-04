@@ -1,0 +1,28 @@
+{
+  "name": "activity-s3-datalake",
+  "config": {
+    "connector.class": "io.aiven.kafka.connect.s3.AivenKafkaConnectS3SinkConnector",
+    "topics.regex": "activity\\..*",
+
+    "aws.s3.bucket.name": "hf4-datalake",
+    "aws.s3.region": "ap-northeast-2",
+    "aws.access.key.id": "${AWS_ACCESS_KEY_ID}",
+    "aws.secret.access.key": "${AWS_SECRET_ACCESS_KEY}",
+
+    "format.output.type": "jsonl",
+    "format.output.fields": "value",
+    "format.output.envelope": "false",
+    "file.compression.type": "gzip",
+    "file.max.records": "1",
+
+    "consumer.override.auto.offset.reset": "earliest",
+
+    "file.name.template": "raw/{{topic}}/year={{timestamp:unit=yyyy}}/month={{timestamp:unit=MM}}/day={{timestamp:unit=dd}}/{{topic}}-{{partition}}-{{start_offset}}.gz",
+    "file.name.timestamp.timezone": "Asia/Seoul",
+    "file.name.timestamp.source": "wallclock",
+
+    "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+    "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "value.converter.schemas.enable": "false"
+  }
+}
