@@ -26,6 +26,10 @@ public class CustomerUserDetails implements UserDetails {
         return user.getUserId();
     }
 
+    public String getDisplayName() {
+        return user.getUserName();
+    }
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         // 테이블 = 역할 이므로 상수 부여. (컬럼에서 읽지 않음)
