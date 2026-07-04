@@ -31,36 +31,11 @@
         </section>
 
         <aside class="live-side">
-            <section class="live-assistant-panel">
-                <div class="live-panel-head">
-                    <h2>라이브 도우미</h2>
-                    <span th:text="${#temporals.format(liveSession.startedAt, 'MM.dd')}">07.04</span>
-                </div>
-                <div class="live-helper-card">
-                    <strong>방송 상태</strong>
-                    <p th:text="${liveStatusLabel}">방송중</p>
-                </div>
-                <div class="live-helper-card">
-                    <strong>현재 상품</strong>
-                    <p th:text="${product.productName}">상품명</p>
-                </div>
-            </section>
-
             <section class="live-chat-panel">
                 <div class="live-panel-head">
                     <h2>채팅</h2>
-                    <span>Demo</span>
                 </div>
-                <div class="live-chat-list" id="liveChatList">
-                    <div class="live-chat-message is-host">
-                        <strong>Host</strong>
-                        <span>어서오세요. 오늘 라이브 혜택을 채팅으로 안내드릴게요.</span>
-                    </div>
-                    <div class="live-chat-message">
-                        <strong>Guest</strong>
-                        <span>지금 구매 가능한가요?</span>
-                    </div>
-                </div>
+                <div class="live-chat-list" id="liveChatList"></div>
                 <form class="live-chat-form" id="liveChatForm">
                     <input type="text" id="liveChatInput" placeholder="메시지를 입력하세요" autocomplete="off">
                     <button type="submit">전송</button>
@@ -71,6 +46,8 @@
 </th:block>
 
 <th:block layout:fragment="script">
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.6.1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@7.0.0/bundles/stomp.umd.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const room = document.querySelector('.live-room');
@@ -82,6 +59,7 @@
             const chatInput = document.getElementById('liveChatInput');
             const chatList = document.getElementById('liveChatList');
 
+            // ── 시청자 수 폴링 (기존) ────────────────────────────────
             const updateStatus = async (url, options = {}) => {
                 try {
                     const response = await fetch(url, options);
@@ -98,23 +76,65 @@
             updateStatus(`/live/${liveSessionId}/viewers/enter`, { method: 'POST' });
             const poll = window.setInterval(() => updateStatus(`/live/${liveSessionId}/status`), 3000);
 
-            window.addEventListener('pagehide', () => {
-                window.clearInterval(poll);
-                navigator.sendBeacon(`/live/${liveSessionId}/viewers/leave`, new Blob([], { type: 'application/json' }));
+            // ── N:N 실시간 채팅 (STOMP 브로드캐스트) ──────────────────
+            let myId = null; // 서버가 준 내 유일 id (표시명이 아니라 id 로 is-me 판정)
+
+            const appendMessage = (msg) => {
+                const node = document.createElement('div');
+                node.className = 'live-chat-message';
+                if (msg.senderId && msg.senderId === myId) {
+                    node.classList.add('is-me');
+                }
+                const who = document.createElement('strong');
+                who.textContent = msg.sender || '게스트';
+                const body = document.createElement('span');
+                body.textContent = msg.message;
+                node.append(who, body);
+                chatList.appendChild(node);
+                chatList.scrollTop = chatList.scrollHeight;
+            };
+
+            const loadHistory = async () => {
+                try {
+                    const response = await fetch(`/live/${liveSessionId}/chat/history`);
+                    if (!response.ok) return;
+                    const history = await response.json();
+                    history.forEach(appendMessage); // 서버가 오래된 순으로 내려줌
+                } catch (error) {
+                    console.warn('[LIVE] chat history load failed', error);
+                }
+            };
+
+            const stompClient = new StompJs.Client({
+                webSocketFactory: () => new SockJS('/ws-live'),
+                reconnectDelay: 3000,
+                onConnect: async (frame) => {
+                    // 서버가 정한 유일 id (user-name 헤더에 실려 옴)
+                    myId = frame.headers['user-name'] || null;
+                    await loadHistory();
+                    stompClient.subscribe(`/topic/live/${liveSessionId}`, (message) => {
+                        appendMessage(JSON.parse(message.body));
+                    });
+                },
+                onStompError: (frame) => console.warn('[LIVE] stomp error', frame.headers['message']),
             });
+            stompClient.activate();
 
             chatForm.addEventListener('submit', (event) => {
                 event.preventDefault();
                 const message = chatInput.value.trim();
-                if (!message) return;
-
-                const node = document.createElement('div');
-                node.className = 'live-chat-message is-me';
-                node.innerHTML = '<strong>Me</strong><span></span>';
-                node.querySelector('span').textContent = message;
-                chatList.appendChild(node);
-                chatList.scrollTop = chatList.scrollHeight;
+                if (!message || !stompClient.connected) return;
+                stompClient.publish({
+                    destination: `/app/live/${liveSessionId}/chat`,
+                    body: JSON.stringify({ message }),
+                });
                 chatInput.value = '';
+            });
+
+            window.addEventListener('pagehide', () => {
+                window.clearInterval(poll);
+                stompClient.deactivate();
+                navigator.sendBeacon(`/live/${liveSessionId}/viewers/leave`, new Blob([], { type: 'application/json' }));
             });
         });
     </script>
