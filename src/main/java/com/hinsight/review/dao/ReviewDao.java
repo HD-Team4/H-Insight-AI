@@ -16,4 +16,8 @@ public interface ReviewDao {
     long countByProductId(Long productId);
 
     Double findAverageRatingByProductId(Long productId);
+
+    /** 임베딩 적재용 배치 조회 (review_id keyset 페이징). content 가 있는 리뷰만. */
+    List<ReviewDto> findBatchForEmbedding(@Param("lastId") long lastId,
+                                          @Param("limit") int limit);
 }
