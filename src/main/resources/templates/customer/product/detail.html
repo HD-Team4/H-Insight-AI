@@ -5,6 +5,17 @@
       layout:decorate="~{layout/default}">
 <th:block layout:fragment="content">
     <div class="product-detail-page container">
+        <a class="live-entry-banner live-entry-banner-detail"
+           th:if="${onAirLiveSession != null}"
+           th:href="@{/live/{id}(id=${onAirLiveSession.liveSessionId})}">
+            <div>
+                <span>LIVE</span>
+                <strong>이 상품은 지금 라이브 방송중입니다</strong>
+                <p>방송 화면에서 실시간 혜택과 채팅을 확인하세요.</p>
+            </div>
+            <em>라이브 보기</em>
+        </a>
+
         <section class="product-detail-hero">
             <aside class="product-thumbnails" aria-label="상품 이미지 목록">
                 <button class="product-thumb is-active" type="button">

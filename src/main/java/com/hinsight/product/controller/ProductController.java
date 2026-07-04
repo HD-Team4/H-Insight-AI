@@ -6,6 +6,7 @@ import com.hinsight.product.service.ProductService;
 import com.hinsight.product.support.ProductInfoFormatter;
 import com.hinsight.review.service.ReviewService;
 import com.hinsight.security.userdetails.CustomerUserDetails;
+import com.hinsight.live.service.LiveSessionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,7 @@ public class ProductController {
     private final ProductService productService;
     private final ProductInfoFormatter productInfoFormatter;
     private final ReviewService reviewService;
+    private final LiveSessionService liveSessionService;
 
     @Operation(summary = "상품 목록 조회", description = "검색 조건으로 상품 목록 페이지를 렌더링한다. 오타 교정(did-you-mean) 안내 포함")
     @GetMapping
@@ -40,6 +42,7 @@ public class ProductController {
         model.addAttribute("searchResult", result); // 오타 교정(did-you-mean) 안내용
         model.addAttribute("condition", condition);
         model.addAttribute("priceRange", productService.getPriceRange());
+        model.addAttribute("onAirLiveSession", liveSessionService.getCurrentOnAirSession());
         return "customer/product/list";
     }
 
@@ -71,6 +74,7 @@ public class ProductController {
         model.addAttribute("reviewCount", reviewPage.totalElements());
         model.addAttribute("reviewAverageRating", reviewAverageRating);
         model.addAttribute("reviewAverageRatingStars", reviewService.toRatingStars(reviewAverageRating));
+        model.addAttribute("onAirLiveSession", liveSessionService.getOnAirSessionByProductId(id));
         return "customer/product/detail";
     }
 }
