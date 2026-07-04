@@ -15,6 +15,10 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <style>
+        .biz-nav { display:flex; gap:4px; margin-left:28px; }
+        .biz-nav a { padding:8px 14px; border-radius:8px; font-size:14px; font-weight:600; color:var(--text-sub); text-decoration:none; }
+        .biz-nav a.active { color:var(--primary); background:rgba(0,137,130,.08); }
+
         .dash-head { display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:16px; margin-top:8px; }
         .period-tabs { display:flex; gap:6px; background:var(--bg-light); border:1px solid var(--border); border-radius:10px; padding:4px; }
         .period-tabs button { border:none; background:none; padding:8px 18px; border-radius:7px; font-size:14px; font-weight:600; color:var(--text-sub); cursor:pointer; }
@@ -63,7 +67,13 @@
 <div class="top-bar"></div>
 <header class="container">
     <div class="header-main">
-        <a th:href="@{/biz/dashboard}" class="logo">H-Insight <span style="color: var(--accent);">Biz</span></a>
+        <div style="display:flex; align-items:center;">
+            <a th:href="@{/biz/dashboard}" class="logo">H-Insight <span style="color: var(--accent);">Biz</span></a>
+            <nav class="biz-nav">
+                <a th:href="@{/biz/dashboard}" class="active">대시보드</a>
+                <a th:href="@{/biz/review-analysis}">상품 분석</a>
+            </nav>
+        </div>
         <div class="header-utils">
             <span><span sec:authentication="name">기업</span> 님</span>
             <form th:action="@{/biz/logout}" method="post" style="display:inline; margin:0;">
