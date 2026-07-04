@@ -56,7 +56,7 @@ def fetch_reviews():
         charset="utf8mb4", cursorclass=pymysql.cursors.DictCursor, connect_timeout=10)
     try:
         with conn.cursor() as cur:
-            cur.execute("SELECT review_id, product_id, sentiment, content FROM reviews "
+            cur.execute("SELECT review_id, product_id, sentiment, rating, content FROM reviews "
                         "WHERE content IS NOT NULL ORDER BY product_id, review_id")
             reviews = cur.fetchall()
             cur.execute("SELECT product_id, product_name FROM products")
@@ -81,7 +81,8 @@ def lambda_handler(event, context):
         return "긍정" if p["label"] == "1" else "부정"
 
     correct = 0
-    by_pid = defaultdict(lambda: {"sent": Counter(), "asp": Counter(), "neg_asp": Counter(), "n": 0})
+    by_pid = defaultdict(lambda: {"sent": Counter(), "asp": Counter(), "neg_asp": Counter(),
+                                  "n": 0, "rsum": 0.0, "rcnt": 0})
     for r, p in zip(reviews, preds):
         judged = to3(p)
         if judged == r["sentiment"]:
@@ -89,6 +90,8 @@ def lambda_handler(event, context):
         b = by_pid[r["product_id"]]
         b["sent"][judged] += 1
         b["n"] += 1
+        if r["rating"] is not None:
+            b["rsum"] += r["rating"]; b["rcnt"] += 1
         asp = match_aspects(r["content"])
         b["asp"].update(asp)
         if judged == "부정":
@@ -107,6 +110,7 @@ def lambda_handler(event, context):
                 "negative": round(100 * b["sent"]["부정"] / n)},
             "keywords": [a for a, _ in b["asp"].most_common(6)],
             "painPoints": [a for a, _ in b["neg_asp"].most_common(4)],
+            "avgRating": round(b["rsum"] / b["rcnt"], 1) if b["rcnt"] else None,
         })
 
     tot = Counter()
