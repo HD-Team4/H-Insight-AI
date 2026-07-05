@@ -406,7 +406,11 @@
                     const response = await fetch(`/live/${liveSessionId}/chat/history`);
                     if (!response.ok) return;
                     const history = await response.json();
-                    history.forEach(appendMessage);
+
+                    history.forEach((msg) => {
+                        if (msg.type === 'BOT') return;
+                        appendMessage(msg);
+                    });
                 } catch (error) {
                     console.warn('[LIVE] chat history load failed', error);
                 }
