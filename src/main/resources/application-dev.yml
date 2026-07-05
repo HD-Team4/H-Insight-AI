@@ -13,5 +13,5 @@ spring:
 
 logging:
   level:
-    com.hinsight: debug
-    org.mybatis: debug
+    com.hinsight: INFO
+    org.mybatis: INFO
