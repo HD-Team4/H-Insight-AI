@@ -7,7 +7,7 @@
     <div class="container">
 
         <section class="live-main-preview"
-                 th:if="${onAirLiveSessions != null and !#lists.isEmpty(onAirLiveSessions)}">
+                 th:if="${showLiveBroadcast and onAirLiveSessions != null and !#lists.isEmpty(onAirLiveSessions)}">
             <div class="live-main-head">
                 <div>
                     <span>방송 진행 중</span>
