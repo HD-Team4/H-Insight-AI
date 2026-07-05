@@ -18,6 +18,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.util.Collections;
+
 @Tag(name = "product-controller", description = "상품 뷰 컨트롤러")
 @Controller
 @RequiredArgsConstructor
@@ -42,8 +44,12 @@ public class ProductController {
         model.addAttribute("searchResult", result); // 오타 교정(did-you-mean) 안내용
         model.addAttribute("condition", condition);
         model.addAttribute("priceRange", productService.getPriceRange());
-        model.addAttribute("onAirLiveSessions", liveSessionService.getOnAirSessions());
-        model.addAttribute("onAirProductIds", liveSessionService.getOnAirProductIds());
+        boolean showLiveBroadcast = isAllCategory(condition);
+        model.addAttribute("showLiveBroadcast", showLiveBroadcast);
+        model.addAttribute("onAirLiveSessions",
+                showLiveBroadcast ? liveSessionService.getOnAirSessions() : Collections.emptyList());
+        model.addAttribute("onAirProductIds",
+                showLiveBroadcast ? liveSessionService.getOnAirProductIds() : Collections.emptyList());
         return "customer/product/list";
     }
 
@@ -55,8 +61,16 @@ public class ProductController {
     public String productItems(ProductSearchCondition condition, Model model) {
         ProductSearchResult result = productService.searchProducts(condition);
         model.addAttribute("products", result.products());
-        model.addAttribute("onAirProductIds", liveSessionService.getOnAirProductIds());
+        boolean showLiveBroadcast = isAllCategory(condition);
+        model.addAttribute("showLiveBroadcast", showLiveBroadcast);
+        model.addAttribute("onAirProductIds",
+                showLiveBroadcast ? liveSessionService.getOnAirProductIds() : Collections.emptyList());
         return "customer/product/fragments/product-cards :: cards";
+    }
+
+    private boolean isAllCategory(ProductSearchCondition condition) {
+        return condition.categoryGroup() == null
+                && (condition.keyword() == null || condition.keyword().isBlank());
     }
 
 

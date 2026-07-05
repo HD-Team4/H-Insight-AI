@@ -10,8 +10,8 @@ S3 버킷에 MP4 5개를 업로드한다.
 
 ```text
 live/windbreaker.mp4
-live/onepiece.mp4
-live/sneakers.mp4
+live/slacks.mp4
+live/t-shirt.mp4
 live/cardigan.mp4
 live/bag.mp4
 ```
@@ -22,8 +22,8 @@ DB의 `live_session.video_url`을 CloudFront URL로 변경한다.
 
 ```text
 https://dxxxxx.cloudfront.net/live/windbreaker.mp4
-https://dxxxxx.cloudfront.net/live/onepiece.mp4
-https://dxxxxx.cloudfront.net/live/sneakers.mp4
+https://dxxxxx.cloudfront.net/live/slacks.mp4
+https://dxxxxx.cloudfront.net/live/t-shirt.mp4
 https://dxxxxx.cloudfront.net/live/cardigan.mp4
 https://dxxxxx.cloudfront.net/live/bag.mp4
 ```

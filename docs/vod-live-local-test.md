@@ -6,8 +6,8 @@
 
 ```text
 src/main/resources/static/videos/live/windbreaker.mp4
-src/main/resources/static/videos/live/onepiece.mp4
-src/main/resources/static/videos/live/sneakers.mp4
+src/main/resources/static/videos/live/slacks.mp4
+src/main/resources/static/videos/live/t-shirt.mp4
 src/main/resources/static/videos/live/cardigan.mp4
 src/main/resources/static/videos/live/bag.mp4
 ```
@@ -16,8 +16,8 @@ Spring Boot 정적 리소스 경로 기준으로 브라우저에서는 다음 UR
 
 ```text
 /videos/live/windbreaker.mp4
-/videos/live/onepiece.mp4
-/videos/live/sneakers.mp4
+/videos/live/slacks.mp4
+/videos/live/t-shirt.mp4
 /videos/live/cardigan.mp4
 /videos/live/bag.mp4
 ```
