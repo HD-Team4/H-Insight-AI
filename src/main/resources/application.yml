@@ -10,6 +10,11 @@ spring:
     cache: true
     prefix: classpath:/templates/
     suffix: .html
+  # 정적 리소스 핸들러 체인 캐시 — jar 내부 리소스 URL 반복 해석(CPU 병목) 방지용 CachingResourceResolver 등록
+  web:
+    resources:
+      chain:
+        enabled: true
   ai:
     google:
       genai:
@@ -51,6 +56,13 @@ server:
 product:
   list:
     page-size: 20
+
+# 정적 리소스(CSS/JS/영상 mp4) 오프로드 대상 CDN(CloudFront) 도메인
+#  - S3(hf4-s3)의 static/ 경로를 오리진으로 서빙. 템플릿은 이 설정값을 참조(하드코딩 금지)
+#  - 로컬/다른 환경에선 CDN_URL 로 오버라이드 가능
+app:
+  cdn:
+    url: ${CDN_URL:https://d3czavkc472er9.cloudfront.net}
 
 # Ollama (BGE-M3 임베딩 서버) — 상품추천 챗봇 쿼리 임베딩
 ollama:

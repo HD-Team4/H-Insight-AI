@@ -172,7 +172,7 @@
                 <div class="live-dummy-stream"
                      th:with="cacheVersion=${liveSession.cacheVersion != null ? liveSession.cacheVersion : 1}">
                     <video autoplay muted loop playsinline preload="metadata" controls>
-                        <source th:src="${liveSession.videoUrl != null and !#strings.isEmpty(#strings.trim(liveSession.videoUrl))} ? ${liveSession.videoUrl + '?v=' + cacheVersion} : @{/videos/live/windbreaker.mp4}"
+                        <source th:src="${liveSession.videoUrl != null and !#strings.isEmpty(#strings.trim(liveSession.videoUrl))} ? ${liveSession.videoUrl + '?v=' + cacheVersion} : ${@environment.getProperty('app.cdn.url') + '/static/videos/live/windbreaker.mp4'}"
                                 type="video/mp4">
                     </video>
                 </div>
