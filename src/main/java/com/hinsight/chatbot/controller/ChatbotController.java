@@ -6,6 +6,7 @@ import com.hinsight.chatbot.service.ChatbotService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.codec.ServerSentEvent;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -31,6 +32,7 @@ public class ChatbotController {
     private final ChatbotService chatbotService;
 
     // 챗봇 페이지
+    @Operation(summary = "챗봇 페이지", description = "상품추천 챗봇 화면을 렌더링한다")
     @GetMapping
     public String chatPage() {
         return "customer/chatbot/chat";
@@ -40,6 +42,7 @@ public class ChatbotController {
      * 질문 → 추천 (SSE 스트리밍).
      * 이벤트: head(ChatbotHead JSON) → delta({"t":토큰}) 여러 개 → done({}).
      */
+    @Operation(summary = "챗봇 질의 (SSE)", description = "질문 → 추천을 SSE로 스트리밍: head(조건+상품) → delta(토큰) → done")
     @ResponseBody
     @PostMapping(value = "/ask", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<ServerSentEvent<Object>> ask(@RequestBody AskRequest request) {
