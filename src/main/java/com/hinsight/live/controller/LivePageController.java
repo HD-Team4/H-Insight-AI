@@ -26,6 +26,9 @@ public class LivePageController {
         if (liveSession == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
+        if (!LiveSessionService.STATUS_ON_AIR.equals(liveSession.getStatus())) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
 
         model.addAttribute("liveSession", liveSession);
         model.addAttribute("liveStatusLabel", liveSessionService.toDisplayStatus(liveSession.getStatus()));

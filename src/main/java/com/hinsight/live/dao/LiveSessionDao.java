@@ -15,7 +15,9 @@ public interface LiveSessionDao {
 
     LiveSession findOnAirByProductId(Long productId);
 
-    LiveSession findCurrentOnAir();
+    List<LiveSession> findOnAir();
+
+    List<Long> findOnAirProductIds();
 
     int insert(LiveSession liveSession);
 
