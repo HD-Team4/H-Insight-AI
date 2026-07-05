@@ -1438,6 +1438,133 @@ footer::before {
     font-size: 14px;
 }
 
+.detail-review-flash {
+    border-radius: 8px;
+    padding: 13px 16px;
+    margin-bottom: 16px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.detail-review-flash.is-success {
+    background: #E8F6F4;
+    color: #00695F;
+    border: 1px solid #A6DED7;
+}
+
+.detail-review-flash.is-error {
+    background: #FDECEA;
+    color: #B23B34;
+    border: 1px solid #F3C6C1;
+}
+
+.detail-review-form {
+    border: 1px solid #D2D2D7;
+    border-radius: 8px;
+    padding: 22px 24px;
+    margin-bottom: 20px;
+    background: #FBFBFD;
+}
+
+.detail-review-form-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.detail-review-form-label {
+    color: #1D1D1F;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.detail-review-stars {
+    display: inline-flex;
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+    gap: 2px;
+}
+
+.detail-review-stars input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.detail-review-stars label {
+    color: #D2D2D7;
+    cursor: pointer;
+    font-size: 26px;
+    line-height: 1;
+    transition: color 0.12s ease;
+}
+
+.detail-review-stars label:hover,
+.detail-review-stars label:hover ~ label,
+.detail-review-stars input:checked ~ label {
+    color: #FFB400;
+}
+
+.detail-review-form-textarea {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid #D2D2D7;
+    border-radius: 8px;
+    padding: 14px 16px;
+    color: #1D1D1F;
+    font: inherit;
+    font-size: 15px;
+    line-height: 1.7;
+    min-height: 96px;
+    resize: vertical;
+}
+
+.detail-review-form-textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(0, 137, 130, 0.12);
+}
+
+.detail-review-form-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 12px;
+}
+
+.detail-review-form-submit {
+    border: 1px solid var(--primary);
+    border-radius: 8px;
+    background: var(--primary);
+    color: #FFFFFF;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 800;
+    padding: 11px 28px;
+    transition: opacity 0.12s ease;
+}
+
+.detail-review-form-submit:hover {
+    opacity: 0.9;
+}
+
+.detail-review-login-prompt {
+    border: 1px dashed #D2D2D7;
+    border-radius: 8px;
+    color: #6E6E73;
+    font-size: 14px;
+    margin-bottom: 20px;
+    padding: 18px;
+    text-align: center;
+}
+
+.detail-review-login-prompt a {
+    color: var(--primary);
+    font-weight: 700;
+}
+
 .detail-review-list {
     display: grid;
     gap: 14px;
