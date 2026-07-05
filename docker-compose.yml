@@ -106,8 +106,8 @@ services:
     build:
       context: ./docker/elasticsearch
       args:
-        ES_VERSION: 8.15.3
-    image: hinsight/elasticsearch-nori:8.15.3
+        ES_VERSION: 8.18.1
+    image: hinsight/elasticsearch-nori:8.18.1
     container_name: hinsight-es
     restart: unless-stopped                 # EC2 재부팅/크래시 시 자동 복구 (로컬에도 무해)
     environment:

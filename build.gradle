@@ -21,8 +21,8 @@ configurations {
 
 ext {
     set('springAiVersion', '1.1.7')
+    set('elasticsearch.version', '8.18.1')
 }
-
 dependencyManagement {
     imports {
         mavenBom "org.springframework.ai:spring-ai-bom:${springAiVersion}"
