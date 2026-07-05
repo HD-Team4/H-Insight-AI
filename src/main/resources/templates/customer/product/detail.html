@@ -156,7 +156,7 @@
             <p class="detail-review-flash is-success" th:if="${reviewMessage}" th:text="${reviewMessage}"></p>
             <p class="detail-review-flash is-error" th:if="${reviewError}" th:text="${reviewError}"></p>
 
-            <form class="detail-review-form" sec:authorize="isAuthenticated()" th:if="${canWriteReview}"
+            <form id="writeReview" class="detail-review-form" sec:authorize="isAuthenticated()" th:if="${canWriteReview}"
                   th:action="@{/customer/reviews}" method="post">
                 <input type="hidden" name="productId" th:value="${product.productId}"/>
                 <div class="detail-review-form-top">

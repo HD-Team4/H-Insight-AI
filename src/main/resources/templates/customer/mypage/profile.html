@@ -58,7 +58,10 @@
         /* 최근 구매 상품 목록 */
         .mypage-purchase-list { display: flex; flex-direction: column; gap: 4px; }
         .mypage-purchase-item + .mypage-purchase-item { border-top: 1px solid var(--border); }
+        .mypage-purchase-item { display: flex; align-items: center; gap: 8px; }
         .mypage-purchase-link {
+            flex: 1;
+            min-width: 0;
             display: flex;
             align-items: center;
             gap: 16px;
@@ -68,6 +71,21 @@
             color: inherit;
             transition: background 0.15s;
         }
+        .mypage-review-btn {
+            flex-shrink: 0;
+            margin-right: 8px;
+            padding: 8px 15px;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            background: #fff;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 700;
+            text-decoration: none;
+            white-space: nowrap;
+            transition: background 0.15s, color 0.15s;
+        }
+        .mypage-review-btn:hover { background: var(--primary); color: #fff; }
         .mypage-purchase-link:hover { background: var(--bg-light); }
         .mypage-purchase-img {
             width: 56px;
@@ -263,6 +281,8 @@
                             </div>
                         </div>
                     </a>
+                    <a class="mypage-review-btn"
+                       th:href="@{/customer/products/{id}(id=${item.productId()})} + '#writeReview'">리뷰 작성</a>
                 </li>
             </ul>
         </section>
