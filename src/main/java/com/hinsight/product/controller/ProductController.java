@@ -42,7 +42,8 @@ public class ProductController {
         model.addAttribute("searchResult", result); // 오타 교정(did-you-mean) 안내용
         model.addAttribute("condition", condition);
         model.addAttribute("priceRange", productService.getPriceRange());
-        model.addAttribute("onAirLiveSession", liveSessionService.getCurrentOnAirSession());
+        model.addAttribute("onAirLiveSessions", liveSessionService.getOnAirSessions());
+        model.addAttribute("onAirProductIds", liveSessionService.getOnAirProductIds());
         return "customer/product/list";
     }
 
@@ -54,6 +55,7 @@ public class ProductController {
     public String productItems(ProductSearchCondition condition, Model model) {
         ProductSearchResult result = productService.searchProducts(condition);
         model.addAttribute("products", result.products());
+        model.addAttribute("onAirProductIds", liveSessionService.getOnAirProductIds());
         return "customer/product/fragments/product-cards :: cards";
     }
 

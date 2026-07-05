@@ -16,8 +16,8 @@ class HInsightAiApplicationTest {
     }
 
     @Test
-    void aiSecretConfigUsesGeminiApiKey() throws Exception {
-        String config = Files.readString(Path.of("src/main/resources/application-secret.yml"));
+    void applicationConfigUsesGeminiApiKeyEnvironmentVariable() throws Exception {
+        String config = Files.readString(Path.of("src/main/resources/application.yml"));
 
         assertTrue(config.contains("google:"));
         assertTrue(config.contains("genai:"));

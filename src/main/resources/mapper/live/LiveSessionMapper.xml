@@ -3,20 +3,44 @@
         "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.hinsight.live.dao.LiveSessionDao">
 
+    <sql id="liveSessionColumns">
+        live_session_id AS liveSessionId,
+        product_id AS productId,
+        live_title AS liveTitle,
+        video_url AS videoUrl,
+        thumbnail_url AS thumbnailUrl,
+        live_message AS liveMessage,
+        cache_version AS cacheVersion,
+        status,
+        started_at AS startedAt
+    </sql>
+
+    <sql id="liveSessionColumnsWithAlias">
+        ${alias}.live_session_id AS liveSessionId,
+        ${alias}.product_id AS productId,
+        ${alias}.live_title AS liveTitle,
+        ${alias}.video_url AS videoUrl,
+        ${alias}.thumbnail_url AS thumbnailUrl,
+        ${alias}.live_message AS liveMessage,
+        ${alias}.cache_version AS cacheVersion,
+        ${alias}.status,
+        ${alias}.started_at AS startedAt
+    </sql>
+
     <select id="findAll" resultType="LiveSession">
-        SELECT live_session_id, product_id, status, started_at
+        SELECT <include refid="liveSessionColumns"/>
         FROM live_session
         ORDER BY started_at DESC, live_session_id DESC
     </select>
 
     <select id="findById" parameterType="long" resultType="LiveSession">
-        SELECT live_session_id, product_id, status, started_at
+        SELECT <include refid="liveSessionColumns"/>
         FROM live_session
         WHERE live_session_id = #{liveSessionId}
     </select>
 
     <select id="findOnAirByProductId" parameterType="long" resultType="LiveSession">
-        SELECT live_session_id, product_id, status, started_at
+        SELECT <include refid="liveSessionColumns"/>
         FROM live_session
         WHERE product_id = #{productId}
           AND status = 'ON_AIR'
@@ -24,22 +48,59 @@
         LIMIT 1
     </select>
 
-    <select id="findCurrentOnAir" resultType="LiveSession">
-        SELECT live_session_id, product_id, status, started_at
+    <select id="findOnAir" resultType="LiveSession">
+        SELECT <include refid="liveSessionColumnsWithAlias">
+                   <property name="alias" value="ls"/>
+               </include>
+        FROM live_session ls
+        INNER JOIN (
+            SELECT product_id, MAX(live_session_id) AS live_session_id
+            FROM live_session
+            WHERE status = 'ON_AIR'
+            GROUP BY product_id
+        ) latest
+            ON latest.live_session_id = ls.live_session_id
+        ORDER BY ls.product_id ASC
+    </select>
+
+    <select id="findOnAirProductIds" resultType="long">
+        SELECT DISTINCT product_id
         FROM live_session
         WHERE status = 'ON_AIR'
-        ORDER BY started_at DESC, live_session_id DESC
-        LIMIT 1
+        ORDER BY product_id ASC
     </select>
 
     <insert id="insert" parameterType="LiveSession" useGeneratedKeys="true" keyProperty="liveSessionId">
-        INSERT INTO live_session (product_id, status, started_at)
-        VALUES (#{productId}, #{status}, #{startedAt})
+        INSERT INTO live_session (
+            product_id,
+            live_title,
+            video_url,
+            thumbnail_url,
+            live_message,
+            cache_version,
+            status,
+            started_at
+        )
+        VALUES (
+            #{productId},
+            #{liveTitle},
+            #{videoUrl},
+            #{thumbnailUrl},
+            #{liveMessage},
+            #{cacheVersion},
+            #{status},
+            #{startedAt}
+        )
     </insert>
 
     <update id="update" parameterType="LiveSession">
         UPDATE live_session
         SET product_id = #{productId},
+            live_title = #{liveTitle},
+            video_url = #{videoUrl},
+            thumbnail_url = #{thumbnailUrl},
+            live_message = #{liveMessage},
+            cache_version = #{cacheVersion},
             status = #{status},
             started_at = #{startedAt}
         WHERE live_session_id = #{liveSessionId}

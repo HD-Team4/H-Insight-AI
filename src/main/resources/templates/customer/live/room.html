@@ -13,9 +13,11 @@
                           th:text="${liveStatusLabel}">방송중</span>
                     <span class="live-viewers">시청자 <strong id="liveViewerCount" th:text="${viewerCount}">0</strong></span>
                 </div>
-                <div class="live-dummy-stream">
-                    <video autoplay muted loop playsinline preload="metadata">
-                        <source th:src="@{/videos/live_demo.mp4}" type="video/mp4">
+                <div class="live-dummy-stream"
+                     th:with="cacheVersion=${liveSession.cacheVersion != null ? liveSession.cacheVersion : 1}">
+                    <video autoplay muted loop playsinline preload="metadata" controls>
+                        <source th:src="${liveSession.videoUrl != null and !#strings.isEmpty(#strings.trim(liveSession.videoUrl))} ? ${liveSession.videoUrl + '?v=' + cacheVersion} : @{/videos/live/windbreaker.mp4}"
+                                type="video/mp4">
                     </video>
                 </div>
             </div>
@@ -23,7 +25,11 @@
             <div class="live-product-strip">
                 <div>
                     <p th:text="${product.brandName != null and !product.brandName.isBlank()} ? ${product.brandName} : 'H-Insight'">H-Insight</p>
-                    <h1 th:text="${product.productName}">상품명</h1>
+                    <h1 th:text="${liveSession.liveTitle != null and !liveSession.liveTitle.isBlank()} ? ${liveSession.liveTitle} : ${product.productName}">라이브 제목</h1>
+                    <strong class="live-product-name" th:text="${product.productName}">상품명</strong>
+                    <span class="live-message"
+                          th:if="${liveSession.liveMessage != null and !liveSession.liveMessage.isBlank()}"
+                          th:text="${liveSession.liveMessage}">라이브 소개 문구</span>
                 </div>
                 <a class="live-product-link"
                    th:href="@{/customer/products/{id}(id=${product.productId})}">상품 보기</a>
@@ -59,7 +65,6 @@
             const chatInput = document.getElementById('liveChatInput');
             const chatList = document.getElementById('liveChatList');
 
-            // ── 시청자 수 폴링 (기존) ────────────────────────────────
             const updateStatus = async (url, options = {}) => {
                 try {
                     const response = await fetch(url, options);
@@ -76,8 +81,7 @@
             updateStatus(`/live/${liveSessionId}/viewers/enter`, { method: 'POST' });
             const poll = window.setInterval(() => updateStatus(`/live/${liveSessionId}/status`), 3000);
 
-            // ── N:N 실시간 채팅 (STOMP 브로드캐스트) ──────────────────
-            let myId = null; // 서버가 준 내 유일 id (표시명이 아니라 id 로 is-me 판정)
+            let myId = null;
 
             const appendMessage = (msg) => {
                 const node = document.createElement('div');
@@ -99,7 +103,7 @@
                     const response = await fetch(`/live/${liveSessionId}/chat/history`);
                     if (!response.ok) return;
                     const history = await response.json();
-                    history.forEach(appendMessage); // 서버가 오래된 순으로 내려줌
+                    history.forEach(appendMessage);
                 } catch (error) {
                     console.warn('[LIVE] chat history load failed', error);
                 }
@@ -109,7 +113,6 @@
                 webSocketFactory: () => new SockJS('/ws-live'),
                 reconnectDelay: 3000,
                 onConnect: async (frame) => {
-                    // 서버가 정한 유일 id (user-name 헤더에 실려 옴)
                     myId = frame.headers['user-name'] || null;
                     await loadHistory();
                     stompClient.subscribe(`/topic/live/${liveSessionId}`, (message) => {

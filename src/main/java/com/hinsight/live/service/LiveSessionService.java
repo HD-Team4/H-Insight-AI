@@ -32,8 +32,12 @@ public class LiveSessionService {
         return liveSessionDao.findOnAirByProductId(productId);
     }
 
-    public LiveSession getCurrentOnAirSession() {
-        return liveSessionDao.findCurrentOnAir();
+    public List<LiveSession> getOnAirSessions() {
+        return liveSessionDao.findOnAir();
+    }
+
+    public List<Long> getOnAirProductIds() {
+        return liveSessionDao.findOnAirProductIds();
     }
 
     @Transactional
@@ -73,6 +77,11 @@ public class LiveSessionService {
         LiveSession liveSession = new LiveSession();
         liveSession.setLiveSessionId(liveSessionId);
         liveSession.setProductId(request.productId());
+        liveSession.setLiveTitle(request.liveTitle());
+        liveSession.setVideoUrl(request.videoUrl());
+        liveSession.setThumbnailUrl(request.thumbnailUrl());
+        liveSession.setLiveMessage(request.liveMessage());
+        liveSession.setCacheVersion(request.cacheVersion() == null ? 1L : request.cacheVersion());
         liveSession.setStatus(normalizeStatus(request.status()));
         liveSession.setStartedAt(request.startedAt() == null ? LocalDateTime.now() : request.startedAt());
         return liveSession;

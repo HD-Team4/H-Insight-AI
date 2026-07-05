@@ -6,30 +6,46 @@
 <th:block layout:fragment="content">
     <div class="container">
 
-        <section class="live-main-preview" th:if="${onAirLiveSession != null}">
-            <a class="live-main-video"
-               th:href="@{/live/{id}(id=${onAirLiveSession.liveSessionId})}"
-               aria-label="라이브 방송 입장">
-                <video autoplay muted loop playsinline preload="metadata">
-                    <source th:src="@{/videos/live_demo.mp4}" type="video/mp4">
-                </video>
-            </a>
-            <aside class="live-main-info">
-                <span>방송 진행 중</span>
-                <h2>8 Seconds 오늘의 라이브 특가</h2>
-                <p>녹화방송으로 상품 핏과 디테일을 확인하고, 라이브 채팅방에서 실시간으로 참여하세요.</p>
-                <dl>
-                    <div>
-                        <dt>혜택</dt>
-                        <dd>오늘 방송 전용 특가</dd>
-                    </div>
-                    <div>
-                        <dt>참여</dt>
-                        <dd>참여하신 모든 분께 쿠폰 제공</dd>
-                    </div>
-                </dl>
-                <a th:href="@{/live/{id}(id=${onAirLiveSession.liveSessionId})}">방송 보러가기</a>
-            </aside>
+        <section class="live-main-preview"
+                 th:if="${onAirLiveSessions != null and !#lists.isEmpty(onAirLiveSessions)}">
+            <div class="live-main-head">
+                <div>
+                    <span>방송 진행 중</span>
+                    <h2>지금 진행 중인 VOD 라이브</h2>
+                </div>
+            </div>
+
+            <div class="live-main-carousel" id="liveMainCarousel">
+                <div class="live-main-grid">
+                    <article class="live-main-card"
+                             th:each="live : ${onAirLiveSessions}">
+                        <a class="live-main-video"
+                           th:href="@{/live/{id}(id=${live.liveSessionId})}"
+                           aria-label="라이브 방송 입장">
+                            <video autoplay muted loop playsinline preload="metadata"
+                                   th:with="cacheVersion=${live.cacheVersion != null ? live.cacheVersion : 1}">
+                                <source th:src="${live.videoUrl != null and !#strings.isEmpty(#strings.trim(live.videoUrl))} ? ${live.videoUrl + '?v=' + cacheVersion} : @{/videos/live/windbreaker.mp4}"
+                                        type="video/mp4">
+                            </video>
+                        </a>
+                        <div class="live-main-info">
+                            <div class="live-main-meta">
+                                <span>ON AIR</span>
+                            </div>
+                            <h3 th:text="${live.liveTitle}">라이브 제목</h3>
+                            <p th:if="${live.liveMessage != null and !live.liveMessage.isBlank()}"
+                               th:text="${live.liveMessage}">라이브 소개 문구</p>
+                            <div class="live-main-cta">
+                                <a th:href="@{/live/{id}(id=${live.liveSessionId})}">방송 보러가기</a>
+                                <div class="live-main-controls">
+                                    <button type="button" class="live-scroll-btn" data-live-scroll="prev" aria-label="이전 라이브">‹</button>
+                                    <button type="button" class="live-scroll-btn" data-live-scroll="next" aria-label="다음 라이브">›</button>
+                                </div>
+                            </div>
+                        </div>
+                    </article>
+                </div>
+            </div>
         </section>
 
         <div class="filter-bar">
@@ -118,6 +134,19 @@
             [minInput, maxInput].forEach(function (el) {
                 el.addEventListener('keydown', function (e) {
                     if (e.key === 'Enter') { applyPriceFilter(); }
+                });
+            });
+
+            const liveCarousel = document.getElementById('liveMainCarousel');
+            const liveScrollButtons = document.querySelectorAll('[data-live-scroll]');
+            liveScrollButtons.forEach(function (button) {
+                button.addEventListener('click', function () {
+                    if (!liveCarousel) return;
+                    const direction = button.dataset.liveScroll === 'prev' ? -1 : 1;
+                    liveCarousel.scrollBy({
+                        left: direction * liveCarousel.clientWidth,
+                        behavior: 'smooth'
+                    });
                 });
             });
         })();
