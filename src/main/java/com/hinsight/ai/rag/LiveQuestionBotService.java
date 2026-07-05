@@ -112,7 +112,7 @@ public class LiveQuestionBotService {
 
         if (answer == null || answer.isBlank()) return;
 
-        LiveChatMessage botMsg = LiveChatMessage.bot(answer.strip());
+        LiveChatMessage botMsg = LiveChatMessage.bot(question, answer.strip());
         messaging.convertAndSend("/topic/live/" + liveSessionId, botMsg);
         liveChatService.save(liveSessionId, botMsg);   // 늦게 입장한 시청자도 replay 로 보게
         log.info("[리뷰봇] 답변 전송 liveSessionId={}, productId={}, q='{}'", liveSessionId, productId, question);

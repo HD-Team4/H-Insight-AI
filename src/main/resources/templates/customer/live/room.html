@@ -5,33 +5,65 @@
       layout:decorate="~{layout/default}">
 <th:block layout:fragment="content">
     <style>
-        /* 리뷰봇 자동 답변 — 채팅 가운데 공지 스타일(초록) */
-        .live-chat-notice {
-            align-self: center;
-            width: fit-content;
-            max-width: 92%;
-            margin: 12px auto;
-            padding: 10px 16px;
-            background: #e9f9ef;
+        /* 리뷰봇 답변 — 채팅 상단 고정 핀 카드(초록). 스트림을 어지럽히지 않도록 항상 최신 1개만 표시 */
+        .live-bot-banner {
+            position: sticky;
+            top: 0;
+            z-index: 5;
+            margin: 0 0 8px;
+            padding: 12px 14px 12px;
+            background: linear-gradient(180deg, #effbf3 0%, #e6f8ed 100%);
             border: 1px solid #34c759;
             border-radius: 14px;
-            text-align: center;
-            box-shadow: 0 1px 4px rgba(15, 157, 88, 0.12);
+            box-shadow: 0 4px 14px rgba(15, 157, 88, 0.16);
         }
-        .live-chat-notice .live-chat-notice-label {
-            display: block;
-            margin-bottom: 4px;
+        .live-bot-banner[hidden] { display: none; }
+        .live-bot-banner .live-bot-banner-head {
+            display: flex;
+            align-items: center;
+            gap: 6px;
             font-size: 12px;
-            font-weight: 700;
+            font-weight: 800;
             color: #0f9d58;
+            letter-spacing: -0.2px;
         }
-        .live-chat-notice .live-chat-notice-body {
-            display: block;
+        .live-bot-banner .live-bot-banner-pin { font-size: 11px; opacity: 0.8; }
+        .live-bot-banner .live-bot-banner-q {
+            margin-top: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: #14522f;
+            line-height: 1.4;
+        }
+        .live-bot-banner .live-bot-banner-a {
+            margin-top: 6px;
+            padding-top: 8px;
+            border-top: 1px dashed rgba(52, 199, 89, 0.4);
             font-size: 13px;
             line-height: 1.55;
             color: #157a3d;
             white-space: pre-wrap;
             word-break: break-word;
+        }
+        .live-bot-banner .live-bot-banner-close {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 22px;
+            height: 22px;
+            border: none;
+            background: transparent;
+            color: #0f9d58;
+            font-size: 14px;
+            line-height: 1;
+            cursor: pointer;
+            border-radius: 6px;
+        }
+        .live-bot-banner .live-bot-banner-close:hover { background: rgba(52, 199, 89, 0.15); }
+        .live-bot-banner.is-pop { animation: botPop 0.28s ease-out; }
+        @keyframes botPop {
+            0%   { transform: translateY(-6px) scale(0.98); opacity: 0; }
+            100% { transform: translateY(0) scale(1); opacity: 1; }
         }
     </style>
     <div class="live-room" th:data-live-session-id="${liveSession.liveSessionId}">
@@ -65,6 +97,12 @@
                 <div class="live-panel-head">
                     <h2>채팅</h2>
                 </div>
+                <div class="live-bot-banner" id="liveBotBanner" hidden>
+                    <button type="button" class="live-bot-banner-close" id="liveBotBannerClose" aria-label="닫기">✕</button>
+                    <div class="live-bot-banner-head"><span class="live-bot-banner-pin">📌</span> 🤖 리뷰봇 답변</div>
+                    <div class="live-bot-banner-q" id="liveBotBannerQ"></div>
+                    <div class="live-bot-banner-a" id="liveBotBannerA"></div>
+                </div>
                 <div class="live-chat-list" id="liveChatList"></div>
                 <form class="live-chat-form" id="liveChatForm">
                     <input type="text" id="liveChatInput" placeholder="메시지를 입력하세요" autocomplete="off">
@@ -88,6 +126,22 @@
             const chatForm = document.getElementById('liveChatForm');
             const chatInput = document.getElementById('liveChatInput');
             const chatList = document.getElementById('liveChatList');
+            const botBanner = document.getElementById('liveBotBanner');
+            const botBannerQ = document.getElementById('liveBotBannerQ');
+            const botBannerA = document.getElementById('liveBotBannerA');
+            const botBannerClose = document.getElementById('liveBotBannerClose');
+
+            // 리뷰봇 답변: 채팅 상단 핀 카드에 항상 "최신 1개"만 갱신(스트림 도배 방지)
+            const showBotAnswer = (msg) => {
+                botBannerQ.textContent = msg.question ? `Q. ${msg.question}` : '';
+                botBannerQ.style.display = msg.question ? '' : 'none';
+                botBannerA.textContent = msg.message || '';
+                botBanner.hidden = false;
+                botBanner.classList.remove('is-pop');
+                void botBanner.offsetWidth; // 리플로우 강제 → 재생 시 애니메이션 재트리거
+                botBanner.classList.add('is-pop');
+            };
+            botBannerClose.addEventListener('click', () => { botBanner.hidden = true; });
 
             // ── 시청자 수 폴링 (기존) ────────────────────────────────
             const updateStatus = async (url, options = {}) => {
@@ -110,19 +164,9 @@
             let myId = null; // 서버가 준 내 유일 id (표시명이 아니라 id 로 is-me 판정)
 
             const appendMessage = (msg) => {
-                // 리뷰봇 답변은 채팅 가운데 공지(초록)로 표시
+                // 리뷰봇 답변은 스트림에 쌓지 않고 상단 핀 카드로 갱신
                 if (msg.type === 'BOT') {
-                    const notice = document.createElement('div');
-                    notice.className = 'live-chat-notice';
-                    const label = document.createElement('strong');
-                    label.className = 'live-chat-notice-label';
-                    label.textContent = msg.sender || '🤖 리뷰봇';
-                    const body = document.createElement('span');
-                    body.className = 'live-chat-notice-body';
-                    body.textContent = msg.message;
-                    notice.append(label, body);
-                    chatList.appendChild(notice);
-                    chatList.scrollTop = chatList.scrollHeight;
+                    showBotAnswer(msg);
                     return;
                 }
 
