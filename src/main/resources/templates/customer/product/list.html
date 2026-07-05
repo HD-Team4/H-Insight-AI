@@ -24,7 +24,7 @@
                            aria-label="라이브 방송 입장">
                             <video autoplay muted loop playsinline preload="metadata"
                                    th:with="cacheVersion=${live.cacheVersion != null ? live.cacheVersion : 1}">
-                                <source th:src="${live.videoUrl != null and !#strings.isEmpty(#strings.trim(live.videoUrl))} ? ${live.videoUrl + '?v=' + cacheVersion} : @{/videos/live/windbreaker.mp4}"
+                                <source th:src="${live.videoUrl != null and !#strings.isEmpty(#strings.trim(live.videoUrl))} ? ${live.videoUrl + '?v=' + cacheVersion} : ${@environment.getProperty('app.cdn.url') + '/static/videos/live/windbreaker.mp4'}"
                                         type="video/mp4">
                             </video>
                         </a>
