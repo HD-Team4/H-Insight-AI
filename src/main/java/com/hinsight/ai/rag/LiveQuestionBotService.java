@@ -72,8 +72,12 @@ public class LiveQuestionBotService {
         if (!enabled || liveSessionId == null || rawMessage == null) return;
         try {
             String q = rawMessage.strip();
-            if (normalize(q).length() < 2 || !looksLikeQuestion(q)) return;
+            if (normalize(q).length() < 2 || !looksLikeQuestion(q)) {
+                log.info("[리뷰봇] 질문 아님으로 skip liveSessionId={}, msg='{}'", liveSessionId, rawMessage);
+                return;
+            }
 
+            log.info("[리뷰봇] 질문 수신 liveSessionId={}, q='{}' (임베딩 시작)", liveSessionId, q);
             float[] vec = embeddingService.embed(q);   // 의미 군집화를 위해 질문 임베딩
             SemanticQuestionAggregator.Result r = aggregator.record(
                     liveSessionId, q, vec, threshold, simThreshold,

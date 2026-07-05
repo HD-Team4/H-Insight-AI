@@ -4,6 +4,36 @@
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{layout/default}">
 <th:block layout:fragment="content">
+    <style>
+        /* 리뷰봇 자동 답변 — 채팅 가운데 공지 스타일(초록) */
+        .live-chat-notice {
+            align-self: center;
+            width: fit-content;
+            max-width: 92%;
+            margin: 12px auto;
+            padding: 10px 16px;
+            background: #e9f9ef;
+            border: 1px solid #34c759;
+            border-radius: 14px;
+            text-align: center;
+            box-shadow: 0 1px 4px rgba(15, 157, 88, 0.12);
+        }
+        .live-chat-notice .live-chat-notice-label {
+            display: block;
+            margin-bottom: 4px;
+            font-size: 12px;
+            font-weight: 700;
+            color: #0f9d58;
+        }
+        .live-chat-notice .live-chat-notice-body {
+            display: block;
+            font-size: 13px;
+            line-height: 1.55;
+            color: #157a3d;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+    </style>
     <div class="live-room" th:data-live-session-id="${liveSession.liveSessionId}">
         <section class="live-stage">
             <div class="live-video-shell">
@@ -80,6 +110,22 @@
             let myId = null; // 서버가 준 내 유일 id (표시명이 아니라 id 로 is-me 판정)
 
             const appendMessage = (msg) => {
+                // 리뷰봇 답변은 채팅 가운데 공지(초록)로 표시
+                if (msg.type === 'BOT') {
+                    const notice = document.createElement('div');
+                    notice.className = 'live-chat-notice';
+                    const label = document.createElement('strong');
+                    label.className = 'live-chat-notice-label';
+                    label.textContent = msg.sender || '🤖 리뷰봇';
+                    const body = document.createElement('span');
+                    body.className = 'live-chat-notice-body';
+                    body.textContent = msg.message;
+                    notice.append(label, body);
+                    chatList.appendChild(notice);
+                    chatList.scrollTop = chatList.scrollHeight;
+                    return;
+                }
+
                 const node = document.createElement('div');
                 node.className = 'live-chat-message';
                 if (msg.senderId && msg.senderId === myId) {
