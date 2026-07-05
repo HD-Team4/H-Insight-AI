@@ -14,6 +14,9 @@ public interface ReviewDao {
                @Param("rating") Integer rating,
                @Param("content") String content);
 
+    long countPurchased(@Param("userId") Long userId,
+                        @Param("productId") Long productId);
+
     List<ReviewDto> findPageByProductId(@Param("productId") Long productId,
                                         @Param("offset") int offset,
                                         @Param("limit") int limit);
