@@ -156,7 +156,7 @@
             <p class="detail-review-flash is-success" th:if="${reviewMessage}" th:text="${reviewMessage}"></p>
             <p class="detail-review-flash is-error" th:if="${reviewError}" th:text="${reviewError}"></p>
 
-            <form class="detail-review-form" sec:authorize="isAuthenticated()"
+            <form id="writeReview" class="detail-review-form" sec:authorize="isAuthenticated()" th:if="${canWriteReview}"
                   th:action="@{/customer/reviews}" method="post">
                 <input type="hidden" name="productId" th:value="${product.productId}"/>
                 <div class="detail-review-form-top">
@@ -180,6 +180,9 @@
                     <button type="submit" class="detail-review-form-submit">리뷰 등록</button>
                 </div>
             </form>
+            <p class="detail-review-login-prompt" sec:authorize="isAuthenticated()" th:unless="${canWriteReview}">
+                구매한 상품만 리뷰를 작성할 수 있습니다.
+            </p>
             <p class="detail-review-login-prompt" sec:authorize="!isAuthenticated()">
                 <a th:href="@{/customer/login}">로그인</a> 후 리뷰를 작성할 수 있습니다.
             </p>

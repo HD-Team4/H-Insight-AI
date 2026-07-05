@@ -76,6 +76,8 @@ public class ProductController {
         model.addAttribute("reviewCount", reviewPage.totalElements());
         model.addAttribute("reviewAverageRating", reviewAverageRating);
         model.addAttribute("reviewAverageRatingStars", reviewService.toRatingStars(reviewAverageRating));
+        model.addAttribute("canWriteReview", reviewService.hasPurchased(userId, id)); // 구매자만 리뷰 작성
+
         model.addAttribute("onAirLiveSession", liveSessionService.getOnAirSessionByProductId(id));
         return "customer/product/detail";
     }
