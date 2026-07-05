@@ -23,6 +23,7 @@ import java.util.List;
 public class LiveChatService {
 
     private static final int MAX_HISTORY = 50;
+    private static final int MAX_BOT_LOG = 30;   // 리뷰봇 답변 과거기록 보관 개수
     private static final Duration GUEST_NAME_TTL = Duration.ofHours(12);
 
     private final StringRedisTemplate redisTemplate;
@@ -59,6 +60,38 @@ public class LiveChatService {
     }
 
     /**
+     * 리뷰봇 답변을 전용 로그에 적재한다(일반 채팅 히스토리와 분리 → 채팅 폭주에도 안 밀려남).
+     */
+    public void saveBotAnswer(Long liveSessionId, LiveChatMessage message) {
+        try {
+            String key = botKey(liveSessionId);
+            redisTemplate.opsForList().leftPush(key, objectMapper.writeValueAsString(message));
+            redisTemplate.opsForList().trim(key, 0, MAX_BOT_LOG - 1);
+        } catch (Exception e) {
+            log.warn("[LIVE] bot answer save failed. liveSessionId={}, message={}", liveSessionId, e.getMessage());
+        }
+    }
+
+    /** 리뷰봇 답변 과거기록을 오래된 것 → 최신 순으로 반환. */
+    public List<LiveChatMessage> recentBotAnswers(Long liveSessionId) {
+        try {
+            List<String> raw = redisTemplate.opsForList().range(botKey(liveSessionId), 0, MAX_BOT_LOG - 1);
+            if (raw == null || raw.isEmpty()) {
+                return List.of();
+            }
+            List<LiveChatMessage> messages = new ArrayList<>(raw.size());
+            for (String json : raw) {
+                messages.add(objectMapper.readValue(json, LiveChatMessage.class));
+            }
+            Collections.reverse(messages); // LPUSH 저장이라 최신이 앞 → 오래된 순으로
+            return messages;
+        } catch (Exception e) {
+            log.warn("[LIVE] bot answer load failed. liveSessionId={}, message={}", liveSessionId, e.getMessage());
+            return List.of();
+        }
+    }
+
+    /**
      * 익명 시청자의 방별 표시명을 배정한다.
      * 같은 senderId(연결)면 항상 같은 이름을, 방 안에서 서로 다른 게스트는 순번으로 서로 다른 이름을 받는다.
      * → "게스트1", "게스트2", ... 로 겹치지 X
@@ -87,6 +120,10 @@ public class LiveChatService {
 
     private String chatKey(Long liveSessionId) {
         return "live:session:" + liveSessionId + ":chat";
+    }
+
+    private String botKey(Long liveSessionId) {
+        return "live:session:" + liveSessionId + ":bot";
     }
 
     private String guestSeqKey(Long liveSessionId) {

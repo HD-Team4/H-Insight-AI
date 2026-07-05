@@ -114,7 +114,7 @@ public class LiveQuestionBotService {
 
         LiveChatMessage botMsg = LiveChatMessage.bot(question, answer.strip());
         messaging.convertAndSend("/topic/live/" + liveSessionId, botMsg);
-        liveChatService.save(liveSessionId, botMsg);   // 늦게 입장한 시청자도 replay 로 보게
+        liveChatService.saveBotAnswer(liveSessionId, botMsg);   // 전용 로그에 적재(공지 보드 과거기록용)
         log.info("[리뷰봇] 답변 전송 liveSessionId={}, productId={}, q='{}'", liveSessionId, productId, question);
     }
 

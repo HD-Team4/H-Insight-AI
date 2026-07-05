@@ -78,4 +78,11 @@ public class LiveChatController {
     public List<LiveChatMessage> history(@PathVariable Long liveSessionId) {
         return liveChatService.recent(liveSessionId);
     }
+
+    /** 리뷰봇 답변 과거기록(공지 보드용). 오래된 순. */
+    @GetMapping("/live/{liveSessionId}/bot-answers")
+    @ResponseBody
+    public List<LiveChatMessage> botAnswers(@PathVariable Long liveSessionId) {
+        return liveChatService.recentBotAnswers(liveSessionId);
+    }
 }
