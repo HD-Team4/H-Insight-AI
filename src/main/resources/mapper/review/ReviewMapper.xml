@@ -8,6 +8,13 @@
         VALUES (#{productId}, #{userId}, #{rating}, #{content})
     </insert>
 
+    <select id="countPurchased" resultType="long">
+        SELECT COUNT(*)
+        FROM purchase_history
+        WHERE user_id = #{userId}
+          AND product_id = #{productId}
+    </select>
+
     <select id="findPageByProductId" resultType="ReviewDto">
         SELECT
             r.review_id,

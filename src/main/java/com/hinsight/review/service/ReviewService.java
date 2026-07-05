@@ -22,8 +22,16 @@ public class ReviewService {
     @Value("${review.page-size:5}")
     private int reviewPageSize;
 
+    /** 해당 유저가 이 상품을 구매한 적 있는지 (리뷰 작성 자격). */
+    public boolean hasPurchased(Long userId, Long productId) {
+        if (userId == null || productId == null) {
+            return false;
+        }
+        return reviewDao.countPurchased(userId, productId) > 0;
+    }
+
     /**
-     * 리뷰 작성. 별점 1~5·내용 필수를 검증하고 저장한다.
+     * 리뷰 작성. 구매 이력·별점 1~5·내용 필수를 검증하고 저장한다.
      * sentiment는 배치(리뷰 Lambda)가 채우므로 여기선 NULL로 남긴다.
      */
     @Transactional
@@ -33,6 +41,9 @@ public class ReviewService {
         }
         if (request == null || request.getProductId() == null) {
             throw new IllegalArgumentException("상품 정보가 올바르지 않습니다.");
+        }
+        if (!hasPurchased(userId, request.getProductId())) {
+            throw new IllegalArgumentException("구매한 상품만 리뷰를 작성할 수 있습니다.");
         }
         Integer rating = request.getRating();
         if (rating == null || rating < 1 || rating > 5) {
