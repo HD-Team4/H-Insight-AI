@@ -32,6 +32,11 @@ spring:
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
       properties:
         enable.idempotence: true   # at-least-once + 브로커측 중복 방지
+    consumer:                       # 급상승 랭킹(HotTrend) 스피드 레이어용 컨슈머
+      group-id: hinsight-hot-trend
+      auto-offset-reset: latest     # 실시간 트렌드 → 지금부터의 이벤트만
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
   servlet:
     multipart:
       max-file-size: 15MB
