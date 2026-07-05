@@ -6,6 +6,8 @@ import com.hinsight.product.service.ProductService;
 import com.hinsight.security.userdetails.CustomerUserDetails;
 import com.hinsight.user.model.dto.PasswordChangeRequest;
 import com.hinsight.user.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -23,6 +25,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
  * 접근 제어는 CustomerSecurityConfig 의 hasRole("CUSTOMER") 로 이미 보장된다
  * (/customer/products·login·signup 외 /customer/** 는 모두 고객 인증 필요).
  */
+@Tag(name = "mypage-controller", description = "마이페이지 (프로필·최근 본/구매 상품·비밀번호 변경)")
 @Controller
 @RequiredArgsConstructor
 @RequestMapping("/customer/mypage")
@@ -36,6 +39,7 @@ public class MyPageController {
     private final ProductService productService;
 
     // 마이페이지: 상단 개인정보 요약 + 최근 본 상품 + 최근 구매 상품 + 비밀번호 변경 폼
+    @Operation(summary = "마이페이지 조회", description = "프로필·최근 본 상품·최근 구매 상품·비밀번호 변경 폼을 렌더링한다")
     @GetMapping
     public String myPage(@AuthenticationPrincipal CustomerUserDetails principal, Model model) {
         model.addAttribute("profile", userService.getMyProfile(principal.getUserId()));
@@ -47,6 +51,7 @@ public class MyPageController {
     }
 
     // 최근 본 상품 영역만 반환(뒤로가기 복귀 시 비동기 갱신용 프래그먼트)
+    @Operation(summary = "최근 본 상품 조각", description = "최근 본 상품 영역만 HTML 조각으로 반환(비동기 갱신용)")
     @GetMapping("/recent-views")
     public String recentViews(@AuthenticationPrincipal CustomerUserDetails principal, Model model) {
         model.addAttribute("recentViews", productService.getRecentViewedProducts(principal.getUserId()));
@@ -54,6 +59,7 @@ public class MyPageController {
     }
 
     // 비밀번호 변경 처리
+    @Operation(summary = "비밀번호 변경", description = "현재 비밀번호 확인 후 새 비밀번호로 변경한다")
     @PostMapping("/password")
     public String changePassword(@Valid @ModelAttribute("passwordChangeRequest") PasswordChangeRequest request,
                                  BindingResult bindingResult,

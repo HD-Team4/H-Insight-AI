@@ -1,6 +1,7 @@
 package com.hinsight.ai.rag;
 
 import com.hinsight.ai.rag.dto.RagAskRequest;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -38,6 +39,7 @@ public class RagController {
 
     private final RagService ragService;
 
+    @Operation(summary = "라이브 리뷰 Q&A (SSE)", description = "상품 리뷰/스펙 기반 RAG 답변을 SSE로 스트리밍: delta(토큰) → done")
     @PostMapping(value = "/ask", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<ServerSentEvent<Object>> ask(@RequestBody RagAskRequest request) {
         if (request.productId() == null || !StringUtils.hasText(request.question())) {

@@ -23,7 +23,14 @@ public class OpenApiConfig {
         return new OpenAPI()
                 .info(new Info()
                         .title("H-Insight-AI API")
-                        .description("H-Insight-AI 백엔드 API 문서")
+                        .description("""
+                                홈쇼핑 판매 분석·방송 전략 추천 플랫폼 백엔드 API.
+
+                                주요 도메인: 상품/검색 · 주문/장바구니 · 리뷰 · 마이페이지 · 라이브 방송/채팅 ·
+                                챗봇/RAG · Biz 대시보드/상품분석 · 관리(ES·RAG).
+                                컨트롤러별 태그로 그룹화되어 있으며, 각 엔드포인트에 요약·설명이 붙어 있다.
+
+                                인증: 고객(/customer/**)·기업(/biz/**) 폼 로그인 기반 세션.""")
                         .version("v0.0.1"));
     }
 }

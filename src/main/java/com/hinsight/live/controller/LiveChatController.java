@@ -5,6 +5,8 @@ import com.hinsight.live.config.LiveChatPrincipal;
 import com.hinsight.live.model.dto.LiveChatMessage;
 import com.hinsight.live.model.dto.LiveChatRequest;
 import com.hinsight.live.service.LiveChatService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -23,6 +25,7 @@ import java.util.List;
  * - STOMP: 한 시청자가 보낸 메시지를 같은 방 구독자 전원에게 브로드캐스트하고 히스토리에 적재.
  * - REST : 늦게 입장한 시청자를 위한 최근 채팅 replay.
  */
+@Tag(name = "live-chat-controller", description = "라이브 방송 채팅 (STOMP 브로드캐스트 + 이력·봇답변 REST)")
 @Controller
 @RequiredArgsConstructor
 public class LiveChatController {
@@ -73,6 +76,7 @@ public class LiveChatController {
     }
 
     /** 입장 직후 최근 채팅을 불러와 화면에 먼저 뿌린다(오래된 순). */
+    @Operation(summary = "라이브 채팅 이력", description = "입장 직후 replay용 최근 채팅 메시지 목록(오래된 순)")
     @GetMapping("/live/{liveSessionId}/chat/history")
     @ResponseBody
     public List<LiveChatMessage> history(@PathVariable Long liveSessionId) {
@@ -80,6 +84,7 @@ public class LiveChatController {
     }
 
     /** 리뷰봇 답변 과거기록(공지 보드용). 오래된 순. */
+    @Operation(summary = "리뷰봇 답변 목록", description = "라이브 중 리뷰봇 자동 답변 과거기록(공지 보드용, 오래된 순)")
     @GetMapping("/live/{liveSessionId}/bot-answers")
     @ResponseBody
     public List<LiveChatMessage> botAnswers(@PathVariable Long liveSessionId) {
