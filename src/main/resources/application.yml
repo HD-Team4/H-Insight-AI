@@ -32,6 +32,15 @@ spring:
       chain:
         enabled: true
   ai:
+    # Gemini 429(무료 쿼터 소진) 시 기본 재시도(10회·지수백오프)가 챗봇 head 를 33초까지 붙잡음(실측)
+    #  → 2회로 잘라 빠르게 실패시키고 조건추출은 무필터 폴백, 추천멘트는 템플릿 폴백으로 넘어가게 한다.
+    #  참고: gemini-2.5-flash 무료 티어는 하루 20건(2026-07 실측) — 질문 1건당 Gemini 2회 소모 주의.
+    retry:
+      max-attempts: 2
+      backoff:
+        initial-interval: 1s
+        multiplier: 2
+        max-interval: 3s
     google:
       genai:
         api-key: ${GEMINI_API_KEY:}
