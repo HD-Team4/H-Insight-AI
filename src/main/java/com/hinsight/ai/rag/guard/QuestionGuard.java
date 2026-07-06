@@ -45,7 +45,9 @@ public class QuestionGuard {
     /** 한국어 의문 힌트 (물음표가 없어도 질문으로 간주). */
     private static final List<String> QUESTION_HINTS = List.of(
             "어때", "어떤", "어떠", "어떰", "나요", "까요", "얼마", "있나", "없나", "되나", "될까",
-            "인가", "궁금", "어디", "언제", "몇", "가요", "니까", "은지", "는지", "아닌");
+            "인가", "궁금", "어디", "언제", "몇", "가요", "니까", "은지", "는지", "아닌",
+            // 간접의문·구어체
+            "냐고", "냐요", "느냐", "냐", "래요", "린가", "려나", "ㄴ지");
 
     /** 사전 파일 로딩 실패 시 최소 방어용 폴백. (정상 경로는 classpath:rag/badwords.txt) */
     private static final List<String> FALLBACK_ABUSE = List.of(

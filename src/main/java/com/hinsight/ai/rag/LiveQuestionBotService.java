@@ -45,7 +45,7 @@ public class LiveQuestionBotService {
     @Value("${rag.bot.threshold:3}")               private int threshold;        // 트리거 최소 반복 횟수
     @Value("${rag.bot.window-seconds:120}")        private long windowSeconds;   // 군집 유지 창
     @Value("${rag.bot.cooldown-seconds:300}")      private long cooldownSeconds; // 같은 군집 재답변 방지
-    @Value("${rag.bot.similarity-threshold:0.75}") private double simThreshold;  // 같은 질문으로 볼 코사인 유사도
+    @Value("${rag.bot.similarity-threshold:0.85}") private double simThreshold;  // 같은 질문으로 볼 코사인 유사도(주제 혼합 방지 위해 보수적)
     @Value("${rag.bot.answer-timeout-seconds:30}") private long answerTimeoutSeconds;
 
     public LiveQuestionBotService(EmbeddingService embeddingService,

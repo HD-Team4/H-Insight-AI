@@ -76,6 +76,13 @@ ollama:
 
 # 라이브 리뷰 Q&A RAG 튜닝
 rag:
+  # 리뷰봇 질문 군집화·트리거 (LiveQuestionBotService / SemanticQuestionAggregator)
+  bot:
+    threshold: 3                   # 한 군집이 이 횟수 이상 반복되면 답변 트리거
+    window-seconds: 120            # 군집 유지 창(초)
+    cooldown-seconds: 300          # 같은 군집 재답변 방지(초)
+    similarity-threshold: 0.85     # 같은 질문으로 볼 코사인 유사도 하한.
+                                   # 낮으면 "옷 밝아요?"(색) 와 "옷 사이즈?"(치수)가 한 군집으로 섞여 오답을 냄 → 0.85로 보수적 분리
   # 시맨틱 답변 캐시 (Redis): 유사 질문 재답변 시 LLM 호출을 건너뛰어 토큰(비용) 절감
   cache:
     enabled: true
