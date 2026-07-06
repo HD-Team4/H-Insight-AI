@@ -55,10 +55,8 @@ public class SemanticQuestionAggregator {
                 matchedSim = 1.0;
             }
             target.lastSeenMs = now;
-            // RAG 에 넘길 대표질문은 군집에서 가장 긴(정보 많은) 문장으로 유지
-            if (question.length() > target.repQuestion.length()) {
-                target.repQuestion = question;
-            }
+            // 대표질문은 군집을 만든 '시드(중심)' 질문으로 고정한다.
+            // 시드는 곧 centroid 이므로, 군집이 대표하는 의미와 가장 일치한다.
 
             boolean triggered = false;
             if (target.count >= threshold

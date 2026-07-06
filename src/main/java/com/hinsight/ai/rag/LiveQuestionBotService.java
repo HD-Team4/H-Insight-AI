@@ -1,6 +1,7 @@
 package com.hinsight.ai.rag;
 
 import com.hinsight.ai.embedding.EmbeddingService;
+import com.hinsight.ai.rag.guard.QuestionGuard;
 import com.hinsight.live.dao.LiveSessionDao;
 import com.hinsight.live.model.dto.LiveChatMessage;
 import com.hinsight.live.model.vo.LiveSession;
@@ -14,7 +15,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.time.OffsetDateTime;
-import java.util.List;
 import java.util.stream.Collectors;
 
 /**
@@ -33,12 +33,8 @@ public class LiveQuestionBotService {
 
     private static final Logger log = LoggerFactory.getLogger(LiveQuestionBotService.class);
 
-    // 한국어 의문 힌트 (물음표가 없어도 질문으로 간주)
-    private static final List<String> QUESTION_HINTS = List.of(
-            "어때", "어떤", "어떠", "어떰", "나요", "까요", "얼마", "있나", "없나", "되나", "될까",
-            "인가", "궁금", "어디", "언제", "몇", "가요", "니까", "은지", "는지", "아닌");
-
     private final EmbeddingService embeddingService;
+    private final QuestionGuard questionGuard;
     private final SemanticQuestionAggregator aggregator;
     private final LiveSessionDao liveSessionDao;
     private final RagService ragService;
@@ -49,16 +45,18 @@ public class LiveQuestionBotService {
     @Value("${rag.bot.threshold:3}")               private int threshold;        // 트리거 최소 반복 횟수
     @Value("${rag.bot.window-seconds:120}")        private long windowSeconds;   // 군집 유지 창
     @Value("${rag.bot.cooldown-seconds:300}")      private long cooldownSeconds; // 같은 군집 재답변 방지
-    @Value("${rag.bot.similarity-threshold:0.75}") private double simThreshold;  // 같은 질문으로 볼 코사인 유사도
+    @Value("${rag.bot.similarity-threshold:0.85}") private double simThreshold;  // 같은 질문으로 볼 코사인 유사도(주제 혼합 방지 위해 보수적)
     @Value("${rag.bot.answer-timeout-seconds:30}") private long answerTimeoutSeconds;
 
     public LiveQuestionBotService(EmbeddingService embeddingService,
+                                  QuestionGuard questionGuard,
                                   SemanticQuestionAggregator aggregator,
                                   LiveSessionDao liveSessionDao,
                                   RagService ragService,
                                   SimpMessagingTemplate messaging,
                                   LiveChatService liveChatService) {
         this.embeddingService = embeddingService;
+        this.questionGuard = questionGuard;
         this.aggregator = aggregator;
         this.liveSessionDao = liveSessionDao;
         this.ragService = ragService;
@@ -72,8 +70,11 @@ public class LiveQuestionBotService {
         if (!enabled || liveSessionId == null || rawMessage == null) return;
         try {
             String q = rawMessage.strip();
-            if (normalize(q).length() < 2 || !looksLikeQuestion(q)) {
-                log.info("[리뷰봇] 질문 아님으로 skip liveSessionId={}, msg='{}'", liveSessionId, rawMessage);
+
+            // 가드레일: 집계/임베딩/LLM 이전에 비질문·비방/트롤링을 즉시 파기 (Requirement 2)
+            QuestionGuard.Decision decision = questionGuard.classify(q);
+            if (decision != QuestionGuard.Decision.ACCEPT) {
+                log.info("[리뷰봇] 가드 파기({}) liveSessionId={}, msg='{}'", decision, liveSessionId, rawMessage);
                 return;
             }
 
@@ -110,20 +111,17 @@ public class LiveQuestionBotService {
                 .block(Duration.ofSeconds(answerTimeoutSeconds));
         log.info("[리뷰봇] 답변 생성 완료 len={}", answer == null ? 0 : answer.length());
 
-        if (answer == null || answer.isBlank()) return;
+        // Silent Drop: LLM 이 IGNORE(무응답)를 냈거나 빈 답이면 채팅에 아무것도 보내지 않고 조용히 종료 (Requirement 3)
+        // → "정보가 없습니다" 공지로 방송 흐름을 끊지 않는다. IGNORE 는 RagService 에서 캐시에도 적재되지 않는다.
+        if (RagService.isNoAnswer(answer)) {
+            log.info("[리뷰봇] Silent Drop (IGNORE/무응답) liveSessionId={}, productId={}, q='{}'",
+                    liveSessionId, productId, question);
+            return;
+        }
 
         LiveChatMessage botMsg = LiveChatMessage.bot(question, answer.strip());
         messaging.convertAndSend("/topic/live/" + liveSessionId, botMsg);
         liveChatService.saveBotAnswer(liveSessionId, botMsg);   // 전용 로그에 적재(공지 보드 과거기록용)
         log.info("[리뷰봇] 답변 전송 liveSessionId={}, productId={}, q='{}'", liveSessionId, productId, question);
-    }
-
-    private boolean looksLikeQuestion(String s) {
-        if (s.contains("?") || s.contains("？")) return true;
-        return QUESTION_HINTS.stream().anyMatch(s::contains);
-    }
-
-    private String normalize(String s) {
-        return s.strip().toLowerCase().replaceAll("[\\s?!.~。？！]+", "");
     }
 }

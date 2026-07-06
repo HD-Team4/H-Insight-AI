@@ -74,6 +74,31 @@ ollama:
   base-url: http://localhost:11434
   embedding-model: bge-m3
 
+# 라이브 리뷰 Q&A RAG 튜닝
+rag:
+  # 리뷰봇 질문 군집화·트리거 (LiveQuestionBotService / SemanticQuestionAggregator)
+  bot:
+    threshold: 3                   # 한 군집이 이 횟수 이상 반복되면 답변 트리거
+    window-seconds: 120            # 군집 유지 창(초)
+    cooldown-seconds: 300          # 같은 군집 재답변 방지(초)
+    similarity-threshold: 0.85     # 같은 질문으로 볼 코사인 유사도 하한.
+                                   # 낮으면 "옷 밝아요?"(색) 와 "옷 사이즈?"(치수)가 한 군집으로 섞여 오답을 냄 → 0.85로 보수적 분리
+  # 시맨틱 답변 캐시 (Redis): 유사 질문 재답변 시 LLM 호출을 건너뛰어 토큰(비용) 절감
+  cache:
+    enabled: true
+    similarity-threshold: 0.92     # 답변 재사용 코사인 유사도 하한(보수적: 사실상 같은 질문만 재사용)
+    ttl-seconds: 1800              # 캐시 신선도(30분). 리뷰/공식 스펙 갱신 반영 위해 짧게 유지
+    max-entries-per-product: 50    # 상품당 캐시 후보 상한(코사인 계산 비용·메모리 관리)
+  # 프롬프트 최적화: 컨텍스트를 잘라 Gemini 로 넘기는 토큰 축소
+  context:
+    max-official-chars: 600        # 공식 스펙 1건 최대 길이
+    max-review-chars: 280          # 유저 리뷰 1건 최대 길이
+    max-total-chars: 2000          # 조립된 컨텍스트 총 상한
+  # 앞단 가드레일: 집계/LLM 이전에 비질문·비방 즉시 파기
+  guard:
+    min-length: 2                  # 정규화 후 이 길이 미만이면 질문으로 안 봄
+    badwords-resource: rag/badwords.txt   # Aho-Corasick 로 로딩할 금칙어 사전(classpath)
+
 # 노션 연동 (대시보드 -> 노션 페이지 이미지 첨부)
 notion:
   token: ${NOTION_TOKEN:}
