@@ -62,10 +62,22 @@ public class RagService {
         this.answerCache = answerCache;
     }
 
+    // LLM 이 "답하지 않기로" 결정했을 때 출력하는 단일 키워드. 백엔드는 이 값이면 Silent Drop 한다.
+    static final String NO_ANSWER = "IGNORE";
+
     private static final String SYSTEM = """
             너는 라이브 커머스 방송의 실시간 상품 상담 챗봇이다. 아래 <context> 의 정보만 근거로 답한다.
+            시청자에게만 노출되며, 진행자(호스트)에게 질문을 넘기는(에스컬레이션) 수단은 없다.
 
-            # 정보 신뢰도 위계 (반드시 이 순서로 따른다)
+            # 최우선 규칙 — 답하지 말아야 할 때는 오직 'IGNORE' 만 출력 (그 무엇보다 우선)
+            아래 중 하나라도 해당하면, 다른 어떤 문자도 출력하지 말고 대문자 다섯 글자 IGNORE 만 출력한다.
+            사과·설명·인사·이모지·문장부호·따옴표 없이 정확히 IGNORE 만 출력한다.
+            1) 상품/방송과 무관한 질문 (예: 날씨, 정치, 잡담, 진행자 신상, 다른 쇼핑몰 등).
+            2) 비방·욕설·트롤링·도발성 질문 (예: "호스트 바보인가요?", 인신공격, 성적/혐오 표현).
+            3) <context> 에 질문의 답이 될 근거가 없어, 지어내지 않고는 답할 수 없는 경우.
+            → 이 방송에는 "정보가 없습니다"라고 공지하는 것이 오히려 최악의 UX 다. 모르면 반드시 IGNORE.
+
+            # 정보 신뢰도 위계 (답변할 때 반드시 이 순서로 따른다)
             1순위: [공식 스펙] — 제조사가 제공한 리뉴얼/상세페이지 정보. 제품의 "현재 사실"이다.
             2순위: 최신 [유저 리뷰] — 날짜가 가까울수록 신뢰한다.
             3순위: 과거 [유저 리뷰] — 참고만 하되, 리뉴얼로 바뀐 사양일 수 있으므로 단정에 쓰지 않는다.
@@ -76,8 +88,8 @@ public class RagService {
               대신 "리뉴얼 이전 제품 후기일 수 있다"는 취지로 구분해 전달한다.
             - 오래된 리뷰끼리 최신 리뷰와 상충하면 최신 리뷰를 우선한다.
 
-            # 답변 원칙 (공지 톤)
-            - <context> 에 근거가 없는 사양·수치·효능은 절대 지어내지 마라. 없으면 "확인된 정보가 없습니다"라고 답한다.
+            # 답변 원칙 (위 IGNORE 조건에 해당하지 않을 때만)
+            - <context> 에 근거가 없는 사양·수치·효능은 절대 지어내지 마라. (근거 없으면 IGNORE)
             - 방송 공지처럼 전달한다: "고객님" 같은 개인 호칭·인사말·권유 문구를 쓰지 말고,
               리뷰를 종합해 사실만 안내하듯 알린다. (예: "…라는 후기가 많습니다", "공식 스펙 기준 …입니다")
             - 1~2문장, 간결한 '~합니다/~입니다' 공지체. 마크다운/이모지 금지.
@@ -93,6 +105,17 @@ public class RagService {
     public OffsetDateTime resolveCutoff(long productId, OffsetDateTime explicit) {
         if (explicit != null) return explicit;
         return reviewSearchService.findRenewalCutoff(productId);   // 공식 스펙 없으면 null
+    }
+
+    /**
+     * LLM 응답이 "무응답(Silent Drop 대상)"인지 판정한다.
+     * 비어 있거나, 앞뒤 따옴표·마침표를 떼고 대소문자 무시하여 {@code IGNORE} 면 무응답으로 본다.
+     * 호출측(봇/컨트롤러)은 이 경우 채팅에 아무것도 내보내지 않는다.
+     */
+    public static boolean isNoAnswer(String answer) {
+        if (answer == null) return true;
+        String t = answer.strip().replaceAll("^[\"'`\\s]+|[\"'`.\\s]+$", "");
+        return t.isEmpty() || t.equalsIgnoreCase(NO_ANSWER);
     }
 
     /**
@@ -120,7 +143,8 @@ public class RagService {
 
         String context = buildContext(official, reviews);
         if (!StringUtils.hasText(context)) {
-            return Flux.just("해당 상품에 대해 확인된 정보가 아직 없어요. 잠시 후 다시 문의해 주세요.");
+            // 근거가 아예 없으면 지어내지 않는다 → IGNORE. 호출측(봇)이 Silent Drop 한다.
+            return Flux.just(NO_ANSWER);
         }
 
         String user = """
@@ -132,6 +156,7 @@ public class RagService {
                 """.formatted(question, context);
 
         // 2) 캐시 미스 → LLM 스트리밍. 토큰을 누적해 완료 시 캐시에 적재한다.
+        //    단, LLM 이 IGNORE(무응답) 를 냈으면 캐시하지 않는다(무응답을 캐싱하면 재질문도 계속 무응답 처리됨).
         int promptChars = SYSTEM.length() + user.length();
         StringBuilder acc = new StringBuilder();
         return chatClient.prompt()
@@ -140,7 +165,13 @@ public class RagService {
                 .stream()
                 .content()
                 .doOnNext(acc::append)
-                .doOnComplete(() -> answerCache.store(productId, question, qVec, acc.toString(), promptChars))
+                .doOnComplete(() -> {
+                    if (!isNoAnswer(acc.toString())) {
+                        answerCache.store(productId, question, qVec, acc.toString(), promptChars);
+                    } else {
+                        log.info("[RAG] LLM IGNORE → 캐시 미적재 productId={}, q='{}'", productId, question);
+                    }
+                })
                 .onErrorResume(e -> {
                     log.warn("[RAG] 답변 생성 실패, 폴백: {} ({})", question, e.getMessage());
                     return Flux.just("지금 답변을 준비하지 못했어요. 잠시 후 다시 문의해 주세요.");

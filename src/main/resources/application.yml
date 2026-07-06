@@ -87,6 +87,10 @@ rag:
     max-official-chars: 600        # 공식 스펙 1건 최대 길이
     max-review-chars: 280          # 유저 리뷰 1건 최대 길이
     max-total-chars: 2000          # 조립된 컨텍스트 총 상한
+  # 앞단 가드레일: 집계/LLM 이전에 비질문·비방 즉시 파기
+  guard:
+    min-length: 2                  # 정규화 후 이 길이 미만이면 질문으로 안 봄
+    badwords-resource: rag/badwords.txt   # Aho-Corasick 로 로딩할 금칙어 사전(classpath)
 
 # 노션 연동 (대시보드 -> 노션 페이지 이미지 첨부)
 notion:

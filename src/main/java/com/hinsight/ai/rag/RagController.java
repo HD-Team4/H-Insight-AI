@@ -12,7 +12,6 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
 import reactor.core.scheduler.Schedulers;
@@ -56,8 +55,19 @@ public class RagController {
             Flux<ServerSentEvent<Object>> metaEvent = Flux.just(ServerSentEvent.<Object>builder(
                     metaPayload(cutoff, explicit != null)).event("meta").build());
 
+            // IGNORE(무응답)는 클라이언트로 흘리지 않는다. 정상 답변은 한글로 시작하므로 그대로 스트리밍하고,
+            // 'I' 로 시작할 때만(=IGNORE 가능성) 전량 모아 판별 후 무응답이면 delta 를 내보내지 않는다.
             Flux<ServerSentEvent<Object>> deltaEvents =
                     ragService.answer(request.productId(), request.question(), cutoff)
+                            .switchOnFirst((signal, flux) -> {
+                                String first = signal.hasValue() ? signal.get() : null;
+                                if (first != null && first.stripLeading().toUpperCase().startsWith("I")) {
+                                    return flux.collectList().flatMapMany(list ->
+                                            RagService.isNoAnswer(String.join("", list))
+                                                    ? Flux.empty() : Flux.fromIterable(list));
+                                }
+                                return flux;
+                            })
                             .map(token -> ServerSentEvent.<Object>builder(Map.of("t", token))
                                     .event("delta").build());
 
