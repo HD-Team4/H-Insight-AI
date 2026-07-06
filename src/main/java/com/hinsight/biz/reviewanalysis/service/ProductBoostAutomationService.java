@@ -108,10 +108,10 @@ public class ProductBoostAutomationService {
         }
     }
 
-    // 리포트용 — 주간 매출 하락률 TOP 5 상품을 기준으로, 마트가 가리키는 개선 액션을 매칭한다.
+    // 리포트용 — 주간 매출 하락 상품마다 실제 지표(검색/클릭/구매)로 병목 단계를 판정해 개선 액션을 제안한다.
     public List<BoostSuggestion> plungingSuggestions(JsonNode plunging, Long bizId) {
         Set<Long> owned = productService.getOwnedProductIds(bizId);
-        Map<Long, CaseCandidate> casesByProduct = indexBoostCases(getBoostMart().path("cases"));
+        JsonNode byProduct = getBoostMart().path("byProduct");
         List<BoostSuggestion> result = new ArrayList<>();
         if (!plunging.isArray()) return result;
 
@@ -121,10 +121,8 @@ public class ProductBoostAutomationService {
                 continue;
             }
 
-            CaseCandidate candidate = casesByProduct.get(productId);
-            BoostCase boostCase = candidate != null
-                    ? toCase(candidate.row(), candidate.caseType(), false)
-                    : plungingFallbackCase(row, "NO_SEARCH", false);
+            JsonNode metrics = byProduct.path(String.valueOf(productId));
+            BoostCase boostCase = toCase(productId, classifyState(metrics), metrics, false);
             result.add(new BoostSuggestion(boostCase, row.path("revenue").asLong(0), row.path("growth").asInt(0)));
             if (result.size() >= 5) {
                 break;
@@ -133,22 +131,16 @@ public class ProductBoostAutomationService {
         return result;
     }
 
-    private Map<Long, CaseCandidate> indexBoostCases(JsonNode cases) {
-        Map<Long, CaseCandidate> byProduct = new HashMap<>();
-        addCaseCandidates(byProduct, cases.path("noSearch"), "NO_SEARCH");
-        addCaseCandidates(byProduct, cases.path("noClick"), "NO_CLICK");
-        addCaseCandidates(byProduct, cases.path("noPurchase"), "NO_PURCHASE");
-        return byProduct;
-    }
-
-    private void addCaseCandidates(Map<Long, CaseCandidate> byProduct, JsonNode rows, String caseType) {
-        if (!rows.isArray()) return;
-        for (JsonNode row : rows) {
-            long productId = row.path("productId").asLong(0);
-            if (productId > 0) {
-                byProduct.putIfAbsent(productId, new CaseCandidate(caseType, row));
-            }
-        }
+    // 검색 → 클릭 → 구매 여정에서 어느 단계가 막혔는지 실제 지표로 판정. 지표가 없으면(활동 0) 노출부터.
+    private String classifyState(JsonNode metrics) {
+        long searches = metrics.path("searches").asLong(0);
+        long clicks = metrics.path("clicks").asLong(0);
+        long purchases = metrics.path("purchases").asLong(0);
+        if (searches == 0) return "NO_SEARCH";     // 노출 자체가 없음
+        if (clicks == 0) return "NO_CLICK";        // 검색은 되나 클릭 없음 → 상품명 개선
+        if (purchases == 0) return "NO_PURCHASE";  // 클릭은 되나 구매 없음 → 상세설명 개선
+        // 세 단계 모두 활동은 있으나 하락 → 클릭률(ctr)·구매전환(cvr) 중 더 약한 단계를 개선
+        return metrics.path("cvr").asDouble(0) <= metrics.path("ctr").asDouble(0) ? "NO_PURCHASE" : "NO_CLICK";
     }
 
     // 액션 페이지·apply 공용 — 소유 상품이 아니면 예외
@@ -187,20 +179,8 @@ public class ProductBoostAutomationService {
     private BoostCase getCase(String caseType, Long productId, Long bizId, boolean generateCopy) {
         requireOwned(productId, bizId);
         String normalized = normalizeCaseType(caseType);
-        if ("NO_SEARCH".equals(normalized)) {
-            return fallbackCase(normalized, findProduct(productId), false);
-        }
-        JsonNode cases = getBoostMart().path("cases");
-        JsonNode rows = casesFor(cases, normalized);
-
-        if (rows.isArray()) {
-            for (JsonNode row : rows) {
-                if (row.path("productId").asLong() == productId) {
-                    return toCase(row, normalized, generateCopy);
-                }
-            }
-        }
-        return fallbackCase(normalized, findProduct(productId), generateCopy);
+        JsonNode metrics = getBoostMart().path("byProduct").path(String.valueOf(productId));
+        return toCase(productId, normalized, metrics, generateCopy);
     }
 
     public boolean apply(String caseType, Long productId, Long bizId, String value) {
@@ -308,22 +288,13 @@ public class ProductBoostAutomationService {
         }
     }
 
-    private JsonNode casesFor(JsonNode cases, String normalized) {
-        return switch (normalized) {
-            case "NO_CLICK" -> cases.path("noClick");
-            case "NO_PURCHASE" -> cases.path("noPurchase");
-            default -> cases.path("noSearch");
-        };
-    }
-
-    private BoostCase toCase(JsonNode row, String caseType, boolean generateCopy) {
-        long productId = row.path("productId").asLong();
+    // byProduct 지표(없으면 MissingNode → 0)로 케이스를 구성. 상품명/이미지는 상품 상세로 보완.
+    private BoostCase toCase(long productId, String caseType, JsonNode metrics, boolean generateCopy) {
         ProductDetailDto product = findProduct(productId);
-
-        String productName = firstNonBlank(row.path("productName").asText(null),
+        String productName = firstNonBlank(metrics.path("productName").asText(null),
                 product == null ? "" : product.productName());
-        String category = firstNonBlank(row.path("category").asText(null), "");
-        GeneratedCopy generated = generatedCopyFor(product, productName, category, null, row, caseType, generateCopy);
+        String category = firstNonBlank(metrics.path("category").asText(null), "");
+        GeneratedCopy generated = generatedCopyFor(product, productName, category, null, metrics, caseType, generateCopy);
 
         return new BoostCase(
                 caseType,
@@ -333,51 +304,9 @@ public class ProductBoostAutomationService {
                 productName,
                 category,
                 product == null ? "" : product.imageUrl(),
-                row.path("searches").asLong(0),
-                row.path("clicks").asLong(0),
-                row.path("purchases").asLong(0),
-                firstNonBlank(generated.productName(), fallbackProductNameSuggestion(productName)),
-                firstNonBlank(generated.description(), fallbackDetailSuggestion(product)),
-                actionUrl(caseType, productId)
-        );
-    }
-
-    private BoostCase fallbackCase(String caseType, ProductDetailDto product, boolean generateCopy) {
-        long productId = product == null ? 0 : product.productId();
-        String productName = product == null ? "대상 상품 없음" : product.productName();
-        GeneratedCopy generated = generatedCopyFor(product, productName, "", null, null, caseType, generateCopy);
-        return new BoostCase(caseType, label(caseType), reason(caseType), productId,
-                productName, "", product == null ? "" : product.imageUrl(),
-                0L, 0L, 0L,
-                firstNonBlank(generated.productName(), fallbackProductNameSuggestion(productName)),
-                firstNonBlank(generated.description(), fallbackDetailSuggestion(product)),
-                actionUrl(caseType, productId));
-    }
-
-    private BoostCase plungingFallbackCase(JsonNode row, String caseType, boolean generateCopy) {
-        long productId = row.path("productId").asLong();
-        ProductDetailDto product = findProduct(productId);
-        String productName = firstNonBlank(row.path("productName").asText(null),
-                product == null ? "" : product.productName());
-        String category = firstNonBlank(row.path("category").asText(null), "");
-        long revenue = row.path("revenue").asLong(0);
-        long prevRevenue = row.path("prevRevenue").asLong(0);
-        int growth = row.path("growth").asInt(0);
-        String reason = String.format("주간 매출이 %s원에서 %s원으로 %d%% 하락했습니다. 개선 케이스 로그가 없어 상품 노출을 우선 보강합니다.",
-                formatWon(prevRevenue), formatWon(revenue), Math.abs(growth));
-        GeneratedCopy generated = generatedCopyFor(product, productName, category, null, row, caseType, generateCopy);
-
-        return new BoostCase(
-                caseType,
-                label(caseType),
-                reason,
-                productId,
-                productName,
-                category,
-                product == null ? "" : product.imageUrl(),
-                0L,
-                0L,
-                row.path("unitsSold").asLong(0),
+                metrics.path("searches").asLong(0),
+                metrics.path("clicks").asLong(0),
+                metrics.path("purchases").asLong(0),
                 firstNonBlank(generated.productName(), fallbackProductNameSuggestion(productName)),
                 firstNonBlank(generated.description(), fallbackDetailSuggestion(product)),
                 actionUrl(caseType, productId)
@@ -598,13 +527,6 @@ public class ProductBoostAutomationService {
     private String trimTrailingSlash(String value) {
         if (value == null || value.isBlank()) return "http://localhost:8080";
         return value.endsWith("/") ? value.substring(0, value.length() - 1) : value;
-    }
-
-    private String formatWon(long value) {
-        return String.format("%,d", value);
-    }
-
-    private record CaseCandidate(String caseType, JsonNode row) {
     }
 
     private record GeneratedCopy(String productName, String description, String headline,

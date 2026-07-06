@@ -183,17 +183,13 @@ def product_boost(srch, clk_prod, pur, prod2cat, cat_name, anchor, days=30):
                      "ctr": round(clicks / searches, 4) if searches else 0,
                      "cvr": round(purchases / clicks, 4) if clicks else 0})
 
-    # 각 케이스별로 병목이 뚜렷한 상품 TOP 5
+    # 상품별 검색/클릭/구매 지표 맵. 서비스가 하락 상품을 이 지표로 조회해 병목 단계를 판정한다.
+    # 활동이 있는 상품만 담고, 없는 상품은 서비스에서 "검색 없음"으로 처리하므로 생략한다.
+    by_product = {str(r["productId"]): r for r in rows
+                  if r["searches"] or r["clicks"] or r["purchases"]}
     return {"generatedAt": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
             "anchor": str(anchor),
-            "cases": {
-                "noSearch": sorted([r for r in rows if r["searches"] == 0 and r["purchases"] == 0],
-                                   key=lambda x: (x["clicks"], x["purchases"]))[:5],
-                "noClick": sorted([r for r in rows if r["searches"] >= 1 and r["clicks"] == 0],
-                                  key=lambda x: -x["searches"])[:5],
-                "noPurchase": sorted([r for r in rows if r["clicks"] >= 3 and r["purchases"] == 0],
-                                     key=lambda x: -x["clicks"])[:5],
-            }}
+            "byProduct": by_product}
 
 
 def normalize_text(value):
