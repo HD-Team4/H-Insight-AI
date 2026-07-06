@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>제안 생성 중</title>
+    <link rel="stylesheet" as="style" crossorigin
+          href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css"/>
+    <link rel="stylesheet" th:href="${@environment.getProperty('app.cdn.url') + '/static/css/style.css'}">
+    <style>
+        .loading-wrap { min-height:70vh; display:flex; align-items:center; justify-content:center; }
+        .loading-panel { width:min(440px, 92vw); border:1px solid var(--border); border-radius:8px; padding:28px; background:var(--bg-base); text-align:center; }
+        .spinner { width:34px; height:34px; border:4px solid #e7eeee; border-top-color:var(--primary); border-radius:50%; margin:0 auto 18px; animation:spin .9s linear infinite; }
+        .loading-panel h1 { margin:0; font-size:20px; line-height:1.4; }
+        .loading-panel p { margin:10px 0 0; color:var(--text-sub); font-size:14px; line-height:1.6; }
+        .retry { display:none; margin-top:18px; color:var(--primary); font-weight:800; text-decoration:none; }
+        @keyframes spin { to { transform:rotate(360deg); } }
+    </style>
+</head>
+<body>
+<main class="container loading-wrap">
+    <section class="loading-panel">
+        <div class="spinner"></div>
+        <h1>제안을 생성하는 중입니다</h1>
+        <p id="message">상품 데이터를 바탕으로 문구를 준비하고 있습니다. 잠시만 기다려 주세요.</p>
+        <a class="retry" id="retryLink" href="#">다시 시도</a>
+    </section>
+</main>
+
+<script th:inline="javascript">
+    const caseType = /*[[${caseType}]]*/ '';
+    const productId = /*[[${productId}]]*/ 0;
+    const message = document.getElementById('message');
+    const retryLink = document.getElementById('retryLink');
+
+    const actionUrl = `/biz/review-analysis/boost/action?caseType=${encodeURIComponent(caseType)}&productId=${encodeURIComponent(productId)}&prepared=true`;
+    const prepareUrl = `/biz/review-analysis/boost/prepare?caseType=${encodeURIComponent(caseType)}&productId=${encodeURIComponent(productId)}`;
+
+    async function prepare() {
+        retryLink.style.display = 'none';
+        message.textContent = '상품 데이터를 바탕으로 문구를 준비하고 있습니다. 잠시만 기다려 주세요.';
+        try {
+            const res = await fetch(prepareUrl, {method: 'GET'});
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                throw new Error(data.message || '제안 생성에 실패했습니다.');
+            }
+            window.location.replace(actionUrl);
+        } catch (e) {
+            message.textContent = e.message || '제안 생성 중 오류가 발생했습니다.';
+            retryLink.style.display = 'inline-flex';
+            retryLink.href = '#';
+        }
+    }
+
+    retryLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        prepare();
+    });
+
+    prepare();
+</script>
+</body>
+</html>
