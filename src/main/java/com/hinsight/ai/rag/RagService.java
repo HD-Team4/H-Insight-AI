@@ -1,6 +1,7 @@
 package com.hinsight.ai.rag;
 
 import com.hinsight.ai.embedding.EmbeddingService;
+import com.hinsight.ai.rag.cache.SemanticAnswerCache;
 import com.hinsight.ai.vectorstore.ReviewMatch;
 import com.hinsight.ai.vectorstore.ReviewSearchService;
 import org.slf4j.Logger;
@@ -16,6 +17,7 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * 라이브 방송 리뷰 기반 Q&A RAG 파이프라인.
@@ -36,6 +38,7 @@ public class RagService {
     private final EmbeddingService embeddingService;
     private final ReviewSearchService reviewSearchService;
     private final ChatClient chatClient;
+    private final SemanticAnswerCache answerCache;
 
     // 랭킹 파라미터 (application.yml 로 튜닝: rag.*)
     @Value("${rag.official-top-k:2}")   private int officialTopK;
@@ -44,12 +47,19 @@ public class RagService {
     @Value("${rag.w-sim:0.6}")          private double wSim;
     @Value("${rag.w-rec:0.4}")          private double wRec;
 
+    // 프롬프트 최적화 파라미터: 컨텍스트를 잘라 LLM 에 넘기는 토큰을 줄인다 (rag.context.*)
+    @Value("${rag.context.max-official-chars:600}") private int maxOfficialChars;  // 공식 스펙 1건 최대 길이
+    @Value("${rag.context.max-review-chars:280}")   private int maxReviewChars;    // 유저 리뷰 1건 최대 길이
+    @Value("${rag.context.max-total-chars:2000}")   private int maxTotalChars;     // 조립된 컨텍스트 총 상한
+
     public RagService(EmbeddingService embeddingService,
                       ReviewSearchService reviewSearchService,
-                      ChatClient chatClient) {
+                      ChatClient chatClient,
+                      SemanticAnswerCache answerCache) {
         this.embeddingService = embeddingService;
         this.reviewSearchService = reviewSearchService;
         this.chatClient = chatClient;
+        this.answerCache = answerCache;
     }
 
     private static final String SYSTEM = """
@@ -96,6 +106,13 @@ public class RagService {
     public Flux<String> answer(long productId, String question, OffsetDateTime cutoff) {
         float[] qVec = embeddingService.embed(question);
 
+        // 1) 시맨틱 캐시 조회: 유사 질문을 이미 답했으면 LLM 호출 없이 재사용(토큰 절감)
+        Optional<SemanticAnswerCache.Hit> cached = answerCache.lookup(productId, qVec);
+        if (cached.isPresent()) {
+            log.info("[RAG] 캐시 재사용 productId={}, q='{}' (LLM 호출 skip)", productId, question);
+            return Flux.just(cached.get().answer());
+        }
+
         OffsetDateTime effectiveCutoff = (cutoff != null) ? cutoff : NO_CUTOFF;
         List<ReviewMatch> official = reviewSearchService.searchOfficial(productId, qVec, officialTopK);
         List<ReviewMatch> reviews  = reviewSearchService.searchReviews(
@@ -114,27 +131,53 @@ public class RagService {
                 </context>
                 """.formatted(question, context);
 
+        // 2) 캐시 미스 → LLM 스트리밍. 토큰을 누적해 완료 시 캐시에 적재한다.
+        int promptChars = SYSTEM.length() + user.length();
+        StringBuilder acc = new StringBuilder();
         return chatClient.prompt()
                 .system(SYSTEM)
                 .user(user)
                 .stream()
                 .content()
+                .doOnNext(acc::append)
+                .doOnComplete(() -> answerCache.store(productId, question, qVec, acc.toString(), promptChars))
                 .onErrorResume(e -> {
                     log.warn("[RAG] 답변 생성 실패, 폴백: {} ({})", question, e.getMessage());
                     return Flux.just("지금 답변을 준비하지 못했어요. 잠시 후 다시 문의해 주세요.");
                 });
     }
 
-    /** 공식 스펙을 최상단에, 그 아래 최신 리뷰 순으로 출처·날짜를 태깅해 조립. */
+    /**
+     * 공식 스펙을 최상단에, 그 아래 최신 리뷰 순으로 출처·날짜를 태깅해 조립.
+     *
+     * <p>프롬프트 최적화: 각 블록을 유형별 최대 길이로 자르고(공식 스펙은 더 넉넉히),
+     * 조립 총량이 {@code rag.context.max-total-chars} 를 넘으면 더 낮은 우선순위 리뷰를 버린다.
+     * 공식 스펙(1순위)이 리뷰 때문에 잘리지 않도록 스펙을 먼저 채운다.</p>
+     */
     private String buildContext(List<ReviewMatch> official, List<ReviewMatch> reviews) {
         List<String> blocks = new ArrayList<>();
+        int budget = maxTotalChars;
+
         for (ReviewMatch m : official) {
-            blocks.add("[공식 스펙 | %s]\n%s".formatted(fmt(m.writtenAt()), m.content()));
+            String block = "[공식 스펙 | %s]\n%s".formatted(fmt(m.writtenAt()), truncate(m.content(), maxOfficialChars));
+            if (block.length() > budget) break;
+            blocks.add(block);
+            budget -= block.length();
         }
         for (ReviewMatch m : reviews) {
-            blocks.add("[유저 리뷰 | %s]\n%s".formatted(fmt(m.writtenAt()), m.content()));
+            String block = "[유저 리뷰 | %s]\n%s".formatted(fmt(m.writtenAt()), truncate(m.content(), maxReviewChars));
+            if (block.length() > budget) break;   // 예산 초과분 리뷰는 컷오프(토큰 절약)
+            blocks.add(block);
+            budget -= block.length();
         }
         return String.join("\n\n", blocks);
+    }
+
+    /** 본문을 max 자로 자르고, 잘린 경우 말줄임표를 붙인다. */
+    private String truncate(String s, int max) {
+        if (s == null) return "";
+        String t = s.strip();
+        return t.length() <= max ? t : t.substring(0, max).stripTrailing() + "…";
     }
 
     private String fmt(OffsetDateTime dt) {
