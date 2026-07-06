@@ -21,7 +21,7 @@ import java.util.Optional;
 
 /**
  * 라이브 방송 리뷰 기반 Q&A RAG 파이프라인.
- * 질문 → BGE-M3(Ollama) 임베딩 → review_vectors 2단계 검색(공식 스펙 + 최신 리뷰)
+ * 질문 → BGE-M3(Lambda) 임베딩 → review_vectors 2단계 검색(공식 스펙 + 최신 리뷰)
  *      → 출처·날짜 태깅 컨텍스트 조립 → Gemini 답변 스트리밍(SSE).
  *
  * <p>'과거의 망령'(리뉴얼 전 구형 정보) 방지를 위해:
