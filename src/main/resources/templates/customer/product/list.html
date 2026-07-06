@@ -15,35 +15,77 @@
                 </div>
             </div>
 
-            <div class="live-main-carousel" id="liveMainCarousel">
-                <div class="live-main-grid">
-                    <article class="live-main-card"
-                             th:each="live : ${onAirLiveSessions}">
-                        <a class="live-main-video"
-                           th:href="@{/live/{id}(id=${live.liveSessionId})}"
-                           aria-label="라이브 방송 입장">
-                            <video autoplay muted loop playsinline preload="metadata"
-                                   th:with="cacheVersion=${live.cacheVersion != null ? live.cacheVersion : 1}">
-                                <source th:src="${live.videoUrl != null and !#strings.isEmpty(#strings.trim(live.videoUrl))} ? ${live.videoUrl + '?v=' + cacheVersion} : ${@environment.getProperty('app.cdn.url') + '/static/videos/live/windbreaker.mp4'}"
-                                        type="video/mp4">
-                            </video>
-                        </a>
-                        <div class="live-main-info">
-                            <div class="live-main-meta">
-                                <span>ON AIR</span>
-                            </div>
-                            <h3 th:text="${live.liveTitle}">라이브 제목</h3>
-                            <p th:if="${live.liveMessage != null and !live.liveMessage.isBlank()}"
-                               th:text="${live.liveMessage}">라이브 소개 문구</p>
-                            <div class="live-main-cta">
-                                <a th:href="@{/live/{id}(id=${live.liveSessionId})}">방송 보러가기</a>
-                                <div class="live-main-controls">
-                                    <button type="button" class="live-scroll-btn" data-live-scroll="prev" aria-label="이전 라이브">‹</button>
-                                    <button type="button" class="live-scroll-btn" data-live-scroll="next" aria-label="다음 라이브">›</button>
+            <!-- 판매 개선(검색 없음 승인) 추천 슬롯 — 라이브 영상 옆에 세로로 노출 -->
+            <style>
+                .live-main-row { display:flex; gap:16px; align-items:stretch; }
+                .live-main-row .live-main-carousel { flex:1 1 auto; min-width:0; }
+                .promo-slot { flex:0 0 220px; width:220px; }
+                .promo-slot-label { font-size:13px; font-weight:700; color:var(--text-sub); margin-bottom:8px; }
+                .promo-slot-list { display:flex; flex-direction:column; gap:10px; max-height:100%; overflow-y:auto; padding-right:2px; }
+                .promo-card { display:flex; align-items:center; gap:10px; text-decoration:none; color:inherit;
+                    padding:6px; border-radius:8px; }
+                .promo-card:hover { background:var(--bg-light); }
+                .promo-card-img { flex:0 0 56px; width:56px; height:56px; border-radius:8px; overflow:hidden; background:#f4f4f4; }
+                .promo-card-img img { width:100%; height:100%; object-fit:cover; display:block; }
+                .promo-card-info { min-width:0; }
+                .promo-card-name { font-size:13px; font-weight:600; line-height:1.35;
+                    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+                .promo-card-price { font-size:13px; font-weight:800; margin-top:2px; }
+                @media (max-width:900px) {
+                    .live-main-row { flex-direction:column; }
+                    .promo-slot { width:100%; flex:none; }
+                    .promo-slot-list { flex-direction:row; overflow-x:auto; overflow-y:visible; max-height:none; }
+                    .promo-card { flex-direction:column; align-items:flex-start; flex:0 0 132px; width:132px; }
+                    .promo-card-img { width:100%; height:132px; }
+                }
+            </style>
+            <div class="live-main-row">
+                <div class="live-main-carousel" id="liveMainCarousel">
+                    <div class="live-main-grid">
+                        <article class="live-main-card"
+                                 th:each="live : ${onAirLiveSessions}">
+                            <a class="live-main-video"
+                               th:href="@{/live/{id}(id=${live.liveSessionId})}"
+                               aria-label="라이브 방송 입장">
+                                <video autoplay muted loop playsinline preload="metadata"
+                                       th:with="cacheVersion=${live.cacheVersion != null ? live.cacheVersion : 1}">
+                                    <source th:src="${live.videoUrl != null and !#strings.isEmpty(#strings.trim(live.videoUrl))} ? ${live.videoUrl + '?v=' + cacheVersion} : ${@environment.getProperty('app.cdn.url') + '/static/videos/live/windbreaker.mp4'}"
+                                            type="video/mp4">
+                                </video>
+                            </a>
+                            <div class="live-main-info">
+                                <div class="live-main-meta">
+                                    <span>ON AIR</span>
+                                </div>
+                                <h3 th:text="${live.liveTitle}">라이브 제목</h3>
+                                <p th:if="${live.liveMessage != null and !live.liveMessage.isBlank()}"
+                                   th:text="${live.liveMessage}">라이브 소개 문구</p>
+                                <div class="live-main-cta">
+                                    <a th:href="@{/live/{id}(id=${live.liveSessionId})}">방송 보러가기</a>
+                                    <div class="live-main-controls">
+                                        <button type="button" class="live-scroll-btn" data-live-scroll="prev" aria-label="이전 라이브">‹</button>
+                                        <button type="button" class="live-scroll-btn" data-live-scroll="next" aria-label="다음 라이브">›</button>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    </article>
+                        </article>
+                    </div>
+                </div>
+
+                <div class="promo-slot" th:if="${promotedProducts != null and !#lists.isEmpty(promotedProducts)}">
+                    <div class="promo-slot-label">✨ 추천 상품</div>
+                    <div class="promo-slot-list">
+                        <a class="promo-card" th:each="p : ${promotedProducts}"
+                           th:href="@{/customer/products/{id}(id=${p.productId})}">
+                            <div class="promo-card-img">
+                                <img th:if="${p.imageUrl}" th:src="${p.imageUrl}" th:alt="${p.productName}">
+                            </div>
+                            <div class="promo-card-info">
+                                <div class="promo-card-name" th:text="${p.productName}">상품명</div>
+                                <div class="promo-card-price" th:text="${#numbers.formatInteger(p.price, 0, 'COMMA')} + '원'">0원</div>
+                            </div>
+                        </a>
+                    </div>
                 </div>
             </div>
         </section>

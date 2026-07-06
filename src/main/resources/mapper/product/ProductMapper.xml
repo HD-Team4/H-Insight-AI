@@ -85,4 +85,39 @@
         FROM products
     </select>
 
+    <update id="updateProductName">
+        UPDATE products
+        SET product_name = #{productName}
+        WHERE product_id = #{productId}
+          AND biz_id = #{bizId}
+    </update>
+
+    <update id="updateDescription">
+        UPDATE products
+        SET description = #{description}
+        WHERE product_id = #{productId}
+          AND biz_id = #{bizId}
+    </update>
+
+    <update id="promoteProduct">
+        UPDATE products
+        SET is_promoted = 'Y', promoted_at = NOW()
+        WHERE product_id = #{productId}
+          AND biz_id = #{bizId}
+    </update>
+
+    <select id="findProductIdsByBiz" resultType="long">
+        SELECT product_id
+        FROM products
+        WHERE biz_id = #{bizId}
+    </select>
+
+    <select id="findPromotedProducts" resultType="Product">
+        SELECT *
+        FROM products
+        WHERE is_promoted = 'Y'
+        ORDER BY promoted_at DESC
+        LIMIT #{limit}
+    </select>
+
 </mapper>

@@ -18,6 +18,7 @@ BUCKET = "hf4-datalake"
 ATHENA_OUT = f"s3://{BUCKET}/athena-results/"
 MART_KEY = "mart/dashboard/latest.json"
 PRODUCT_SALES_KEY = "mart/products/sales.json"  # 전체 상품별 매출·성장률 (급등/급락 선별·LLM 전략 입력용)
+PRODUCT_BOOST_KEY = "mart/product-boost/latest.json"  # 검색/클릭/구매 없음 케이스 (판매 개선 자동화 입력용)
 
 PERIODS = [("1w", "1주", 7, "day"), ("1m", "1개월", 30, "week"),
            ("6m", "6개월", 182, "month"), ("1y", "1년", 365, "month")]
@@ -149,6 +150,65 @@ def product_sales(pur, prod2cat, cat_name, price_by, rr_by, anchor, days):
     return out
 
 
+def product_boost(srch, clk_prod, pur, prod2cat, cat_name, anchor, days=30):
+    lo = anchor - dt.timedelta(days=days)
+    search_by, click_by, purchase_by, revenue_by = {}, {}, {}, {}
+
+    # 검색어를 상품명과 대조해 상품별 검색수를 집계
+    product_terms = {pid: compact_terms(name) for pid, (name, _) in prod2cat.items()}
+    for r in srch:
+        if lo < r["d"] <= anchor:
+            kw = normalize_text(r["kw"])
+            if not kw:
+                continue
+            kw_compact = kw.replace(" ", "")
+            for pid, terms in product_terms.items():
+                if kw_compact in terms or terms in kw_compact:
+                    search_by[pid] = search_by.get(pid, 0) + r["cnt"]
+    for r in clk_prod:
+        if lo < r["d"] <= anchor:
+            click_by[r["pid"]] = click_by.get(r["pid"], 0) + r["cnt"]
+    for r in pur:
+        if lo < r["d"] <= anchor:
+            purchase_by[r["pid"]] = purchase_by.get(r["pid"], 0) + r["orders"]
+            revenue_by[r["pid"]] = revenue_by.get(r["pid"], 0) + r["revenue"]
+
+    rows = []
+    for pid in prod2cat.keys():
+        name, cid = prod2cat.get(pid, ("(unknown)", None))
+        searches, clicks, purchases = search_by.get(pid, 0), click_by.get(pid, 0), purchase_by.get(pid, 0)
+        rows.append({"productId": pid, "productName": name, "category": cat_name.get(cid, "-"),
+                     "categoryId": cid, "searches": searches, "clicks": clicks, "purchases": purchases,
+                     "revenue": revenue_by.get(pid, 0),
+                     "ctr": round(clicks / searches, 4) if searches else 0,
+                     "cvr": round(purchases / clicks, 4) if clicks else 0})
+
+    # 각 케이스별로 병목이 뚜렷한 상품 TOP 5
+    return {"generatedAt": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
+            "anchor": str(anchor),
+            "cases": {
+                "noSearch": sorted([r for r in rows if r["searches"] == 0 and r["purchases"] == 0],
+                                   key=lambda x: (x["clicks"], x["purchases"]))[:5],
+                "noClick": sorted([r for r in rows if r["searches"] >= 1 and r["clicks"] == 0],
+                                  key=lambda x: -x["searches"])[:5],
+                "noPurchase": sorted([r for r in rows if r["clicks"] >= 3 and r["purchases"] == 0],
+                                     key=lambda x: -x["clicks"])[:5],
+            }}
+
+
+def normalize_text(value):
+    if not value:
+        return ""
+    keep = []
+    for ch in str(value).lower():
+        keep.append(ch if ch.isalnum() else " ")
+    return " ".join("".join(keep).split())
+
+
+def compact_terms(value):
+    return normalize_text(value).replace(" ", "")
+
+
 def lambda_handler(event, context):
     prod2cat = {int(r["product_id"]): (r["product_name"], int(r["category_id"]))
                 for r in read_dim("dims/products.csv")}
@@ -169,6 +229,11 @@ def lambda_handler(event, context):
         SELECT date(from_iso8601_timestamp(occurredat)) AS d,
                count(distinct userid) AS dau
         FROM hf4_datalake.activity_click GROUP BY 1""")
+    clk_prod = run_athena("""
+        SELECT date(from_iso8601_timestamp(occurredat)) AS d,
+               payload.productid AS pid, count(*) AS cnt
+        FROM hf4_datalake.activity_click
+        GROUP BY 1, 2""")
     # 상품별 판매가(구매 이벤트의 payload.price) + 재구매율(2회 이상 구매 고객 비율)
     prc = run_athena("""
         SELECT payload.productid AS pid, max(payload.price) AS price
@@ -187,6 +252,8 @@ def lambda_handler(event, context):
         r["d"] = dt.date.fromisoformat(r["d"]); r["cnt"] = int(r["cnt"])
     for r in clk:
         r["d"] = dt.date.fromisoformat(r["d"]); r["dau"] = int(r["dau"])
+    for r in clk_prod:
+        r["d"] = dt.date.fromisoformat(r["d"]); r["pid"] = int(r["pid"]); r["cnt"] = int(r["cnt"])
     price_by = {int(r["pid"]): int(float(r["price"])) for r in prc if r.get("price")}
     rr_by = {int(r["pid"]): int(float(r["rr"])) for r in rep if r.get("rr")}
 
@@ -205,6 +272,11 @@ def lambda_handler(event, context):
                      for key, label, days, mode in PERIODS}}
     s3.put_object(Bucket=BUCKET, Key=PRODUCT_SALES_KEY,
                   Body=json.dumps(sales_mart, ensure_ascii=False).encode("utf-8"),
+                  ContentType="application/json")
+
+    boost_mart = product_boost(srch, clk_prod, pur, prod2cat, cat_name, anchor, 30)
+    s3.put_object(Bucket=BUCKET, Key=PRODUCT_BOOST_KEY,
+                  Body=json.dumps(boost_mart, ensure_ascii=False).encode("utf-8"),
                   ContentType="application/json")
 
     summary = {k: v["kpi"]["totalSales"] for k, v in mart.items()}

@@ -1,6 +1,22 @@
 spring:
+  datasource:
+    hikari:
+      maximum-pool-size: 3
   config:
     import: optional:file:.env[.properties]
+  # 메일(SMTP) — .env 를 properties 로 로드하면 SPRING_MAIL_* 대문자키가 relaxed binding 되지 않으므로
+  # 여기서 명시적으로 placeholder 참조해야 JavaMailSender 가 자동 구성됨(미설정 시 리포트 메일 skip)
+  mail:
+    host: ${SPRING_MAIL_HOST:}
+    port: ${SPRING_MAIL_PORT:587}
+    username: ${SPRING_MAIL_USERNAME:}
+    password: ${SPRING_MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: ${SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH:true}
+          starttls:
+            enable: ${SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE:true}
   application:
     name: H-Insight-AI
   profiles:
