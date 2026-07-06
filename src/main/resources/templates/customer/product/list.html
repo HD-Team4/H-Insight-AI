@@ -78,6 +78,39 @@
             </div>
         </div>
 
+        <!-- 🔥 실시간 급상승 (Kafka→Redis 스피드 레이어, 최근 1시간 롤링) — 가로 상품 카드 행 -->
+        <style>
+            .hot-trend { margin: 40px 0 8px; }
+            .hot-trend .section-title { margin: 0 0 4px; }
+            .hot-trend .hot-sub { font-size: 13px; color: var(--text-sub); margin: 0 0 6px; }
+            .hot-row-label { font-size:16px; font-weight:700; margin: 22px 0 12px; }
+            .hot-row { display:flex; gap:14px; overflow-x:auto; padding-bottom:10px; scroll-snap-type:x proximity; }
+            .hot-row::-webkit-scrollbar { height:6px; }
+            .hot-row::-webkit-scrollbar-thumb { background:#dcdcdc; border-radius:3px; }
+            .hot-card { flex:0 0 156px; width:156px; text-decoration:none; color:inherit; scroll-snap-align:start; }
+            .hot-card-img { position:relative; width:156px; height:156px; border-radius:12px; overflow:hidden; background:#f4f4f4; }
+            .hot-card-img img { width:100%; height:100%; object-fit:cover; display:block; transition:transform .25s ease; }
+            .hot-card:hover .hot-card-img img { transform:scale(1.05); }
+            .hot-rank { position:absolute; top:8px; left:8px; min-width:24px; height:24px; padding:0 6px; border-radius:7px;
+                        background:rgba(0,0,0,.72); color:#fff; font-size:14px; font-weight:800; display:flex; align-items:center; justify-content:center; }
+            .hot-card:nth-child(-n+3) .hot-rank { background:var(--primary); }
+            .hot-card-name { font-size:13px; margin-top:9px; font-weight:600; line-height:1.35; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+            .hot-card-price { font-size:14px; font-weight:800; margin-top:3px; }
+            .hot-card-metric { font-size:11px; color:var(--text-sub); margin-top:4px; }
+            .hot-empty { color:var(--text-sub); font-size:13px; padding:8px 2px; }
+            @media (max-width:700px){ .hot-card,.hot-card-img{flex-basis:132px; width:132px;} .hot-card-img{height:132px;} }
+        </style>
+        <section class="hot-trend" id="hotTrend" style="display:none">
+            <h2 class="section-title">🔥 실시간 급상승</h2>
+            <p class="hot-sub">최근 1시간 실시간 집계 · <span id="hotAt">–</span> 기준</p>
+
+            <div class="hot-row-label">👁 지금 많이 보는 상품</div>
+            <div class="hot-row" id="hotViews"></div>
+
+            <div class="hot-row-label">🛒 지금 많이 팔리는 상품</div>
+            <div class="hot-row" id="hotSales"></div>
+        </section>
+
         <h2 class="section-title" th:if="${condition.categoryGroup() == null}">
             H-Insight 추천 픽
         </h2>
@@ -113,6 +146,48 @@
         </div>
 
     </div>
+
+    <script>
+        // 🔥 실시간 급상승: /api/hot-trends 를 5초마다 폴링 (Kafka→Redis 스피드 레이어)
+        (function () {
+            const box = document.getElementById('hotTrend');
+            if (!box) return;
+            function esc(s) {
+                return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+            }
+            function render(el, items, kind) {
+                el.innerHTML = (items || []).map(function (it) {
+                    const name = esc(it.name);
+                    const price = (it.price || 0).toLocaleString('ko-KR');
+                    const cnt = (it.count || 0).toLocaleString('ko-KR');
+                    const metric = kind === 'view' ? '👁 ' + cnt + '회 조회' : '🛒 ' + cnt + '개 판매';
+                    return '<a class="hot-card" href="/customer/products/' + it.productId + '">' +
+                        '<div class="hot-card-img"><span class="hot-rank">' + it.rank + '</span>' +
+                        '<img src="' + esc(it.imageUrl) + '" alt="' + name + '" loading="lazy"></div>' +
+                        '<div class="hot-card-name">' + name + '</div>' +
+                        '<div class="hot-card-price">' + price + '원</div>' +
+                        '<div class="hot-card-metric">' + metric + '</div></a>';
+                }).join('') || '<div class="hot-empty">아직 데이터가 없어요</div>';
+            }
+            async function poll() {
+                try {
+                    const res = await fetch('/api/hot-trends');
+                    if (!res.ok) return;
+                    const d = await res.json();
+                    const has = (d.views && d.views.length) || (d.sales && d.sales.length);
+                    box.style.display = has ? '' : 'none';
+                    if (!has) return;
+                    render(document.getElementById('hotViews'), d.views, 'view');
+                    render(document.getElementById('hotSales'), d.sales, 'sale');
+                    document.getElementById('hotAt').textContent =
+                        new Date(d.generatedAt).toLocaleTimeString('ko-KR');
+                } catch (e) { /* 무시 */ }
+            }
+            poll();
+            setInterval(poll, 5000);
+        })();
+    </script>
 
     <script th:inline="javascript">
         (function () {
