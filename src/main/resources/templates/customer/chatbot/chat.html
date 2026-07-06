@@ -6,76 +6,363 @@
 
 <th:block layout:fragment="css">
     <style>
-        .chatbot-page { padding: 40px 0 80px; max-width: 860px; }
-        .chatbot-intro { color: var(--text-sub); margin-bottom: 24px; }
-        .chatbot-form { display: flex; gap: 10px; margin-bottom: 8px; }
-        .chatbot-input {
-            flex: 1; height: 52px; padding: 0 18px;
-            border: 1.5px solid #C4C8CC; border-radius: 26px; font-size: 15px; outline: none;
-        }
-        .chatbot-input:focus { border-color: var(--primary); }
-        .chatbot-send {
-            height: 52px; padding: 0 26px; border: none; border-radius: 26px;
-            background: var(--primary); color: #fff; font-size: 15px; font-weight: 700; cursor: pointer;
-        }
-        .chatbot-send:hover { background: var(--primary-hover); }
-        .chatbot-send:disabled { opacity: 0.5; cursor: default; }
-        .chatbot-examples { font-size: 13px; color: var(--text-sub); margin-bottom: 28px; }
-        .chatbot-examples button {
-            border: 1px solid var(--border); background: var(--bg-base); color: var(--text-sub);
-            border-radius: 16px; padding: 5px 12px; margin: 4px 6px 0 0; cursor: pointer; font-size: 13px;
-        }
-        .chatbot-examples button:hover { border-color: var(--primary); color: var(--primary); }
+        /* ====== 상품 추천 챗봇 — 흰 도시 러너뷰 (부스터 비행 → 현대홈쇼핑 도착) ======
+           카메라가 캐릭터 뒤에 붙은 1인칭 몰입 비행. 흰 3D 빌딩/도로/신호등/자동차가 쏟아지고,
+           캐릭터가 부스터로 좌/우 필터링하다 흰 현대홈쇼핑 건물 앞에 멈추면 문이 열리고 상품이 나온다.
+           전부 화이트. 브랜드 teal/gold 는 부스터 화염·현대 사인·상품 배출 빛의 포인트로만. 이모지 미사용. */
+        .sc { max-width: 900px; margin: 0 auto; padding: 36px 0 80px; }
+        .sc-intro { color: var(--text-sub); margin: 6px 0 22px; font-size: 15px; }
 
-        .chatbot-status { color: var(--text-sub); font-size: 14px; padding: 16px 0; }
-        .chatbot-reply {
-            background: var(--bg-light); border: 1px solid var(--border); border-radius: 14px;
-            padding: 14px 18px; margin: 8px 0 4px; font-size: 15px; line-height: 1.6; color: var(--text-main);
+        /* ---- 무대: 밝은 흰 도시 ---- */
+        .sc-stage {
+            position: relative; width: 100%; aspect-ratio: 16 / 10; min-height: 340px;
+            border-radius: 22px; overflow: hidden; user-select: none;
+            background: linear-gradient(180deg, #e8f3f4 0%, #f2f9f9 38%, #ffffff 60%);
+            border: 1px solid var(--border);
+            box-shadow: 0 22px 50px -30px rgba(0, 137, 130, .35);
         }
-        .chatbot-parsed {
-            display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
-            margin: 8px 0 20px; font-size: 13px; color: var(--text-sub);
-        }
-        .chatbot-chip {
-            background: var(--bg-light); border: 1px solid var(--border);
-            border-radius: 14px; padding: 4px 12px; font-weight: 600; color: var(--text-main);
+        /* 원경 스카이라인 실루엣 */
+        .sc-horizon {
+            position: absolute; left: 0; right: 0; top: 30%; height: 15%; z-index: 1; opacity: .5;
+            background:
+                linear-gradient(90deg, transparent 4%, #dfe8ea 4% 9%, transparent 9% 14%, #e6eef0 14% 17%, transparent 17% 23%,
+                    #dbe5e7 23% 30%, transparent 30% 36%, #e6eef0 36% 40%, transparent 40% 47%, #dfe8ea 47% 53%, transparent 53% 60%,
+                    #e6eef0 60% 64%, transparent 64% 70%, #dbe5e7 70% 77%, transparent 77% 83%, #e6eef0 83% 87%, transparent 87% 93%, #dfe8ea 93% 97%, transparent 97%);
+            -webkit-mask: linear-gradient(180deg, #000 0 60%, transparent);
+            mask: linear-gradient(180deg, #000 0 60%, transparent);
         }
 
-        .chatbot-results { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 20px; }
-        .chatbot-card { border-radius: 12px; overflow: hidden; transition: transform .2s ease; }
-        .chatbot-card:hover { transform: translateY(-4px); }
-        .chatbot-card .thumb {
-            width: 100%; aspect-ratio: 1/1; background: var(--bg-light);
-            border-radius: 12px; overflow: hidden; display: flex; align-items: center; justify-content: center;
+        /* 3D 월드 */
+        .sc-world { position: absolute; inset: 0; perspective: 460px; perspective-origin: 50% 42%; z-index: 2; }
+        .sc-stage.boosting .sc-world { animation: sc-cam-bob .5s ease-in-out infinite; }
+        @keyframes sc-cam-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+        .sc-world-3d { position: absolute; inset: 0; transform-style: preserve-3d; will-change: transform; }
+
+        /* 도로 (원근 바닥, 차선 러시) */
+        .sc-road {
+            position: absolute; left: 50%; bottom: -2%; width: 300%; height: 150%;
+            transform: translateX(-50%) rotateX(76deg); transform-origin: bottom center;
+            background:
+                repeating-linear-gradient(0deg, transparent 0 30px, rgba(255, 255, 255, .95) 30px 62px) 50% 0 / 26px auto repeat-y,
+                linear-gradient(90deg, transparent 33.2%, rgba(255, 255, 255, .8) 33.2% 33.8%, transparent 33.8% 66.2%, rgba(255, 255, 255, .8) 66.2% 66.8%, transparent 66.8%),
+                linear-gradient(to top, #d7dee0 0%, #e6ecee 46%, #f2f6f7 78%, #f7fafa 100%);
+            animation: sc-road-run .42s linear infinite; animation-play-state: paused;
         }
-        .chatbot-card .thumb img { width: 100%; height: 100%; object-fit: cover; }
-        .chatbot-card .cat { font-size: 12px; color: var(--text-sub); margin: 12px 4px 4px; }
-        .chatbot-card .nm { font-size: 14px; margin: 0 4px 6px; }
-        .chatbot-card .pr { font-size: 16px; font-weight: 700; margin: 0 4px; }
-        .chatbot-card .sc { font-size: 11px; color: var(--primary); margin: 4px 4px 0; }
+        .sc-stage.boosting .sc-road { animation-play-state: running; }
+        @keyframes sc-road-run { from { background-position: 50% 0, 0 0, 0 0; } to { background-position: 50% 62px, 0 0, 0 0; } }
+
+        /* 흰 빌딩 (양옆 3D 스침) */
+        .sc-bldg {
+            position: absolute; width: 66px; height: 200px; transform: translateZ(-1900px); opacity: 0;
+            will-change: transform, opacity; border-radius: 3px 3px 0 0;
+            background:
+                repeating-linear-gradient(0deg, transparent 0 15px, rgba(150, 170, 174, .4) 15px 17px) 0 0 / 100% 100%,
+                repeating-linear-gradient(90deg, transparent 0 11px, rgba(150, 170, 174, .28) 11px 12px) 0 0 / 100% 100%,
+                linear-gradient(100deg, #ffffff 0 74%, #e4eaec 74% 100%);
+            box-shadow: 0 0 0 1px rgba(120, 140, 145, .18), 0 30px 40px -28px rgba(0, 0, 0, .18);
+            animation: sc-rush .95s linear infinite; animation-play-state: paused;
+        }
+        .sc-stage.boosting .sc-bldg { animation-play-state: running; }
+        .sc-stage.arrived .sc-bldg { opacity: 0 !important; transition: opacity .4s ease; }
+        @keyframes sc-rush {
+            0%   { transform: translateZ(-1900px); opacity: 0; }
+            12%  { opacity: 1; }
+            84%  { opacity: 1; }
+            100% { transform: translateZ(520px); opacity: 0; }
+        }
+
+        /* 자동차 (도로 위, 뒤에서 본 빨간 미등) */
+        .sc-car {
+            position: absolute; width: 54px; height: 40px; transform: translateZ(-1500px); opacity: 0;
+            will-change: transform, opacity; border-radius: 10px 10px 7px 7px;
+            background: linear-gradient(180deg, #ffffff 0%, #eef2f3 62%, #dfe5e7 100%);
+            box-shadow: 0 8px 14px -6px rgba(0, 0, 0, .28), inset 0 2px 0 rgba(255, 255, 255, .8);
+            animation: sc-rush-car 1.15s linear infinite; animation-play-state: paused;
+        }
+        .sc-car::before { /* 캐빈 */
+            content: ""; position: absolute; left: 20%; right: 20%; top: -34%; height: 46%;
+            border-radius: 8px 8px 0 0; background: linear-gradient(180deg, #eef3f4, #dbe2e4);
+        }
+        .sc-car::after { /* 미등 */
+            content: ""; position: absolute; left: 12%; right: 12%; bottom: 6px; height: 6px; border-radius: 3px;
+            background: linear-gradient(90deg, #ff5a4d 0 22%, transparent 22% 78%, #ff5a4d 78%);
+            box-shadow: 0 0 8px rgba(255, 90, 77, .7);
+        }
+        .sc-stage.boosting .sc-car { animation-play-state: running; }
+        .sc-stage.arrived .sc-car { opacity: 0 !important; transition: opacity .4s ease; }
+        @keyframes sc-rush-car {
+            0%   { transform: translateZ(-1500px); opacity: 0; }
+            16%  { opacity: 1; }
+            86%  { opacity: 1; }
+            100% { transform: translateZ(540px); opacity: 0; }
+        }
+
+        /* 신호등 */
+        .sc-tl { position: absolute; width: 10px; height: 118px; transform: translateZ(-1700px); opacity: 0;
+            will-change: transform, opacity; animation: sc-rush 1.05s linear infinite; animation-play-state: paused; }
+        .sc-stage.boosting .sc-tl { animation-play-state: running; }
+        .sc-stage.arrived .sc-tl { opacity: 0 !important; transition: opacity .4s ease; }
+        .sc-tl .pole { position: absolute; left: 50%; transform: translateX(-50%); bottom: 0; width: 5px; height: 100%;
+            background: linear-gradient(90deg, #cfd6d8, #b9c1c3); border-radius: 3px; }
+        .sc-tl .head { position: absolute; left: 50%; transform: translateX(-50%); top: 0; width: 16px; padding: 3px;
+            border-radius: 5px; background: #eef2f3; box-shadow: 0 0 0 1px rgba(120, 140, 145, .3);
+            display: flex; flex-direction: column; gap: 3px; }
+        .sc-tl .head i { width: 10px; height: 10px; border-radius: 50%; background: #cfd6d8; }
+        .sc-tl .head i.r { background: #ff5a4d; }
+        .sc-tl .head i.y { background: #f0b429; }
+        .sc-tl .head i.g { background: #2fbf71; box-shadow: 0 0 8px rgba(47, 191, 113, .8); } /* 부스트 = 초록 */
+
+        /* ---- 목적지: 흰 3D 현대홈쇼핑 ---- */
+        .sc-hyundai {
+            position: absolute; left: 50%; top: 50%; width: min(300px, 60%); height: 74%;
+            transform: translate(-50%, -50%) translateZ(-1600px); opacity: 0; z-index: 3; transform-style: preserve-3d;
+        }
+        .sc-hy-side { /* 오른쪽 옆면(3D 깊이) */
+            position: absolute; top: 3%; right: -1px; width: 46px; height: 97%; transform-origin: right center;
+            transform: rotateY(90deg); background: linear-gradient(180deg, #e2e8ea, #cdd5d7);
+            box-shadow: inset 0 0 30px rgba(0, 0, 0, .06);
+        }
+        .sc-hy-face {
+            position: absolute; inset: 0; border-radius: 8px 8px 0 0;
+            background: linear-gradient(180deg, #ffffff 0%, #eef3f4 100%);
+            box-shadow: 0 0 0 1px rgba(120, 140, 145, .25), 0 40px 60px -40px rgba(0, 0, 0, .3), inset 0 2px 0 rgba(255, 255, 255, .9);
+        }
+        .sc-hy-crown { position: absolute; top: -24px; left: 50%; transform: translateX(-50%); width: 56%; height: 28px;
+            background: linear-gradient(180deg, #ffffff, #eef3f4); box-shadow: 0 0 0 1px rgba(120, 140, 145, .25);
+            clip-path: polygon(0 100%, 24% 0, 76% 0, 100% 100%); }
+        .sc-hy-cols { position: absolute; top: 28%; bottom: 0; left: 6%; right: 6%;
+            background: repeating-linear-gradient(90deg, rgba(150, 170, 174, .22) 0 4px, transparent 4px 34px); }
+        .sc-hy-sign { position: absolute; top: 8%; left: 0; right: 0; text-align: center; line-height: 1; }
+        .sc-hy-sign b { display: block; color: var(--primary); font-weight: 800; letter-spacing: .12em;
+            font-size: clamp(20px, 5vw, 32px); }
+        .sc-hy-sign span { display: block; margin-top: 5px; color: var(--text-sub); font-size: clamp(8px, 1.5vw, 10px);
+            letter-spacing: .34em; font-weight: 700; }
+        .sc-hy-entrance { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 50%; height: 48%;
+            border-radius: 6px 6px 0 0; overflow: hidden; background: #eef3f4; box-shadow: inset 0 0 0 1px rgba(120, 140, 145, .3); }
+        .sc-interior { position: absolute; inset: 0; opacity: 0; transition: opacity .55s ease;
+            background: radial-gradient(circle at 50% 84%, #fff3d1 0%, #E2A807 34%, rgba(226, 168, 7, .1) 78%); }
+        .sc-hyundai.open .sc-interior { opacity: 1; }
+        .sc-door { position: absolute; top: 0; bottom: 0; width: 50%; will-change: transform;
+            background: linear-gradient(180deg, #f4f8f9 0%, #dfe6e8 100%); box-shadow: inset 0 0 0 1px rgba(120, 140, 145, .3); }
+        .sc-door.l { left: 0; } .sc-door.r { right: 0; }
+        .sc-door::after { content: ""; position: absolute; top: 42%; height: 16%; width: 2px; background: rgba(120, 140, 145, .6); }
+        .sc-door.l::after { right: 6px; } .sc-door.r::after { left: 6px; }
+
+        /* 문에서 나오는 상품 */
+        .sc-emerge { position: absolute; left: 50%; bottom: 26%; width: 54px; height: 54px; border-radius: 9px;
+            overflow: hidden; opacity: 0; z-index: 4; background: #fff;
+            box-shadow: 0 10px 24px rgba(0, 0, 0, .28), 0 0 0 2px rgba(226, 168, 7, .55), 0 0 22px rgba(226, 168, 7, .5); }
+        .sc-emerge img { width: 100%; height: 100%; object-fit: cover; }
+
+        /* ---- 캐릭터 (뒤에서 본 흰 파일럿 + 부스터) ---- */
+        .sc-hero { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
+        .sc-stage.boosting .sc-hero { animation: sc-shake .16s linear infinite; }
+        @keyframes sc-shake { 0% { transform: translate(0, 0); } 25% { transform: translate(-1px, 1px); }
+            50% { transform: translate(1px, -1px); } 75% { transform: translate(-1px, 0); } 100% { transform: translate(1px, 1px); } }
+        .sc-char { position: absolute; left: 50%; bottom: 8%; width: 120px; transform: translateX(-50%); will-change: transform; }
+        .sc-char-shadow { position: absolute; left: 50%; bottom: -6px; width: 78px; height: 14px; transform: translateX(-50%);
+            background: radial-gradient(ellipse, rgba(0, 0, 0, .22) 0%, rgba(0, 0, 0, 0) 70%);
+            animation: sc-sh 2.6s ease-in-out infinite; }
+        @keyframes sc-sh { 0%, 100% { transform: translateX(-50%) scale(1); opacity: .8; } 50% { transform: translateX(-50%) scale(.86); opacity: .6; } }
+        .sc-char-body { position: relative; width: 120px; height: 118px; margin: 0 auto; animation: sc-hover 2.6s ease-in-out infinite; }
+        @keyframes sc-hover { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+        .sc-char-body svg { width: 100%; height: 100%; overflow: visible; }
+        /* 부스터 화염(노즐 2개) */
+        .sc-flame { position: absolute; width: 15px; height: 26px; bottom: 6px;
+            border-radius: 7px 7px 10px 10px / 6px 6px 26px 26px;
+            background: linear-gradient(180deg, #d7fff8 0%, #4fe3d5 26%, #00b3a6 56%, #E2A807 100%);
+            filter: blur(.6px); transform-origin: top center; opacity: .92;
+            box-shadow: 0 0 18px rgba(0, 180, 168, .65), 0 6px 22px rgba(226, 168, 7, .4); }
+        .sc-flame.l { left: 34px; } .sc-flame.r { right: 34px; }
+        .sc-char.boost .sc-flame { animation: sc-flame .1s steps(2, end) infinite; }
+        @keyframes sc-flame { 0% { transform: scaleY(.85) scaleX(1); opacity: .8; } 100% { transform: scaleY(1.35) scaleX(.82); opacity: 1; } }
+
+        /* 스피드라인 */
+        .sc-sl { position: absolute; width: 2px; height: 74px; z-index: 4; opacity: 0;
+            background: linear-gradient(180deg, transparent, rgba(255, 255, 255, .9), transparent); }
+        .sc-stage.boosting .sc-sl { animation: sc-sl-run .5s linear infinite; }
+        @keyframes sc-sl-run { 0% { opacity: 0; transform: translateY(-70px) scaleY(.4); } 26% { opacity: .9; }
+            100% { opacity: 0; transform: translateY(360px) scaleY(1.7); } }
+
+        /* 플래시(부스터 버스트/문열림) */
+        .sc-flash { position: absolute; inset: 0; z-index: 6; pointer-events: none; opacity: 0;
+            background: radial-gradient(circle at 50% 60%, rgba(255, 255, 255, .8) 0%, rgba(255, 255, 255, 0) 60%); }
+        .sc-flash.gold { background: radial-gradient(circle at 50% 62%, rgba(255, 226, 150, .8) 0%, rgba(226, 168, 7, 0) 62%); }
+
+        /* 분석 중 힌트 */
+        .sc-hint { position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 7; display: none;
+            align-items: center; gap: 8px; padding: 6px 14px; border-radius: 20px; background: rgba(255, 255, 255, .82);
+            backdrop-filter: blur(6px); border: 1px solid var(--border); color: var(--text-sub); font-size: 12px; letter-spacing: .04em;
+            box-shadow: 0 6px 16px -8px rgba(0, 0, 0, .3); }
+        .sc-hint.show { display: inline-flex; }
+        .sc-hint i { width: 6px; height: 6px; border-radius: 50%; background: var(--primary); box-shadow: 0 0 8px var(--primary);
+            animation: sc-pulse .9s ease-in-out infinite; }
+        @keyframes sc-pulse { 0%, 100% { opacity: .3; transform: scale(.8); } 50% { opacity: 1; transform: scale(1.2); } }
+
+        /* HUD 단서 */
+        .sc-clues { position: absolute; top: 14px; left: 14px; right: 14px; z-index: 7; display: flex; flex-wrap: wrap; gap: 8px; pointer-events: none; }
+        .sc-clue { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px 6px 9px; border-radius: 13px;
+            background: rgba(255, 255, 255, .9); backdrop-filter: blur(6px); border: 1px solid var(--border);
+            box-shadow: 0 10px 24px -14px rgba(0, 0, 0, .5); opacity: 0; }
+        .sc-clue.pop { animation: sc-clue-in .5s cubic-bezier(.15, 1.25, .35, 1) forwards; }
+        @keyframes sc-clue-in { from { opacity: 0; transform: translateY(-6px) scale(.35); filter: blur(4px); } to { opacity: 1; transform: none; filter: none; } }
+        .sc-clue svg { width: 17px; height: 17px; color: var(--primary); flex: none; }
+        .sc-clue-txt { line-height: 1.12; }
+        .sc-clue-label { display: block; font-size: 9.5px; font-weight: 700; letter-spacing: .13em; text-transform: uppercase; color: var(--text-sub); }
+        .sc-clue-value { display: block; font-size: 13px; font-weight: 700; color: var(--text-main); max-width: 210px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        /* ---- 입력 ---- */
+        .sc-form { display: flex; gap: 10px; margin: 20px 0 8px; }
+        .sc-input { flex: 1; height: 52px; padding: 0 20px; border: 1.5px solid #C4C8CC; border-radius: 26px; font-size: 15px; outline: none;
+            background: #fff; transition: border-color .18s ease, box-shadow .18s ease; }
+        .sc-input:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(0, 137, 130, .1); }
+        .sc-send { height: 52px; padding: 0 28px; border: none; border-radius: 26px; background: var(--primary); color: #fff;
+            font-size: 15px; font-weight: 700; cursor: pointer; transition: background .18s ease, transform .1s ease; }
+        .sc-send:hover { background: var(--primary-hover); }
+        .sc-send:active { transform: scale(.97); }
+        .sc-send:disabled { opacity: .5; cursor: default; }
+
+        .sc-examples { font-size: 13px; color: var(--text-sub); margin-bottom: 24px; }
+        .sc-examples button { border: 1px solid var(--border); background: var(--bg-base); color: var(--text-sub); border-radius: 16px;
+            padding: 6px 13px; margin: 4px 6px 0 0; cursor: pointer; font-size: 13px; transition: border-color .15s ease, color .15s ease; }
+        .sc-examples button:hover { border-color: var(--primary); color: var(--primary); }
+
+        /* ---- 컨시어지 멘트 ---- */
+        .sc-reply { display: none; gap: 12px; margin: 4px 0 20px; }
+        .sc-reply.show { display: flex; align-items: flex-start; animation: sc-fade-up .4s ease both; }
+        .sc-crest { flex: none; width: 40px; height: 40px; border-radius: 50%; background: var(--primary); display: flex;
+            align-items: center; justify-content: center; box-shadow: 0 6px 16px -6px rgba(0, 137, 130, .8); }
+        .sc-crest svg { width: 24px; height: 24px; }
+        .sc-reply-main { min-width: 0; }
+        .sc-reply-name { font-size: 12px; font-weight: 700; color: var(--primary); letter-spacing: .02em; margin: 2px 0 6px; }
+        .sc-bubble { position: relative; background: var(--bg-light); border: 1px solid var(--border); border-radius: 4px 16px 16px 16px;
+            padding: 14px 18px; font-size: 15px; line-height: 1.65; color: var(--text-main); min-height: 24px; max-width: 640px; }
+        .sc-caret { display: inline-block; width: 2px; height: 1em; vertical-align: -2px; margin-left: 1px; background: var(--primary);
+            animation: sc-blink 1s steps(1) infinite; }
+        @keyframes sc-blink { 50% { opacity: 0; } }
+
+        /* ---- 진열대 ---- */
+        .sc-status { display: none; color: var(--text-sub); font-size: 14px; padding: 4px 0 18px; }
+        .sc-shelf { display: grid; grid-template-columns: repeat(auto-fill, minmax(186px, 1fr)); gap: 22px; }
+        .sc-card { display: block; border-radius: 12px; opacity: 0; transform: translateY(16px); transition: transform .2s ease; text-decoration: none; }
+        .sc-card.in { animation: sc-fade-up .5s ease both; }
+        .sc-card:hover { transform: translateY(-5px); }
+        .sc-card .thumb { width: 100%; aspect-ratio: 1 / 1; background: var(--bg-light); border: 1px solid var(--border); border-radius: 12px;
+            overflow: hidden; display: flex; align-items: center; justify-content: center; }
+        .sc-card .thumb img { width: 100%; height: 100%; object-fit: cover; }
+        .sc-card .cat { font-size: 12px; color: var(--text-sub); margin: 12px 4px 4px; }
+        .sc-card .nm { font-size: 14px; margin: 0 4px 6px; color: var(--text-main); }
+        .sc-card .pr { font-size: 16px; font-weight: 700; margin: 0 4px; color: var(--text-main); }
+        .sc-card .sc-score { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: var(--primary); margin: 8px 4px 0; font-weight: 600; }
+        .sc-score-bar { width: 42px; height: 4px; border-radius: 2px; background: rgba(0, 137, 130, .15); overflow: hidden; }
+        .sc-score-bar > span { display: block; height: 100%; background: var(--primary); border-radius: 2px; }
+
+        @keyframes sc-fade-up { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+        @media (max-width: 560px) { .sc-clue-value { max-width: 120px; } .sc-char { width: 96px; } }
+
+        /* 접근성: 모션 최소화 — 러시/흔들림/화염 정지, 페이드만 */
+        @media (prefers-reduced-motion: reduce) {
+            .sc-stage.boosting .sc-world, .sc-stage.boosting .sc-road, .sc-stage.boosting .sc-bldg,
+            .sc-stage.boosting .sc-car, .sc-stage.boosting .sc-tl, .sc-stage.boosting .sc-hero,
+            .sc-stage.boosting .sc-sl, .sc-char.boost .sc-flame, .sc-char-body, .sc-char-shadow, .sc-hint i { animation: none; }
+            .sc-stage.boosting .sc-bldg, .sc-stage.boosting .sc-car, .sc-stage.boosting .sc-tl, .sc-stage.boosting .sc-sl { opacity: 0; }
+        }
     </style>
 </th:block>
 
 <th:block layout:fragment="content">
-    <div class="chatbot-page container">
-        <h1 class="section-title" style="margin-top:0;">상품 추천 챗봇</h1>
-        <p class="chatbot-intro">원하는 스타일을 말로 설명해 주세요. 성별·카테고리·가격은 자동으로 걸러 드려요.</p>
+    <div class="sc container">
+        <h1 class="section-title" style="margin-top:0;">스타일리스트 챗봇</h1>
+        <p class="sc-intro">원하는 스타일을 말해 주세요. 부스터를 켜고 도시를 가로질러 현대홈쇼핑까지 단숨에 안내해 드려요.</p>
 
-        <form class="chatbot-form" id="chatbotForm">
-            <input type="text" id="chatbotInput" class="chatbot-input"
+        <!-- 무대: 흰 도시 러너뷰 -->
+        <div class="sc-stage" id="scStage">
+            <div class="sc-horizon"></div>
+
+            <div class="sc-world">
+                <div class="sc-world-3d" id="scWorld">
+                    <div class="sc-road"></div>
+                    <div id="scBuildings"></div>
+                    <div id="scProps"></div>
+
+                    <!-- 현대홈쇼핑 -->
+                    <div class="sc-hyundai" id="scStore">
+                        <div class="sc-hy-side"></div>
+                        <div class="sc-hy-face">
+                            <div class="sc-hy-crown"></div>
+                            <div class="sc-hy-cols"></div>
+                            <div class="sc-hy-sign"><b>현대</b><span>HOME SHOPPING</span></div>
+                            <div class="sc-hy-entrance">
+                                <div class="sc-interior"></div>
+                                <div class="sc-door l" id="scDoorL"></div>
+                                <div class="sc-door r" id="scDoorR"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 캐릭터(카메라 앞) -->
+            <div class="sc-hero">
+                <div id="scSpeed"></div>
+                <div class="sc-char" id="scChar">
+                    <div class="sc-char-shadow"></div>
+                    <div class="sc-char-body">
+                        <div class="sc-flame l"></div>
+                        <div class="sc-flame r"></div>
+                        <svg viewBox="0 0 120 118">
+                            <!-- 뒤에서 본 흰 파일럿 -->
+                            <ellipse cx="60" cy="106" rx="30" ry="7" fill="rgba(0,0,0,.05)"/>
+                            <!-- 팔 -->
+                            <rect x="20" y="52" width="18" height="40" rx="9" fill="#ffffff" stroke="#dbe2e4" stroke-width="2"/>
+                            <rect x="82" y="52" width="18" height="40" rx="9" fill="#ffffff" stroke="#dbe2e4" stroke-width="2"/>
+                            <!-- 제트팩 -->
+                            <rect x="30" y="46" width="60" height="54" rx="18" fill="#f2f6f7" stroke="#d3dbdd" stroke-width="2"/>
+                            <rect x="40" y="94" width="14" height="14" rx="5" fill="#e5ebed" stroke="#cdd5d7" stroke-width="2"/>
+                            <rect x="66" y="94" width="14" height="14" rx="5" fill="#e5ebed" stroke="#cdd5d7" stroke-width="2"/>
+                            <!-- 몸통 -->
+                            <rect x="40" y="40" width="40" height="46" rx="16" fill="#ffffff" stroke="#dbe2e4" stroke-width="2"/>
+                            <!-- 뒤통수(헬멧) -->
+                            <circle cx="60" cy="30" r="22" fill="#ffffff" stroke="#dbe2e4" stroke-width="2"/>
+                            <path d="M44 26 a16 12 0 0 1 32 0 z" fill="#eef3f4"/>
+                            <ellipse cx="60" cy="20" rx="7" ry="4" fill="rgba(255,255,255,.9)"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sc-flash" id="scFlash"></div>
+            <div class="sc-hint" id="scHint"><i></i> 스타일 분석 중</div>
+            <div class="sc-clues" id="scClues" aria-live="polite"></div>
+        </div>
+
+        <!-- 입력 -->
+        <form class="sc-form" id="scForm">
+            <input type="text" id="scInput" class="sc-input"
                    placeholder="예) 엄마 사줄 5만원대 원피스" autocomplete="off" required>
-            <button type="submit" class="chatbot-send" id="chatbotSend">추천받기</button>
+            <button type="submit" class="sc-send" id="scSend">추천받기</button>
         </form>
-        <div class="chatbot-examples">
+        <div class="sc-examples">
             <button type="button" data-q="엄마 사줄 5만원대 원피스">엄마 사줄 5만원대 원피스</button>
             <button type="button" data-q="가볍게 입을 남성 봄 바람막이">가볍게 입을 남성 봄 바람막이</button>
             <button type="button" data-q="오피스룩에 어울리는 검정 슬랙스">오피스룩에 어울리는 검정 슬랙스</button>
         </div>
 
-        <div id="chatbotStatus" class="chatbot-status" style="display:none;"></div>
-        <div id="chatbotReply" class="chatbot-reply" style="display:none;"></div>
-        <div id="chatbotParsed" class="chatbot-parsed" style="display:none;"></div>
-        <div id="chatbotResults" class="chatbot-results"></div>
+        <!-- 컨시어지 멘트 -->
+        <div class="sc-reply" id="scReply">
+            <span class="sc-crest" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 21h18M5 21V9l7-5 7 5v12M10 21v-5h4v5"/>
+                </svg>
+            </span>
+            <div class="sc-reply-main">
+                <div class="sc-reply-name">현대 스타일 컨시어지</div>
+                <div class="sc-bubble" id="scBubble" aria-live="polite"></div>
+            </div>
+        </div>
+
+        <div class="sc-status" id="scStatus"></div>
+        <div class="sc-shelf" id="scShelf"></div>
     </div>
 </th:block>
 
@@ -84,106 +371,299 @@
         const csrfToken  = /*[[${_csrf != null ? _csrf.token : null}]]*/ null;
         const csrfHeader = /*[[${_csrf != null ? _csrf.headerName : null}]]*/ null;
 
-        // script 프래그먼트가 <head> 에서 실행되므로, DOM 준비 후에 요소 참조·핸들러를 등록한다.
         document.addEventListener('DOMContentLoaded', () => {
-        const form    = document.getElementById('chatbotForm');
-        const input   = document.getElementById('chatbotInput');
-        const sendBtn = document.getElementById('chatbotSend');
-        const statusEl = document.getElementById('chatbotStatus');
-        const replyEl  = document.getElementById('chatbotReply');
-        const parsedEl = document.getElementById('chatbotParsed');
-        const resultsEl = document.getElementById('chatbotResults');
+            const form    = document.getElementById('scForm');
+            const input   = document.getElementById('scInput');
+            const sendBtn = document.getElementById('scSend');
+            const stage   = document.getElementById('scStage');
+            const world   = document.getElementById('scWorld');
+            const bldgEl  = document.getElementById('scBuildings');
+            const propsEl = document.getElementById('scProps');
+            const speedEl = document.getElementById('scSpeed');
+            const store   = document.getElementById('scStore');
+            const doorL   = document.getElementById('scDoorL');
+            const doorR   = document.getElementById('scDoorR');
+            const charEl  = document.getElementById('scChar');
+            const flash   = document.getElementById('scFlash');
+            const hint    = document.getElementById('scHint');
+            const cluesEl = document.getElementById('scClues');
+            const replyEl = document.getElementById('scReply');
+            const bubble  = document.getElementById('scBubble');
+            const statusEl = document.getElementById('scStatus');
+            const shelfEl = document.getElementById('scShelf');
 
-        const won = n => (n == null ? '' : Number(n).toLocaleString('ko-KR') + '원');
+            const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            const sleep = ms => new Promise(r => setTimeout(r, reduced ? Math.min(ms, 100) : ms));
+            const won = n => (n == null ? '' : Number(n).toLocaleString('ko-KR') + '원');
+            function anim(el, frames, opts) {
+                const a = el.animate(frames, reduced ? { ...opts, duration: 1 } : opts);
+                return a.finished;
+            }
+            const rand = (a, b) => a + Math.random() * (b - a);
 
-        async function ask(message) {
-            sendBtn.disabled = true;
-            replyEl.style.display = 'none';
-            replyEl.textContent = '';
-            parsedEl.style.display = 'none';
-            resultsEl.innerHTML = '';
-            statusEl.style.display = 'block';
-            statusEl.textContent = '어울리는 상품을 찾고 있어요...';
+            // 흰 빌딩(양옆), 자동차·신호등(도로), 스피드라인 생성
+            (function buildCity() {
+                for (let i = 0; i < 16; i++) {
+                    const left = i % 2 === 0;
+                    const b = document.createElement('div');
+                    b.className = 'sc-bldg';
+                    b.style[left ? 'left' : 'right'] = rand(1, 22).toFixed(1) + '%';
+                    b.style.top = rand(2, 34).toFixed(1) + '%';
+                    b.style.width = rand(48, 82).toFixed(0) + 'px';
+                    b.style.height = rand(130, 260).toFixed(0) + 'px';
+                    b.style.animationDuration = rand(0.8, 1.25).toFixed(2) + 's';
+                    b.style.animationDelay = (-(i / 16) * 0.95).toFixed(2) + 's';
+                    bldgEl.appendChild(b);
+                }
+                for (let i = 0; i < 3; i++) {
+                    const car = document.createElement('div');
+                    car.className = 'sc-car';
+                    car.style.left = rand(38, 56).toFixed(1) + '%';
+                    car.style.top = rand(45, 52).toFixed(1) + '%';
+                    car.style.animationDelay = (-i * 0.55).toFixed(2) + 's';
+                    propsEl.appendChild(car);
+                }
+                for (let i = 0; i < 2; i++) {
+                    const tl = document.createElement('div');
+                    tl.className = 'sc-tl';
+                    tl.style[i ? 'right' : 'left'] = rand(24, 30).toFixed(1) + '%';
+                    tl.style.top = '34%';
+                    tl.style.animationDelay = (-i * 0.9 - 0.4).toFixed(2) + 's';
+                    tl.innerHTML = '<div class="pole"></div><div class="head"><i class="r"></i><i class="y"></i><i class="g"></i></div>';
+                    propsEl.appendChild(tl);
+                }
+                for (let i = 0; i < 8; i++) {
+                    const s = document.createElement('div');
+                    s.className = 'sc-sl';
+                    s.style.left = (i < 4 ? rand(4, 26) : rand(74, 96)).toFixed(1) + '%';
+                    s.style.top = rand(2, 30).toFixed(1) + '%';
+                    s.style.animationDelay = (-rand(0, 0.5)).toFixed(2) + 's';
+                    s.style.animationDuration = rand(0.4, 0.62).toFixed(2) + 's';
+                    speedEl.appendChild(s);
+                }
+            })();
 
-            let replyText = '';
-            try {
-                const headers = {'Content-Type': 'application/json', 'Accept': 'text/event-stream'};
-                if (csrfToken) headers[csrfHeader] = csrfToken;
-                const res = await fetch('/customer/chatbot/ask', {
-                    method: 'POST', headers, body: JSON.stringify({message})
+            const ICONS = {
+                gender: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M5 21c0-3.9 3.1-7 7-7s7 3.1 7 7"/></svg>',
+                subcat: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 11.5 3H21v9.5L12.5 21z"/><circle cx="16.5" cy="7.5" r="1.4"/></svg>',
+                price: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 9h8M8 13h8M10 9l2 7 2-7"/></svg>',
+                mood: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M6 6l2 2M16 16l2 2M18 6l-2 2M8 16l-2 2"/></svg>'
+            };
+            function buildClues(p) {
+                const list = [];
+                if (p.gender) list.push({ icon: 'gender', label: '성별', value: p.gender });
+                if (p.subcat) list.push({ icon: 'subcat', label: '카테고리', value: p.subcat });
+                if (p.minPrice || p.maxPrice) {
+                    const lo = p.minPrice ? won(p.minPrice) : '0원';
+                    const hi = p.maxPrice ? won(p.maxPrice) : '제한 없음';
+                    list.push({ icon: 'price', label: '예산', value: lo + ' ~ ' + hi });
+                }
+                if (p.semanticText) list.push({ icon: 'mood', label: '무드', value: p.semanticText });
+                return list;
+            }
+
+            // 부스터로 좌/우 필터링 — 캐릭터 스와이프 + 월드 뱅크 + 화염 버스트
+            function veer(dir) {
+                anim(flash, [{ opacity: 0 }, { opacity: .6, offset: .3 }, { opacity: 0 }], { duration: 440, easing: 'ease-out' });
+                const p1 = anim(charEl, [
+                    { transform: 'translateX(-50%) rotate(0)' },
+                    { transform: `translateX(calc(-50% + ${dir * 104}px)) rotate(${dir * 9}deg)`, offset: .5 },
+                    { transform: 'translateX(-50%) rotate(0)' }
+                ], { duration: 540, easing: 'cubic-bezier(.35,0,.2,1)' });
+                const p2 = anim(world, [
+                    { transform: 'rotateY(0) translateX(0)' },
+                    { transform: `rotateY(${dir * -9}deg) translateX(${dir * 22}px)`, offset: .5 },
+                    { transform: 'rotateY(0) translateX(0)' }
+                ], { duration: 540, easing: 'ease-in-out' });
+                return Promise.all([p1, p2]);
+            }
+
+            async function choreograph(head) {
+                const clues = buildClues(head.parsed || {});
+                const products = head.products || [];
+
+                // 1) 비행 중 — 단서마다 부스터로 좌/우 필터링
+                for (let i = 0; i < clues.length; i++) {
+                    const c = clues[i];
+                    const chip = document.createElement('div');
+                    chip.className = 'sc-clue pop';
+                    chip.innerHTML = `${ICONS[c.icon]}<span class="sc-clue-txt">
+                        <span class="sc-clue-label">${c.label}</span>
+                        <span class="sc-clue-value">${escapeHtml(c.value)}</span></span>`;
+                    cluesEl.appendChild(chip);
+                    await veer(i % 2 === 0 ? 1 : -1);
+                    await sleep(70);
+                }
+
+                hint.classList.remove('show');
+                if (products.length === 0) {
+                    stage.classList.remove('boosting');
+                    charEl.classList.remove('boost');
+                    return { products };
+                }
+
+                // 2) 감속 → 흰 현대홈쇼핑이 정면으로 확대·정지, 부스터 끔
+                stage.classList.remove('boosting');
+                stage.classList.add('arrived');
+                charEl.classList.remove('boost');
+                await anim(store, [
+                    { opacity: 0, transform: 'translate(-50%, -50%) translateZ(-1600px)' },
+                    { opacity: 1, transform: 'translate(-50%, -50%) translateZ(60px)', offset: .82 },
+                    { transform: 'translate(-50%, -50%) translateZ(0)' }
+                ], { duration: 950, easing: 'cubic-bezier(.16,.9,.2,1)', fill: 'forwards' });
+
+                // 3) 문 열림 + 금빛 버스트
+                store.classList.add('open');
+                flash.classList.add('gold');
+                anim(flash, [{ opacity: 0 }, { opacity: .85, offset: .35 }, { opacity: 0 }], { duration: 700, easing: 'ease-out' });
+                await Promise.all([
+                    anim(doorL, [{ transform: 'translateX(0)' }, { transform: 'translateX(-104%)' }], { duration: 720, easing: 'cubic-bezier(.5,0,.2,1)', fill: 'forwards' }),
+                    anim(doorR, [{ transform: 'translateX(0)' }, { transform: 'translateX(104%)' }], { duration: 720, easing: 'cubic-bezier(.5,0,.2,1)', fill: 'forwards' })
+                ]);
+
+                // 4) 문에서 상품 배출 → 진열대
+                await emerge(products);
+                renderShelf(products);
+                return { products };
+            }
+
+            async function emerge(products) {
+                const picks = products.slice(0, 3);
+                const spread = [-46, 0, 46];
+                const jobs = picks.map((it, i) => {
+                    const t = document.createElement('div');
+                    t.className = 'sc-emerge';
+                    t.style.left = '50%';
+                    t.innerHTML = it.imageUrl ? `<img src="${escapeAttr(it.imageUrl)}" alt="">` : '';
+                    stage.appendChild(t);
+                    return anim(t, [
+                        { opacity: 0, transform: 'translate(-50%, 22px) scale(.5)' },
+                        { opacity: 1, transform: `translate(calc(-50% + ${spread[i]}px), -44px) scale(1)`, offset: .6 },
+                        { opacity: 0, transform: `translate(calc(-50% + ${spread[i] * 1.5}px), -110px) scale(.9)` }
+                    ], { duration: 900, delay: i * 130, easing: 'cubic-bezier(.3,.8,.3,1)', fill: 'forwards' })
+                        .then(() => t.remove());
                 });
-                if (!res.ok || !res.body) throw new Error('요청 실패');
+                await sleep(reduced ? 0 : 520);
+                await Promise.allSettled(jobs);
+            }
 
-                // SSE 스트림 수동 파싱: 이벤트 블록은 빈 줄(\n\n)로 구분, data 는 JSON.
-                const reader = res.body.getReader();
-                const decoder = new TextDecoder();
-                let buffer = '';
-                while (true) {
-                    const {value, done} = await reader.read();
-                    if (done) break;
-                    buffer += decoder.decode(value, {stream: true});
-                    let sep;
-                    while ((sep = buffer.indexOf('\n\n')) >= 0) {
-                        const evt = parseEvent(buffer.slice(0, sep));
-                        buffer = buffer.slice(sep + 2);
-                        if (evt.event === 'head') {
-                            renderHead(JSON.parse(evt.data));
-                        } else if (evt.event === 'delta') {
-                            replyText += JSON.parse(evt.data).t;
-                            replyEl.textContent = replyText;
-                            replyEl.style.display = 'block';
+            function renderShelf(products) {
+                shelfEl.innerHTML = products.map(it => `
+                    <a class="sc-card" href="/customer/products/${it.productId}">
+                        <div class="thumb">${it.imageUrl ? `<img src="${escapeAttr(it.imageUrl)}" alt="">` : ''}</div>
+                        <div class="cat">${escapeHtml(it.category ?? '')}</div>
+                        <div class="nm">${escapeHtml(it.name ?? '')}</div>
+                        <div class="pr">${won(it.price)}</div>
+                        <div class="sc-score">
+                            <span class="sc-score-bar"><span style="width:${Math.round((it.score || 0) * 100)}%"></span></span>
+                            유사도 ${Math.round((it.score || 0) * 100)}%
+                        </div>
+                    </a>`).join('');
+                shelfEl.querySelectorAll('.sc-card').forEach((c, i) => { c.style.animationDelay = (i * 70) + 'ms'; c.classList.add('in'); });
+            }
+
+            // ---- 컨시어지 멘트 타이핑 ----
+            let replyBuffer = '', shown = 0, typing = false, streamDone = false;
+            function startSpeaking() {
+                replyEl.classList.add('show');
+                bubble.innerHTML = '<span class="sc-caret"></span>';
+                typing = true; pump();
+            }
+            function pump() {
+                if (!typing) return;
+                if (shown < replyBuffer.length) {
+                    shown += 1;
+                    bubble.innerHTML = escapeHtml(replyBuffer.slice(0, shown)) + '<span class="sc-caret"></span>';
+                    setTimeout(pump, reduced ? 0 : 18);
+                } else if (streamDone) { typing = false; bubble.textContent = replyBuffer; }
+                else { setTimeout(pump, 40); }
+            }
+
+            async function ask(message) {
+                sendBtn.disabled = true;
+                cluesEl.innerHTML = '';
+                shelfEl.innerHTML = '';
+                stage.querySelectorAll('.sc-emerge').forEach(e => e.remove());
+                replyEl.classList.remove('show');
+                bubble.textContent = '';
+                statusEl.style.display = 'none';
+                replyBuffer = ''; shown = 0; typing = false; streamDone = false;
+                [world, store, doorL, doorR, flash, charEl].forEach(el => el.getAnimations().forEach(a => a.cancel()));
+                store.classList.remove('open');
+                store.style.opacity = '0';
+                store.style.transform = 'translate(-50%, -50%) translateZ(-1600px)';
+                doorL.style.transform = 'translateX(0)'; doorR.style.transform = 'translateX(0)';
+                flash.classList.remove('gold');
+                stage.classList.remove('arrived');
+
+                // 부스터 점화 → 비행
+                stage.classList.add('boosting');
+                charEl.classList.add('boost');
+                hint.classList.add('show');
+
+                try {
+                    const headers = { 'Content-Type': 'application/json', 'Accept': 'text/event-stream' };
+                    if (csrfToken) headers[csrfHeader] = csrfToken;
+                    const res = await fetch('/customer/chatbot/ask', {
+                        method: 'POST', headers, body: JSON.stringify({ message })
+                    });
+                    if (!res.ok || !res.body) throw new Error('요청 실패');
+
+                    const reader = res.body.getReader();
+                    const decoder = new TextDecoder();
+                    let buffer = '';
+                    while (true) {
+                        const { value, done } = await reader.read();
+                        if (done) break;
+                        buffer += decoder.decode(value, { stream: true });
+                        let sep;
+                        while ((sep = buffer.indexOf('\n\n')) >= 0) {
+                            const evt = parseEvent(buffer.slice(0, sep));
+                            buffer = buffer.slice(sep + 2);
+                            if (evt.event === 'head') {
+                                const head = JSON.parse(evt.data);
+                                const r = await choreograph(head);
+                                if (r.products.length === 0) {
+                                    statusEl.style.display = 'block';
+                                    statusEl.textContent = '조건에 맞는 상품을 찾지 못했어요. 조건을 조금 바꿔보세요.';
+                                }
+                                startSpeaking();
+                            } else if (evt.event === 'delta') {
+                                replyBuffer += JSON.parse(evt.data).t;
+                            }
                         }
                     }
+                    streamDone = true;
+                    if (!typing && replyBuffer) startSpeaking();
+                } catch (e) {
+                    stage.classList.remove('boosting');
+                    charEl.classList.remove('boost');
+                    hint.classList.remove('show');
+                    statusEl.style.display = 'block';
+                    statusEl.textContent = '추천을 가져오지 못했어요. 잠시 후 다시 시도해 주세요.';
+                } finally {
+                    sendBtn.disabled = false;
+                    input.focus();
                 }
-            } catch (e) {
-                if (!replyText) statusEl.textContent = '추천을 가져오지 못했어요. 잠시 후 다시 시도해 주세요.';
-            } finally {
-                sendBtn.disabled = false;
             }
-        }
 
-        // 한 SSE 이벤트 블록에서 event 이름과 data(JSON 문자열) 추출
-        function parseEvent(chunk) {
-            let event = 'message', data = '';
-            for (const line of chunk.split('\n')) {
-                if (line.startsWith('event:'))      event = line.slice(6).trim();
-                else if (line.startsWith('data:'))  data += line.slice(5).trimStart();
+            function parseEvent(chunk) {
+                let event = 'message', data = '';
+                for (const line of chunk.split('\n')) {
+                    if (line.startsWith('event:'))      event = line.slice(6).trim();
+                    else if (line.startsWith('data:'))  data += line.slice(5).trimStart();
+                }
+                return { event, data };
             }
-            return {event, data};
-        }
-
-        function renderHead(head) {
-            const p = head.parsed || {};
-            const chips = [];
-            if (p.gender)   chips.push(p.gender);
-            if (p.subcat)   chips.push(p.subcat);
-            if (p.minPrice || p.maxPrice) chips.push((won(p.minPrice) || '0원') + ' ~ ' + (won(p.maxPrice) || '제한없음'));
-            if (p.semanticText) chips.push('“' + p.semanticText + '”');
-
-            parsedEl.innerHTML = '이렇게 이해했어요: ' +
-                chips.map(c => `<span class="chatbot-chip">${c}</span>`).join('');
-            parsedEl.style.display = chips.length ? 'flex' : 'none';
-
-            const items = head.products || [];
-            if (items.length === 0) {
-                statusEl.style.display = 'block';
-                statusEl.textContent = '조건에 맞는 상품을 찾지 못했어요. 조건을 바꿔보세요.';
-                return;
+            function escapeHtml(s) {
+                return String(s).replace(/[&<>"']/g, m =>
+                    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
             }
-            statusEl.style.display = 'none';
-            resultsEl.innerHTML = items.map(it => `
-                <a class="chatbot-card" href="/customer/products/${it.productId}">
-                    <div class="thumb">${it.imageUrl ? `<img src="${it.imageUrl}" alt="">` : ''}</div>
-                    <div class="cat">${it.category ?? ''}</div>
-                    <div class="nm">${it.name ?? ''}</div>
-                    <div class="pr">${won(it.price)}</div>
-                    <div class="sc">유사도 ${(it.score * 100).toFixed(0)}%</div>
-                </a>`).join('');
-        }
+            function escapeAttr(s) { return escapeHtml(s); }
 
-        form.addEventListener('submit', e => { e.preventDefault(); const q = input.value.trim(); if (q) ask(q); });
-        document.querySelectorAll('.chatbot-examples button').forEach(b =>
-            b.addEventListener('click', () => { input.value = b.dataset.q; ask(b.dataset.q); }));
+            form.addEventListener('submit', e => { e.preventDefault(); const q = input.value.trim(); if (q) ask(q); });
+            document.querySelectorAll('.sc-examples button').forEach(b =>
+                b.addEventListener('click', () => { input.value = b.dataset.q; ask(b.dataset.q); }));
         });
     </script>
 </th:block>
