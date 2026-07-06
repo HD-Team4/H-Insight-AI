@@ -432,7 +432,7 @@
         var old = btn.textContent;
         btn.textContent = "임베딩 중…";
         document.getElementById("vizWrap").innerHTML = '<div class="viz-hint">BGE-M3로 임베딩하고 군집화하는 중…</div>';
-        fetch("/api/demo/semantic/analyze", {
+        fetch("/api/cy/demo/semantic/analyze", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({

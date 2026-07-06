@@ -399,7 +399,7 @@
     // ---------- API ----------
     function scan() {
         var text = document.getElementById("input").value;
-        fetch("/api/demo/guard/scan", {
+        fetch("/api/cy/demo/guard/scan", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ text: text })
@@ -409,7 +409,7 @@
     }
 
     function loadDict() {
-        fetch("/api/demo/guard/dictionary")
+        fetch("/api/cy/demo/guard/dictionary")
             .then(function (r) { return r.json(); })
             .then(function (j) {
                 if (!j || !j.success) throw new Error("dictionary load failed");
@@ -531,7 +531,7 @@
         var old = btn.textContent;
         btn.textContent = "측정 중…";
         document.getElementById("chartWrap").innerHTML = '<div class="hint">서버에서 두 방식을 실제 측정하는 중… (수 초 소요)</div>';
-        fetch("/api/demo/guard/benchmark")
+        fetch("/api/cy/demo/guard/benchmark")
             .then(function (r) { return r.json(); })
             .then(function (j) { if (j && j.success) renderBenchmark(j.data); })
             .catch(function (e) {

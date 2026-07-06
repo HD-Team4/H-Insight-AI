@@ -21,7 +21,7 @@ import java.util.List;
 @Tag(name = "semantic-demo-api", description = "시맨틱 군집화(벡터공간·코사인 유사도) 시연 API — 실서비스 API와 분리")
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/demo/semantic")
+@RequestMapping("/api/cy/demo/semantic")
 public class SemanticDemoApiController {
 
     private static final Logger log = LoggerFactory.getLogger(SemanticDemoApiController.class);

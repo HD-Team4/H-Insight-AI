@@ -21,7 +21,7 @@ import java.util.List;
 @Tag(name = "guard-demo-api", description = "금칙어 사전 게이팅(Aho-Corasick) 시연 API — 실서비스 API와 분리")
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/demo/guard")
+@RequestMapping("/api/cy/demo/guard")
 public class GuardDemoApiController {
 
     private final GuardDemoService guardDemoService;

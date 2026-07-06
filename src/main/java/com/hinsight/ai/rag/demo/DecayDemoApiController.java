@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "decay-demo-api", description = "반감기 지수 감쇠 재랭킹 시연 API — 실서비스 API와 분리")
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/demo/decay")
+@RequestMapping("/api/cy/demo/decay")
 public class DecayDemoApiController {
 
     private final DecayDemoService decayDemoService;
