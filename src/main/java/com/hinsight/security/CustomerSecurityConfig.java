@@ -26,8 +26,8 @@ public class CustomerSecurityConfig {
                 .securityMatcher("/customer/**")   // /biz/** 와 겹치지 않음 → 순서(@Order) 불필요
                 .userDetailsService(customerUserDetailsService)
                 .authorizeHttpRequests(auth -> auth
-                        // 공개: 상품 브라우징 + 로그인/회원가입
-                        .requestMatchers("/customer/products/**", "/customer/login", "/customer/users/signup").permitAll()
+                        // 공개: 상품 브라우징 + 로그인/회원가입 + 대기열 부하 테스트 경량 엔드포인트
+                        .requestMatchers("/customer/products/**", "/customer/login", "/customer/users/signup", "/customer/loadtest").permitAll()
                         // 그 외 고객 전용 기능(장바구니/주문/마이페이지 등)은 ROLE_CUSTOMER 필요
                         .anyRequest().hasRole("CUSTOMER")
                 )
