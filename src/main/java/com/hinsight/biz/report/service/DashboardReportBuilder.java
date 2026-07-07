@@ -1,6 +1,7 @@
 package com.hinsight.biz.report.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.hinsight.biz.reviewanalysis.service.ProductBoostAutomationService.BoostSuggestion;
 import org.springframework.stereotype.Component;
 
 import java.text.NumberFormat;
@@ -21,7 +22,7 @@ public class DashboardReportBuilder {
     private static final int TOP_N = 5;
     private static final String TEAL = "#008982";
 
-    public ReportContent build(String company, JsonNode d) {
+    public ReportContent build(String company, JsonNode d, List<BoostSuggestion> suggestions) {
         String period = d.path("period").asText("주간");
         String generatedAt = d.path("generatedAt").asText("-");
         String title = String.format("📊 %s %s 리포트 · %s", company, period, LocalDateTime.now().format(STAMP));
@@ -29,15 +30,15 @@ public class DashboardReportBuilder {
         JsonNode kpi = d.path("kpi");
         JsonNode cats = d.path("categorySales");
         JsonNode top = d.path("topProducts");
-        List<String> actions = actionItems(top);
 
         return new ReportContent(title,
-                buildNotionBlocks(company, period, generatedAt, kpi, cats, top, actions),
-                buildHtml(company, period, generatedAt, kpi, cats, top, actions));
+                buildNotionBlocks(company, period, generatedAt, kpi, cats, top, suggestions),
+                buildHtml(company, period, generatedAt, kpi, cats, top, suggestions));
     }
 
     private List<Object> buildNotionBlocks(String company, String period, String generatedAt,
-                                           JsonNode kpi, JsonNode cats, JsonNode top, List<String> actions) {
+                                           JsonNode kpi, JsonNode cats, JsonNode top,
+                                           List<BoostSuggestion> suggestions) {
         List<Object> blocks = new ArrayList<>();
 
         // (헤더는 토글 제목이 대신함) 생성 시각만 안내
@@ -81,10 +82,22 @@ public class DashboardReportBuilder {
             blocks.add(table(5, rows));
         }
 
-        // 액션 아이템 — 체크박스
-        if (!actions.isEmpty()) {
-            blocks.add(heading2("✅ 액션 아이템"));
-            for (String a : actions) blocks.add(todo(a));
+        // 업무 자동화 제안 — 주간 매출 하락률 TOP 5 표 + 제안 링크
+        if (suggestions != null && !suggestions.isEmpty()) {
+            blocks.add(heading2("🤖 업무 자동화 제안"));
+            List<List<List<Map<String, Object>>>> rows = new ArrayList<>();
+            rows.add(row(cell("#"), cell("상품"), cell("주간 매출"), cell("증감"), cell("제안")));
+            int i = 0;
+            for (BoostSuggestion s : suggestions) {
+                if (i++ >= TOP_N) break;
+                rows.add(row(
+                        cell(String.valueOf(i)),
+                        cell(productCellText(s)),
+                        cell(won(s.revenue()) + "원"),
+                        cellColored(growthLabel(s.growth()), growthColor(s.growth())),
+                        cellLink("시도해보기", s.item().actionUrl())));
+            }
+            blocks.add(table(5, rows));
         }
 
         blocks.add(divider());
@@ -92,7 +105,8 @@ public class DashboardReportBuilder {
     }
 
     private String buildHtml(String company, String period, String generatedAt,
-                             JsonNode kpi, JsonNode cats, JsonNode top, List<String> actions) {
+                             JsonNode kpi, JsonNode cats, JsonNode top,
+                             List<BoostSuggestion> suggestions) {
         StringBuilder h = new StringBuilder();
         h.append("<div style=\"max-width:720px;margin:0 auto;font-family:'Apple SD Gothic Neo','Malgun Gothic',sans-serif;color:#222\">");
 
@@ -144,12 +158,26 @@ public class DashboardReportBuilder {
             h.append("</table>");
         }
 
-        // 액션 아이템
-        if (!actions.isEmpty()) {
-            h.append(sectionTitle("✅ 액션 아이템"));
-            h.append("<ul style=\"margin:0 0 8px;padding-left:20px;font-size:14px;line-height:1.7\">");
-            for (String a : actions) h.append("<li>").append(esc(a)).append("</li>");
-            h.append("</ul>");
+        // 업무 자동화 제안 — 주간 매출 하락률 TOP 5 표 + 제안 링크
+        if (suggestions != null && !suggestions.isEmpty()) {
+            h.append(sectionTitle("🤖 업무 자동화 제안"));
+            h.append("<table width=\"100%\" style=\"border-collapse:collapse;font-size:14px;margin-bottom:22px\">");
+            h.append("<tr style=\"background:#f6f9f9\">")
+                    .append(th("#", "left")).append(th("상품", "left"))
+                    .append(th("주간 매출", "right")).append(th("증감", "right"))
+                    .append(th("제안", "center")).append("</tr>");
+            int i = 0;
+            for (BoostSuggestion s : suggestions) {
+                if (i++ >= TOP_N) break;
+                h.append("<tr>")
+                        .append(td(String.valueOf(i), "left", null))
+                        .append(td(esc(productCellText(s)).replace("\n", "<br>"), "left", null))
+                        .append(td(won(s.revenue()) + "원", "right", null))
+                        .append(td(growthLabel(s.growth()), "right", growthColor(s.growth())))
+                        .append(td(suggestionLink(s.item().actionUrl()), "center", null))
+                        .append("</tr>");
+            }
+            h.append("</table>");
         }
 
         h.append("</div></div>");
@@ -178,26 +206,17 @@ public class DashboardReportBuilder {
         return "<td align=\"" + align + "\" style=\"padding:9px 8px;border-bottom:1px solid #f0f0f0" + c + "\">" + t + "</td>";
     }
 
-    // growth 하락/급등 상위를 점검·보충 액션으로 변환
-    private List<String> actionItems(JsonNode top) {
-        List<String> actions = new ArrayList<>();
-        if (!top.isArray()) return actions;
+    private String productCellText(BoostSuggestion suggestion) {
+        String category = suggestion.item().category();
+        if (category == null || category.isBlank()) {
+            return suggestion.item().productName();
+        }
+        return suggestion.item().productName() + "\n" + category;
+    }
 
-        String worstName = null; long worstGrowth = Long.MAX_VALUE;
-        String bestName = null;  long bestGrowth = Long.MIN_VALUE;
-        for (JsonNode p : top) {
-            if (!p.hasNonNull("growth")) continue;
-            long g = p.path("growth").asLong();
-            if (g < worstGrowth) { worstGrowth = g; worstName = p.path("productName").asText(); }
-            if (g > bestGrowth)  { bestGrowth = g;  bestName = p.path("productName").asText(); }
-        }
-        if (worstName != null && worstGrowth < 0) {
-            actions.add(String.format("▼ '%s' 매출 %d%% 하락 — 원인 점검", worstName, Math.abs(worstGrowth)));
-        }
-        if (bestName != null && bestGrowth > 0) {
-            actions.add(String.format("▲ '%s' 매출 %d%% 급등 — 재고 보충 검토", bestName, bestGrowth));
-        }
-        return actions;
+    private String suggestionLink(String url) {
+        return "<a href=\"" + esc(url) + "\" style=\"color:" + TEAL
+                + ";font-size:13px;font-weight:800;text-decoration:none\">시도해보기</a>";
     }
 
     private String deltaText(JsonNode kpi) {
@@ -214,10 +233,20 @@ public class DashboardReportBuilder {
         return g >= 0 ? "▲" + g + "%" : "▼" + Math.abs(g) + "%";
     }
 
+    private String growthLabel(Integer growth) {
+        if (growth == null) return "신규";
+        return growth >= 0 ? "▲" + growth + "%" : "▼" + Math.abs(growth) + "%";
+    }
+
     // 노션 컬러명(red/blue/gray)
     private String growthColor(JsonNode growth) {
         if (growth == null || growth.isNull()) return "gray";
         return growth.asLong() >= 0 ? "red" : "blue";
+    }
+
+    private String growthColor(Integer growth) {
+        if (growth == null) return "gray";
+        return growth >= 0 ? "red" : "blue";
     }
 
     private String won(long n) {
@@ -233,10 +262,6 @@ public class DashboardReportBuilder {
                 "rich_text", rt(content),
                 "icon", Map.of("type", "emoji", "emoji", emoji),
                 "color", color));
-    }
-
-    private Map<String, Object> todo(String content) {
-        return Map.of("type", "to_do", "to_do", Map.of("rich_text", rt(content), "checked", false));
     }
 
     private Map<String, Object> divider() {
@@ -268,6 +293,11 @@ public class DashboardReportBuilder {
     private List<Map<String, Object>> cellColored(String content, String color) {
         return List.of(Map.of("type", "text", "text", Map.of("content", content),
                 "annotations", Map.of("color", color)));
+    }
+
+    private List<Map<String, Object>> cellLink(String content, String url) {
+        return List.of(Map.of("type", "text", "text", Map.of("content", content, "link", Map.of("url", url)),
+                "annotations", Map.of("bold", true, "color", "blue")));
     }
 
     private List<Map<String, Object>> rt(String content) {

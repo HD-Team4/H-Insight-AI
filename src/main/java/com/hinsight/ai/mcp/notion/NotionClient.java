@@ -1,6 +1,8 @@
 package com.hinsight.ai.mcp.notion;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.hinsight.exception.ErrorCode;
+import com.hinsight.exception.custom.notion.NotionIntegrationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.MediaType;
@@ -46,7 +48,8 @@ public class NotionClient {
                 .body(JsonNode.class);
 
         if (res == null || res.get("id") == null) {
-            throw new IllegalStateException("노션 file_upload 생성 응답에 id 가 없습니다: " + res);
+            log.error("노션 file_upload 생성 응답에 id 가 없습니다: {}", res);
+            throw new NotionIntegrationException(ErrorCode.NOTION_API_ERROR);
         }
         return res.get("id").asText();
     }
@@ -122,7 +125,8 @@ public class NotionClient {
 
         String id = (res == null) ? null : res.path("results").path(0).path("id").asText(null);
         if (id == null || id.isBlank()) {
-            throw new IllegalStateException("노션 toggle 생성 응답에 id 가 없습니다: " + res);
+            log.error("노션 toggle 생성 응답에 id 가 없습니다: {}", res);
+            throw new NotionIntegrationException(ErrorCode.NOTION_API_ERROR);
         }
         return id;
     }

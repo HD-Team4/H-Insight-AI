@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="_csrf" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:content="${_csrf.headerName}">
+    <title>H-Insight-AI 상세페이지 문구 자동화</title>
+    <link rel="stylesheet" as="style" crossorigin
+          href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css"/>
+    <link rel="stylesheet" th:href="${@environment.getProperty('app.cdn.url') + '/static/css/style.css'}">
+    <style>
+        .biz-nav { display:flex; gap:4px; margin-left:28px; }
+        .biz-nav a { padding:8px 14px; border-radius:8px; font-size:14px; font-weight:600; color:var(--text-sub); text-decoration:none; }
+        .biz-nav a.active { color:var(--primary); background:rgba(0,137,130,.08); }
+
+        .copy-head { display:flex; justify-content:space-between; align-items:flex-start; gap:18px; margin-bottom:20px; }
+        .copy-head p { margin:8px 0 0; color:var(--text-sub); line-height:1.6; }
+        .head-actions { display:flex; gap:8px; flex-wrap:nowrap; align-items:center; flex:0 0 auto; }
+        .btn { border:1px solid var(--border); background:var(--bg-base); color:var(--text-main); font-size:14px; font-weight:800;
+            padding:10px 15px; border-radius:8px; cursor:pointer; text-decoration:none; display:inline-flex; align-items:center; justify-content:center; gap:6px; white-space:nowrap; }
+        .btn.primary { border-color:var(--primary); background:var(--primary); color:#fff; }
+        .btn:disabled { opacity:.55; cursor:progress; }
+
+        .summary-grid { display:grid; grid-template-columns:1fr; gap:16px; margin-bottom:16px; }
+        .panel { background:var(--bg-base); border:1px solid var(--border); border-radius:8px; padding:20px 22px; }
+        .panel h3 { font-size:16px; font-weight:800; margin:0 0 14px; }
+        .product-name { font-size:18px; font-weight:800; line-height:1.4; margin:0 0 8px; color:var(--text-main); }
+        .target-panel { display:grid; grid-template-columns:minmax(0,1fr) 260px; gap:18px; align-items:end; }
+        .meta-row { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+        .chip { font-size:12px; font-weight:800; padding:5px 10px; border-radius:999px; background:var(--bg-light); color:var(--text-sub); }
+        .chip.up { background:rgba(192,57,43,.09); color:#c0392b; }
+        .chip.down { background:rgba(36,113,163,.09); color:#2471a3; }
+        .metric { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-top:0; }
+        .metric div { background:var(--bg-light); border:1px solid var(--border); border-radius:8px; padding:11px 12px; }
+        .metric span { display:block; font-size:12px; color:var(--text-sub); }
+        .metric strong { display:block; margin-top:5px; font-size:17px; color:var(--text-main); }
+
+        .work-grid { display:grid; grid-template-columns:minmax(320px, .82fr) minmax(480px, 1.18fr); gap:16px; align-items:start; }
+        .list { display:flex; flex-direction:column; gap:9px; margin:0; padding:0; list-style:none; }
+        .list li { border-bottom:1px solid var(--border); padding-bottom:9px; color:var(--text-main); font-size:14px; line-height:1.6; }
+        .list li:last-child { border-bottom:none; padding-bottom:0; }
+        .empty { color:var(--text-sub); font-size:14px; line-height:1.6; }
+        .source-panel h3, .copy-panel h3 { font-size:17px; }
+        .source-note { margin:-4px 0 14px; color:var(--text-sub); font-size:13px; line-height:1.5; }
+        .copy-panel { position:sticky; top:18px; }
+        .copy-title { border-left:4px solid var(--accent); padding-left:12px; margin-bottom:14px; }
+        .copy-title strong { display:block; font-size:18px; line-height:1.4; }
+        .copy-title span { display:block; margin-top:5px; color:var(--text-sub); font-size:14px; line-height:1.5; }
+        .editor-head { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top:18px; margin-bottom:8px; }
+        .editor-head h3 { margin:0; }
+        .char-count { color:var(--text-sub); font-size:12px; font-weight:700; white-space:nowrap; }
+        textarea { width:100%; min-height:420px; resize:vertical; border:1px solid var(--border); border-radius:8px;
+            padding:18px; font-family:inherit; font-size:15.5px; line-height:1.9; color:var(--text-main); background:#fff; box-sizing:border-box; }
+        textarea:focus { outline:2px solid rgba(0,137,130,.18); border-color:var(--primary); }
+        .preview-link { color:var(--primary); font-size:13px; font-weight:800; text-decoration:none; }
+        .current-copy { white-space:pre-line; color:var(--text-main); font-size:15px; line-height:1.85; max-height:520px; overflow:auto;
+            background:#fbfcfc; border:1px solid var(--border); border-radius:8px; padding:16px; }
+        .supplement-copy { background:#f6f9f9; border:1px solid var(--border); border-radius:8px; padding:14px 16px;
+            color:var(--text-main); font-size:14px; line-height:1.7; margin-bottom:16px; }
+        .step-list { display:grid; gap:8px; margin-top:14px; }
+        .step { font-size:12.5px; color:var(--text-sub); background:var(--bg-light); border:1px solid var(--border);
+            border-radius:8px; padding:8px 10px; }
+
+        @media (max-width:960px) {
+            .copy-head, .summary-grid, .work-grid, .target-panel { grid-template-columns:1fr; display:grid; }
+            .head-actions { justify-content:flex-start; }
+            .copy-panel { position:static; }
+            .metric { margin-top:6px; }
+        }
+    </style>
+</head>
+<body>
+<div class="top-bar"></div>
+<header class="container">
+    <div class="header-main">
+        <div style="display:flex; align-items:center;">
+            <a th:href="@{/biz/dashboard}" class="logo">H-Insight <span style="color: var(--accent);">Biz</span></a>
+            <nav class="biz-nav">
+                <a th:href="@{/biz/dashboard}">대시보드</a>
+                <a th:href="@{/biz/review-analysis}" class="active">상품 분석</a>
+            </nav>
+        </div>
+        <div class="header-utils">
+            <span><span sec:authentication="name">기업</span> 님</span>
+            <form th:action="@{/biz/logout}" method="post" style="display:inline; margin:0;">
+                <button type="submit"
+                        style="background:none; border:none; padding:0; cursor:pointer; color:inherit; font:inherit; font-weight:500;">
+                    로그아웃
+                </button>
+            </form>
+        </div>
+    </div>
+</header>
+
+<main class="container" style="padding-top:32px; padding-bottom:64px;"
+      th:with="targetUrl=@{/customer/products/{id}(id=${draft.targetProductId})}">
+    <div class="copy-head">
+        <div>
+            <h1 class="section-title" style="margin:0;">상세페이지 문구 자동화</h1>
+            <p>클릭은 있었지만 구매로 이어지지 않은 상품을 대상으로, 상품 정보와 리뷰 신호, 최신 커머스 문구 흐름을 반영한 상세 설명 초안을 생성했습니다.</p>
+        </div>
+        <div class="head-actions">
+            <a class="btn" th:href="@{/biz/review-analysis}">분석으로 돌아가기</a>
+            <button type="button" class="btn primary" id="applyBtn">상세페이지에 적용</button>
+        </div>
+    </div>
+
+    <div class="summary-grid">
+        <section class="panel">
+            <h3>개선 대상</h3>
+            <div class="target-panel">
+                <div>
+                    <p class="product-name" th:text="${draft.targetProductName}">상품명</p>
+                    <a class="preview-link" th:href="${targetUrl}" target="_blank" rel="noopener">고객 상세페이지 보기</a>
+                    <div class="meta-row">
+                        <span class="chip" th:text="${draft.targetCategory}">카테고리</span>
+                        <span class="chip down" th:if="${draft.targetGrowth != null}" th:text="${draft.targetGrowth + '%'}">-</span>
+                    </div>
+                </div>
+                <div class="metric">
+                    <div><span>최근 매출</span><strong th:text="${#numbers.formatInteger(draft.targetRevenue, 3, 'COMMA')} + '원'">0원</strong></div>
+                    <div><span>평균 평점</span><strong th:text="${draft.targetRating != null ? draft.targetRating + ' / 5' : '-'}">-</strong></div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <div class="work-grid">
+        <div>
+            <section class="panel source-panel">
+                <h3>기존 상품 설명</h3>
+                <p class="source-note">현재 상세페이지에 등록된 문구입니다. 오른쪽 초안과 비교해 필요한 부분만 수정해서 적용할 수 있습니다.</p>
+                <p class="current-copy" th:if="${draft.currentDescription != null and !draft.currentDescription.isBlank()}"
+                   th:text="${draft.currentDescription}">기존 설명</p>
+                <p class="empty" th:unless="${draft.currentDescription != null and !draft.currentDescription.isBlank()}">
+                    등록된 기존 상품 설명이 없습니다.
+                </p>
+            </section>
+        </div>
+
+        <section class="panel copy-panel">
+            <div class="copy-title">
+                <strong th:text="${draft.headline}">생성 제목</strong>
+                <span th:text="${draft.subHeadline}">생성 설명</span>
+            </div>
+            <h3>변경 방향</h3>
+            <div class="supplement-copy" th:text="${draft.supplementalCopy}">보완 문구</div>
+            <div class="editor-head">
+                <h3>개선된 상품 설명</h3>
+                <span class="char-count" id="descriptionCount">0자</span>
+            </div>
+            <textarea id="generatedDescription" spellcheck="false" th:text="${draft.generatedDescription}"></textarea>
+            <input type="hidden" id="targetProductId" th:value="${draft.targetProductId}">
+            <div class="step-list">
+                <span class="step" th:each="step : ${draft.automationSteps}" th:text="${step}">단계</span>
+            </div>
+        </section>
+    </div>
+</main>
+
+<div th:replace="~{fragments/modal :: modalFragment}"></div>
+
+<script>
+    const applyBtn = document.getElementById('applyBtn');
+    const generatedDescription = document.getElementById('generatedDescription');
+    const descriptionCount = document.getElementById('descriptionCount');
+    const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
+    const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
+
+    function syncDescriptionEditor() {
+        if (!generatedDescription || !descriptionCount) return;
+        descriptionCount.textContent = `${generatedDescription.value.trim().length.toLocaleString()}자`;
+        generatedDescription.style.height = 'auto';
+        generatedDescription.style.height = `${Math.max(generatedDescription.scrollHeight, 420)}px`;
+    }
+
+    generatedDescription?.addEventListener('input', syncDescriptionEditor);
+    syncDescriptionEditor();
+
+    async function alertMessage(message, title) {
+        if (window.showAlert) {
+            await showAlert(message, {title});
+        } else {
+            alert(message);
+        }
+    }
+
+    applyBtn.addEventListener('click', async () => {
+        const productId = Number(document.getElementById('targetProductId').value);
+        const description = generatedDescription.value.trim();
+        if (!description) {
+            await alertMessage('적용할 문구가 없습니다.', '상세페이지 적용');
+            return;
+        }
+
+        applyBtn.disabled = true;
+        try {
+            const headers = {'Content-Type': 'application/json'};
+            if (csrfHeader && csrfToken) headers[csrfHeader] = csrfToken;
+            const res = await fetch('/biz/review-analysis/boost/apply', {
+                method: 'POST',
+                headers,
+                body: JSON.stringify({caseType: 'NO_PURCHASE', productId, value: description})
+            });
+            const data = await res.json().catch(() => ({}));
+            await alertMessage(data.message || (res.ok ? '적용했습니다.' : '적용에 실패했습니다.'), '상세페이지 적용');
+        } catch (e) {
+            await alertMessage(e.message || '적용 중 오류가 발생했습니다.', '상세페이지 적용');
+        } finally {
+            applyBtn.disabled = false;
+        }
+    });
+</script>
+</body>
+</html>

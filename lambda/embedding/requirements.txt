@@ -1,0 +1,6 @@
+# 런타임 전용 (모델 변환은 Dockerfile의 export 스테이지에서 수행)
+# onnxruntime은 Lambda x86_64에서 검증된 1.19.x로 고정 (arm64는 세션 초기화 크래시 — Dockerfile 참고).
+# numpy는 ORT 1.19 호환 1.x로 고정.
+onnxruntime==1.19.2
+tokenizers>=0.19
+numpy==1.26.4

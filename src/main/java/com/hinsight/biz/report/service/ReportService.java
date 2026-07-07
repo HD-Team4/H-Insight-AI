@@ -9,6 +9,8 @@ import com.hinsight.biz.auth.model.vo.BizUser;
 import com.hinsight.biz.dashboard.service.DashboardService;
 import com.hinsight.biz.report.notify.MailNotifier;
 import com.hinsight.biz.report.service.DashboardReportBuilder.ReportContent;
+import com.hinsight.biz.reviewanalysis.service.ProductBoostAutomationService;
+import com.hinsight.biz.reviewanalysis.service.ReviewAnalysisService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
@@ -24,6 +26,8 @@ public class ReportService {
 
     private final DashboardService dashboardService;
     private final DashboardReportBuilder reportBuilder;
+    private final ProductBoostAutomationService boostAutomationService;
+    private final ReviewAnalysisService reviewAnalysisService;
     private final NotionClient notionClient;
     private final NotionProperties notionProps;
     private final MailNotifier mailNotifier;
@@ -32,6 +36,8 @@ public class ReportService {
 
     public ReportService(DashboardService dashboardService,
                          DashboardReportBuilder reportBuilder,
+                         ProductBoostAutomationService boostAutomationService,
+                         ReviewAnalysisService reviewAnalysisService,
                          NotionClient notionClient,
                          NotionProperties notionProps,
                          MailNotifier mailNotifier,
@@ -39,6 +45,8 @@ public class ReportService {
                          @Value("${report.period:1w}") String period) {
         this.dashboardService = dashboardService;
         this.reportBuilder = reportBuilder;
+        this.boostAutomationService = boostAutomationService;
+        this.reviewAnalysisService = reviewAnalysisService;
         this.notionClient = notionClient;
         this.notionProps = notionProps;
         this.mailNotifier = mailNotifier;
@@ -73,7 +81,8 @@ public class ReportService {
     private DispatchResult dispatch(BizUser user, byte[] image, boolean doNotion, boolean doMail) {
         String company = user.getCompanyName() != null ? user.getCompanyName() : "기업";
         JsonNode data = dashboardService.getDashboard(period);
-        ReportContent content = reportBuilder.build(company, data);
+        List<ProductBoostAutomationService.BoostSuggestion> suggestions = boostSuggestionsFor(user);
+        ReportContent content = reportBuilder.build(company, data, suggestions);
 
         boolean notion = false, mail = false;
 
@@ -82,9 +91,10 @@ public class ReportService {
                 && user.getNotionPageId() != null && !user.getNotionPageId().isBlank()) {
             try {
                 String toggleId = notionClient.appendToggle(user.getNotionPageId(), content.title());
-                notionClient.appendBlocks(toggleId, content.notionBlocks());
                 if (image != null && image.length > 0) {
-                    notionClient.attachImageToPage(toggleId, null, image, imageName(company), "image/png");
+                    appendBlocksWithImageAfterGeneratedAt(toggleId, content.notionBlocks(), image, imageName(company));
+                } else {
+                    notionClient.appendBlocks(toggleId, content.notionBlocks());
                 }
                 notion = true;
             } catch (Exception e) {
@@ -101,6 +111,30 @@ public class ReportService {
         log.info("[리포트] 발송 완료 company={} (image={}) → notion={}, mail={}",
                 company, image != null, notion, mail);
         return new DispatchResult(company, notion, mail);
+    }
+
+    private void appendBlocksWithImageAfterGeneratedAt(String toggleId, List<Object> blocks, byte[] image, String imageName) {
+        if (blocks == null || blocks.isEmpty()) {
+            notionClient.attachImageToPage(toggleId, null, image, imageName, "image/png");
+            return;
+        }
+
+        notionClient.appendBlocks(toggleId, blocks.subList(0, 1));
+        notionClient.attachImageToPage(toggleId, null, image, imageName, "image/png");
+        if (blocks.size() > 1) {
+            notionClient.appendBlocks(toggleId, blocks.subList(1, blocks.size()));
+        }
+    }
+
+    // 업무 자동화 제안은 주간 매출 하락률 TOP 5를 기준으로, 개선 케이스를 보고 적합한 액션을 고른다.
+    private List<ProductBoostAutomationService.BoostSuggestion> boostSuggestionsFor(BizUser user) {
+        try {
+            JsonNode analysis = reviewAnalysisService.getProductAnalysis();
+            return boostAutomationService.plungingSuggestions(analysis.path("plunging"), user.getBizId());
+        } catch (Exception e) {
+            log.warn("[리포트] 판매 개선 제안 조회 실패 company={}: {}", user.getCompanyName(), e.getMessage());
+            return List.of();
+        }
     }
 
     private String imageName(String company) {

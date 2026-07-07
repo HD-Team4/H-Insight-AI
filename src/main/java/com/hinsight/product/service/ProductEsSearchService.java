@@ -1,5 +1,6 @@
 package com.hinsight.product.service;
 
+import com.hinsight.exception.custom.product.ProductSearchException;
 import com.hinsight.product.dao.ProductDao;
 import com.hinsight.product.dao.ProductEsDao;
 import com.hinsight.product.model.vo.Product;
@@ -39,7 +40,7 @@ public class ProductEsSearchService {
 
         } catch (IOException e) {
             log.error("Elasticsearch 검색 중 에러 발생", e);
-            throw new RuntimeException("검색 시스템에 일시적인 오류가 발생했습니다.", e);
+            throw new ProductSearchException(e);
         }
     }
 }

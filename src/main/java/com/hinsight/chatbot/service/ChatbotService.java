@@ -14,7 +14,7 @@ import java.util.List;
 
 /**
  * 상품추천 챗봇 코어 파이프라인.
- * 질문 → Gemini 조건추출 → BGE-M3(Ollama) 임베딩 → pgvector 필터+코사인 검색 (여기까지 {@link #search})
+ * 질문 → Gemini 조건추출 → BGE-M3(Lambda) 임베딩 → pgvector 필터+코사인 검색 (여기까지 {@link #search})
  *      → Gemini 추천멘트 스트리밍 ({@link #streamReply}).
  * 검색 결과(head)를 먼저 내려주고 추천멘트는 뒤이어 토큰 스트림으로 흘리는 SSE 구조.
  */

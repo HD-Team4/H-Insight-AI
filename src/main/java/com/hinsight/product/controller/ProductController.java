@@ -50,6 +50,8 @@ public class ProductController {
                 showLiveBroadcast ? liveSessionService.getOnAirSessions() : Collections.emptyList());
         model.addAttribute("onAirProductIds",
                 showLiveBroadcast ? liveSessionService.getOnAirProductIds() : Collections.emptyList());
+        model.addAttribute("promotedProducts",
+                showLiveBroadcast ? productService.getPromotedProducts(5) : Collections.emptyList());
         return "customer/product/list";
     }
 

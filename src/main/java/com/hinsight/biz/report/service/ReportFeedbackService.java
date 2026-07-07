@@ -4,6 +4,8 @@ import com.hinsight.ai.mcp.notion.NotionClient;
 import com.hinsight.ai.mcp.notion.NotionProperties;
 import com.hinsight.biz.auth.dao.BizUserDao;
 import com.hinsight.biz.auth.model.vo.BizUser;
+import com.hinsight.exception.ErrorCode;
+import com.hinsight.exception.custom.notion.NotionIntegrationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -23,11 +25,11 @@ public class ReportFeedbackService {
 
     public Feedback getFeedback(Long bizId) {
         if (!notionProps.isConfigured()) {
-            throw new IllegalStateException("노션 토큰(NOTION_TOKEN)이 설정되지 않았습니다.");
+            throw new NotionIntegrationException(ErrorCode.NOTION_NOT_CONFIGURED);
         }
         BizUser target = bizUserDao.findNotionTargetByBizId(bizId);
         if (target == null || target.getNotionPageId() == null || target.getNotionPageId().isBlank()) {
-            throw new IllegalStateException("이 계정에 연결된 노션 페이지(notion_page_id)가 없습니다.");
+            throw new NotionIntegrationException(ErrorCode.NOTION_PAGE_NOT_LINKED);
         }
 
         String pageId = target.getNotionPageId();

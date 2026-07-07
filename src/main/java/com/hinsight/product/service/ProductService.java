@@ -18,7 +18,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Slf4j
 @Service
@@ -184,5 +186,25 @@ public class ProductService {
     public PriceRange getPriceRange() {
         return productDao.getPriceRange();
     }
-}
 
+    // 판매 개선 승인 반영 — biz_id 일치하는 행이 없으면 false(다른 기업 상품 보호)
+    public boolean updateProductNameForBiz(Long productId, Long bizId, String productName) {
+        return productDao.updateProductName(productId, bizId, productName) > 0;
+    }
+
+    public boolean updateDescriptionForBiz(Long productId, Long bizId, String description) {
+        return productDao.updateDescription(productId, bizId, description) > 0;
+    }
+
+    public boolean promoteProductForBiz(Long productId, Long bizId) {
+        return productDao.promoteProduct(productId, bizId) > 0;
+    }
+
+    public Set<Long> getOwnedProductIds(Long bizId) {
+        return new HashSet<>(productDao.findProductIdsByBiz(bizId));
+    }
+
+    public List<Product> getPromotedProducts(int limit) {
+        return productDao.findPromotedProducts(limit);
+    }
+}

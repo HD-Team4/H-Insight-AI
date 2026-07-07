@@ -53,12 +53,14 @@ public class MailNotifier {
 
             boolean hasImage = image != null && image.length > 0;
 
-            StringBuilder html = new StringBuilder(htmlBody == null ? "" : htmlBody);
+            // 사진을 본문 맨 위에 배치(노션과 동일). 본문은 그 아래로.
+            StringBuilder html = new StringBuilder();
             if (hasImage) {
-                html.append("<div style=\"max-width:720px;margin:16px auto 0\">")
+                html.append("<div style=\"max-width:720px;margin:0 auto 16px\">")
                         .append("<img src=\"cid:dashboard\" style=\"width:100%;border:1px solid #eee;border-radius:10px\"/>")
                         .append("</div>");
             }
+            html.append(htmlBody == null ? "" : htmlBody);
 
             // setText 를 addInline 보다 먼저 호출해야 본문이 정상 렌더링됨
             helper.setText(html.toString(), true);

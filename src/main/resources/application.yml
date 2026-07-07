@@ -4,6 +4,19 @@ spring:
       maximum-pool-size: 3
   config:
     import: optional:file:.env[.properties]
+  # 메일(SMTP) — .env 를 properties 로 로드하면 SPRING_MAIL_* 대문자키가 relaxed binding 되지 않으므로
+  # 여기서 명시적으로 placeholder 참조해야 JavaMailSender 가 자동 구성됨(미설정 시 리포트 메일 skip)
+  mail:
+    host: ${SPRING_MAIL_HOST:}
+    port: ${SPRING_MAIL_PORT:587}
+    username: ${SPRING_MAIL_USERNAME:}
+    password: ${SPRING_MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: ${SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH:true}
+          starttls:
+            enable: ${SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE:true}
   application:
     name: H-Insight-AI
   profiles:
@@ -72,10 +85,12 @@ app:
   cdn:
     url: ${CDN_URL:https://d3czavkc472er9.cloudfront.net}
 
-# Ollama (BGE-M3 임베딩 서버) — 상품추천 챗봇 쿼리 임베딩
-ollama:
-  base-url: http://localhost:11434
-  embedding-model: bge-m3
+# BGE-M3 임베딩 — AWS Lambda(hf4-embedding) SDK invoke (상품추천 챗봇/리뷰 RAG 쿼리 임베딩)
+#  - 모델은 Lambda 컨테이너 이미지에 베이크(ONNX fp32), EventBridge 5분 워밍 핑으로 상주 유지
+#  - 기존 EC2 로컬 Ollama 제거 → 앱 기동 시 모델을 메모리에 올리지 않음
+embedding:
+  lambda:
+    function-name: ${EMBED_LAMBDA_FUNCTION:hf4-embedding}
 
 # 라이브 리뷰 Q&A RAG 튜닝
 rag:
