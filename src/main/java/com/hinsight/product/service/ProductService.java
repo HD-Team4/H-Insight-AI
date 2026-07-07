@@ -93,28 +93,16 @@ public class ProductService {
             return searchByDb(condition, categoryIds, page, offset);
         }
 
-        // 검색어가 있으면 ES(동의어·상품 키워드) 검색
+        // 검색어가 있으면 ES(동의어·상품 키워드) 검색 — 오타 교정 재검색까지 ES 서비스가 담당
         try {
-            // 1. 원본 키워드로 검색 (query+suggest 를 한 요청으로) — 정상어면 여기서 끝(왕복 1회)
             ProductEsSearchService.SearchOutcome outcome = productEsSearchService.search(
                     keyword, categoryIds, condition.minPrice(), condition.maxPrice(), offset, pageSize);
 
-            if (!outcome.products().isEmpty()) {
-                return ProductSearchResult.of(outcome.products(), PageInfo.of(page, pageSize, outcome.total()));
-            }
-
-            // 2. 결과 0건 + 교정어가 있으면(오타) 교정어로 한 번 더 검색
-            String corrected = outcome.suggestion();
-            if (corrected != null && !corrected.equalsIgnoreCase(keyword)) {
-                ProductEsSearchService.SearchOutcome alt = productEsSearchService.search(
-                        corrected, categoryIds, condition.minPrice(), condition.maxPrice(), offset, pageSize);
-
-                if (!alt.products().isEmpty()) {
-                    return ProductSearchResult.corrected(alt.products(), keyword, corrected,
-                            PageInfo.of(page, pageSize, alt.total()));
-                }
-            }
-            return ProductSearchResult.of(List.of(), PageInfo.of(page, pageSize, 0));
+            PageInfo pageInfo = PageInfo.of(page, pageSize, outcome.total());
+            return outcome.corrected()
+                    ? ProductSearchResult.corrected(outcome.products(), outcome.originalKeyword(),
+                            outcome.correctedKeyword(), pageInfo)
+                    : ProductSearchResult.of(outcome.products(), pageInfo);
         } catch (Exception e) {
             // ES 장애 시 기존 LIKE 검색으로 폴백 (사이트가 죽지 않도록)
             log.warn("[ES] 검색 실패, LIKE 검색으로 폴백: {}", e.getMessage());
