@@ -8,6 +8,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.stereotype.Service;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+
 /**
  * Gemini 로 사용자 질문 → 구조화 조건(ParsedQuery) 추출.
  * 실패 시(파싱 오류 등) 필터 없이 원문을 의미검색으로 쓰도록 안전하게 폴백한다.
@@ -48,14 +51,21 @@ public class QueryConditionExtractor {
             """;
 
     public ParsedQuery extract(String userQuery) {
+        // Gemini SDK 가 429(쿼터 소진)의 retryDelay(수 초~수십 초)를 존중하며 내부 재시도하므로
+        // spring.ai.retry 로는 못 끊는다 → 하드 데드라인. 초과 시 무필터 폴백.
+        // (실측: 쿼터 소진 시 head 이벤트가 33~48초까지 밀리던 것을 ~4초로 제한)
+        CompletableFuture<String> call = CompletableFuture.supplyAsync(() -> chatClient.prompt()
+                .system(SYSTEM)
+                .user(userQuery)
+                .call()
+                .content());
         try {
-            String content = chatClient.prompt()
-                    .system(SYSTEM)
-                    .user(userQuery)
-                    .call()
-                    .content();
-            return om.readValue(extractJson(content), ParsedQuery.class);
+            return om.readValue(extractJson(call.get(4, TimeUnit.SECONDS)), ParsedQuery.class);
         } catch (Exception e) {
+            call.cancel(true);
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
             log.warn("[챗봇] 조건추출 실패, 원문으로 폴백: {} ({})", userQuery, e.getMessage());
             return new ParsedQuery(null, null, null, null, userQuery);
         }

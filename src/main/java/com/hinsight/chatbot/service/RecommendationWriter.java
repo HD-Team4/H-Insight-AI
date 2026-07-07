@@ -64,6 +64,10 @@ public class RecommendationWriter {
                 .user(user)
                 .stream()
                 .content()
+                // 쿼터 소진(429) 시 SDK 가 구독 스레드를 잡고 내부 재시도(수십 초)를 함
+                //  → subscribeOn 으로 블로킹을 워커로 분리해야 timeout 타이머가 즉시 시작된다(실측 42초→8초).
+                .subscribeOn(reactor.core.scheduler.Schedulers.boundedElastic())
+                .timeout(java.time.Duration.ofSeconds(8))
                 .onErrorResume(e -> {
                     log.warn("[챗봇] 추천멘트 생성 실패, 템플릿 폴백: {} ({})", userMessage, e.getMessage());
                     return Flux.just(fallback(products));
