@@ -2,6 +2,7 @@ package com.hinsight.biz.reviewanalysis.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hinsight.exception.custom.biz.MartLoadException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.ClassPathResource;
@@ -10,7 +11,6 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UncheckedIOException;
 
 /**
  * 상품 분석 데이터 서빙 — 주간 상승률/하락률 TOP5 + 상품별 리뷰 감성·키워드 + LLM 향상 전략.
@@ -39,7 +39,7 @@ public class ReviewAnalysisService {
             try (InputStream is = new ClassPathResource(MART_RESOURCE).getInputStream()) {
                 return objectMapper.readTree(is);
             } catch (IOException io) {
-                throw new UncheckedIOException("상품 분석 mart 로드 실패: " + MART_RESOURCE, io);
+                throw new MartLoadException(io);
             }
         }
     }
