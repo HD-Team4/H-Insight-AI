@@ -2,6 +2,7 @@ package com.hinsight.ai.embedding;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hinsight.exception.custom.ai.EmbeddingFailedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -45,7 +46,8 @@ public class EmbeddingService {
         JsonNode root = invoke(Map.of("input", text));
         JsonNode embeddings = root.path("embeddings");
         if (!embeddings.isArray() || embeddings.isEmpty()) {
-            throw new IllegalStateException("임베딩 Lambda 응답이 비어 있습니다. (function=" + functionName + ", 응답=" + root + ")");
+            log.error("임베딩 Lambda 응답이 비어 있습니다. (function={}, 응답={})", functionName, root);
+            throw new EmbeddingFailedException();
         }
         JsonNode v = embeddings.get(0);
         float[] out = new float[v.size()];
@@ -62,11 +64,12 @@ public class EmbeddingService {
                     .payload(SdkBytes.fromUtf8String(json)));
             JsonNode root = objectMapper.readTree(resp.payload().asUtf8String());
             if (resp.functionError() != null) {
-                throw new IllegalStateException("임베딩 Lambda 실행 오류: " + root);
+                log.error("임베딩 Lambda 실행 오류: {}", root);
+                throw new EmbeddingFailedException();
             }
             return root;
         } catch (java.io.IOException e) {
-            throw new IllegalStateException("임베딩 Lambda 응답 파싱 실패", e);
+            throw new EmbeddingFailedException(e);
         }
     }
 

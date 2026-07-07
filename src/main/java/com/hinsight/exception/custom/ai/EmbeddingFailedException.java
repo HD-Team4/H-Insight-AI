@@ -7,4 +7,8 @@ public class EmbeddingFailedException extends BusinessException {
     public EmbeddingFailedException() {
         super(ErrorCode.EMBEDDING_FAILED);
     }
+
+    public EmbeddingFailedException(Throwable cause) {
+        super(ErrorCode.EMBEDDING_FAILED, cause);
+    }
 }

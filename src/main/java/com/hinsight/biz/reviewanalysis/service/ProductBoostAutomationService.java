@@ -2,6 +2,8 @@ package com.hinsight.biz.reviewanalysis.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hinsight.exception.custom.biz.MartLoadException;
+import com.hinsight.exception.custom.biz.ProductAccessDeniedException;
 import com.hinsight.product.model.dto.ProductDetailDto;
 import com.hinsight.product.service.ProductService;
 import com.hinsight.review.service.ReviewService;
@@ -16,7 +18,6 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -103,7 +104,7 @@ public class ProductBoostAutomationService {
                 martCache.put(s3Key, new CachedMart(data, System.currentTimeMillis()));
                 return data;
             } catch (IOException io) {
-                throw new UncheckedIOException(label + " mart 로드 실패: " + dummyResource, io);
+                throw new MartLoadException(io);
             }
         }
     }
@@ -284,7 +285,7 @@ public class ProductBoostAutomationService {
 
     private void requireOwned(Long productId, Long bizId) {
         if (productId == null || !productService.getOwnedProductIds(bizId).contains(productId)) {
-            throw new IllegalArgumentException("해당 상품에 대한 권한이 없습니다.");
+            throw new ProductAccessDeniedException();
         }
     }
 
