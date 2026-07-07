@@ -87,6 +87,24 @@ product:
   list:
     page-size: 20
 
+# 가상 대기열(virtual waiting room) — paths 의 폭주 경로 접근을 CDN 대기 페이지로 우회
+#  - 대기 페이지 정적 파일: waiting-room/ → s3://hf4-s3/waiting-room/ (CloudFront 서빙)
+#  - 대기열 상태는 전용 Redis(ElastiCache hf4-ticketing-queue-redis)에 저장. 번호표(seq/serving) 방식.
+#  - redis.host: 로컬은 localhost(도커 redis), EC2/운영은 WAITING_ROOM_REDIS_HOST 로 ElastiCache 지정
+#    (ElastiCache 는 프라이빗 서브넷이라 로컬에서 직접 접근 불가 → 로컬은 로컬 Redis 사용)
+waiting-room:
+  enabled: ${WAITING_ROOM_ENABLED:true}
+  page-url: ${WAITING_ROOM_PAGE_URL:https://d3czavkc472er9.cloudfront.net/waiting-room/index.html}
+  paths: ${WAITING_ROOM_PATHS:/customer/products/30}   # 콤마 구분, Ant 패턴 가능
+  redis:
+    host: ${WAITING_ROOM_REDIS_HOST:localhost}
+    port: ${WAITING_ROOM_REDIS_PORT:6379}
+  queue:
+    key-prefix: ${WAITING_ROOM_KEY_PREFIX:wr:}
+    release-count: ${WAITING_ROOM_RELEASE_COUNT:5}          # 한 틱마다 입장시킬 인원
+    release-interval-ms: ${WAITING_ROOM_RELEASE_INTERVAL_MS:3000}  # serving 전진 주기
+    token-ttl-minutes: 30
+
 # 정적 리소스(CSS/JS/영상 mp4) 오프로드 대상 CDN(CloudFront) 도메인
 #  - S3(hf4-s3)의 static/ 경로를 오리진으로 서빙. 템플릿은 이 설정값을 참조(하드코딩 금지)
 #  - 로컬/다른 환경에선 CDN_URL 로 오버라이드 가능
