@@ -159,7 +159,8 @@
             .hot-empty { color:var(--text-sub); font-size:13px; padding:8px 2px; }
             @media (max-width:700px){ .hot-card,.hot-card-img{flex-basis:132px; width:132px;} .hot-card-img{height:132px;} }
         </style>
-        <section class="hot-trend" id="hotTrend" style="display:none">
+        <!-- 전체 보기에서만 노출 — 카테고리 선택/검색 시엔 결과에 집중 (라이브·추천픽과 동일 기준) -->
+        <section class="hot-trend" id="hotTrend" style="display:none" th:if="${showLiveBroadcast}">
             <h2 class="section-title">🔥 실시간 급상승</h2>
             <p class="hot-sub">최근 1시간 실시간 집계 · <span id="hotAt">–</span> 기준</p>
 
