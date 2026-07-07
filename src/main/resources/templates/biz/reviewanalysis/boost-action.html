@@ -32,6 +32,8 @@
         .btn:disabled { opacity:.55; cursor:progress; }
         @media (max-width:900px){ .grid,.head{grid-template-columns:1fr; display:grid;} .metrics{grid-template-columns:1fr;} }
     </style>
+    <!-- 발표용 고대비 테마 -->
+    <div th:replace="~{fragments/present :: presentTheme}"></div>
 </head>
 <body>
 <div class="top-bar"></div>

@@ -16,6 +16,8 @@
         .retry { display:none; margin-top:18px; color:var(--primary); font-weight:800; text-decoration:none; }
         @keyframes spin { to { transform:rotate(360deg); } }
     </style>
+    <!-- 발표용 고대비 테마 -->
+    <div th:replace="~{fragments/present :: presentTheme}"></div>
 </head>
 <body>
 <main class="container loading-wrap">
