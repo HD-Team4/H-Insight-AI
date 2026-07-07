@@ -42,24 +42,27 @@ public class WaitingRoomInterceptor implements HandlerInterceptor {
             throws IOException {
         if (!enabled) return true;
 
-        // 이미 입장한 사용자 → 도메인 전체 통과(다른 상품·장바구니 등 자유 이용)
+        // 이미 입장한 사용자 → 도메인 전체 통과(다른 상품·장바구니 등 자유 이용). 처리 수 집계에 포함.
         HttpSession session = request.getSession(false);
         if (session != null && Boolean.TRUE.equals(session.getAttribute(SESSION_PASSED))) {
+            waitingRoomService.enter();
             return true;
         }
 
         String cleanUrl = urlWithoutToken(request);
 
-        // 대기를 마치고 wr_token 들고 돌아온 요청 — 토큰 검증 후 지속 통과권 부여
+        // 대기를 마치고 wr_token 들고 돌아온 요청 — 토큰 검증 후 지속 통과권 부여(리다이렉트라 집계 안 함)
         if (waitingRoomService.admit(request.getParameter(TOKEN_PARAM))) {
             request.getSession(true).setAttribute(SESSION_PASSED, Boolean.TRUE);
             response.sendRedirect(cleanUrl);   // 주소창에서 wr_token 제거
             return false;
         }
 
-        // 여유 있으면(CPU<target & 대기 줄 없음) 대기 없이 바로 입장 + 지속 통과권
-        if (waitingRoomService.canAdmitDirectly()) {
+        // 여유 있으면(동시 처리 여유 & 대기 줄 없음) 대기 없이 바로 입장 + 지속 통과권
+        // tryAdmitDirect 가 슬롯을 원자적으로 예약(+1)하므로 enter() 를 또 부르지 않는다.
+        if (waitingRoomService.tryAdmitDirect()) {
             request.getSession(true).setAttribute(SESSION_PASSED, Boolean.TRUE);
+            waitingRoomService.holdConnectionForTest();   // (테스트 전용) 입장 요청이 DB 커넥션을 test-hold-ms 동안 점유 → 게이트가 실제로 참
             return true;
         }
 
@@ -68,6 +71,13 @@ public class WaitingRoomInterceptor implements HandlerInterceptor {
                 + "?redirect=" + URLEncoder.encode(cleanUrl, StandardCharsets.UTF_8)
                 + "&origin=" + originKey(request));
         return false;
+    }
+
+    /** 게이트를 통과한(preHandle=true) 요청의 처리 종료 시 in-flight 카운트 감소 */
+    @Override
+    public void afterCompletion(HttpServletRequest request, HttpServletResponse response,
+                               Object handler, Exception ex) {
+        waitingRoomService.exit();
     }
 
     /** 원 요청 URL에서 wr_token 만 제거한 경로+쿼리 (만료 토큰이 redirect 파라미터에 섞여 도는 것 방지) */

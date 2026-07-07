@@ -1,7 +1,7 @@
 spring:
   datasource:
     hikari:
-      maximum-pool-size: 3
+      maximum-pool-size: ${DB_POOL_SIZE:20}   # RDS db.t3.micro(max_connections≈85) 여유 내. 폭주 시 DB 병목 완화
   config:
     import: optional:file:.env[.properties]
   # 메일(SMTP) — .env 를 properties 로 로드하면 SPRING_MAIL_* 대문자키가 relaxed binding 되지 않으므로
@@ -103,8 +103,12 @@ waiting-room:
     port: ${WAITING_ROOM_REDIS_PORT:6379}
   queue:
     key-prefix: ${WAITING_ROOM_KEY_PREFIX:wr:}
-    # AIMD 자기조정 방출: 매 틱 CPU<target → rate 가산 증가, CPU≥target → 승산 감소. [rate-min, rate-max] 클램프.
-    cpu-target: ${WAITING_ROOM_CPU_TARGET:0.80}                     # 인스턴스 CPU 목표(0~1). 포화 판정 겸 AIMD 기준
+    # 게이트 주 신호 = 동시 처리 중 요청 수. 이 수 이상이면 새 유입은 대기(이 앱은 CPU 낮고 DB 가 병목).
+    # ★반드시 DB 커넥션 풀(DB_POOL_SIZE:20)보다 낮게 둔다(여유분 확보). 풀과 같거나 크면 풀이 먼저
+    #  고갈돼 초과 요청이 대기 페이지로 안 가고 Hikari 커넥션 대기에서 '버퍼링(멈춤)'만 한다 — 대기열이 안 뜨던 근본 원인.
+    max-concurrent: ${WAITING_ROOM_MAX_CONCURRENT:15}
+    # AIMD 자기조정 방출: 여유(inFlight<max & CPU<target) → rate 가산 증가, 포화 → 승산 감소. [rate-min, rate-max]
+    cpu-target: ${WAITING_ROOM_CPU_TARGET:0.50}                     # CPU 이 값 이상이면 포화로 보고 대기(0~1)
     rate-max: ${WAITING_ROOM_RATE_MAX:200}                          # 방출 레이트 상한(/s)
     rate-min: ${WAITING_ROOM_RATE_MIN:35}                           # 방출 레이트 하한(/s)
     rate-initial: ${WAITING_ROOM_RATE_INITIAL:35}                   # 시작 방출 레이트(/s)
@@ -112,6 +116,11 @@ waiting-room:
     aimd-decrease: ${WAITING_ROOM_AIMD_DECREASE:0.5}                # CPU 포화 시 승산 감소 계수
     release-interval-ms: ${WAITING_ROOM_RELEASE_INTERVAL_MS:1000}   # 방출/조정 틱 주기
     token-ttl-minutes: 30
+    # 부하 테스트 전용 스위치 — 입장한 요청이 primary(MySQL) 풀에서 실제 커넥션을 빌려 이 시간(ms)만큼
+    #  SELECT SLEEP 으로 붙잡았다 놓는다. 실제 트래픽 소진을 못 만드는 테스트에서 "DB 가 동시에
+    #  max-concurrent 개만 처리" 병목을 인위 재현해 대기열이 실제로 차게 만든다.
+    #  ★현재 부하 테스트 중이라 기본 1000(1초)으로 켜둠. 운영 복귀 시 WAITING_ROOM_TEST_HOLD_MS=0 으로 끈다.
+    test-hold-ms: ${WAITING_ROOM_TEST_HOLD_MS:1000}
 
 # 정적 리소스(CSS/JS/영상 mp4) 오프로드 대상 CDN(CloudFront) 도메인
 #  - S3(hf4-s3)의 static/ 경로를 오리진으로 서빙. 템플릿은 이 설정값을 참조(하드코딩 금지)
