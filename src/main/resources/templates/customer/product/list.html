@@ -19,18 +19,35 @@
             <style>
                 .live-main-row { display:flex; gap:16px; align-items:stretch; }
                 .live-main-row .live-main-carousel { flex:1 1 auto; min-width:0; }
-                .promo-slot { flex:0 0 220px; width:220px; }
-                .promo-slot-label { font-size:13px; font-weight:700; color:var(--text-sub); margin-bottom:8px; }
-                .promo-slot-list { display:flex; flex-direction:column; gap:10px; max-height:100%; overflow-y:auto; padding-right:2px; }
-                .promo-card { display:flex; align-items:center; gap:10px; text-decoration:none; color:inherit;
-                    padding:6px; border-radius:8px; }
+                .promo-slot { flex:0 0 288px; width:288px; }
+
+                /* ── 라이브 섹션 확대 (발표용) ──
+                   비율(16/9)·object-fit:cover 는 그대로 → 잘림/검은 여백 없이 크기만 키움.
+                   컨테이너(1200px) 안에선 추천슬롯 때문에 영상이 안 커지므로,
+                   라이브 섹션만 좌우 대칭으로 컨테이너 밖으로 넓혀(최대 1360px) 영상을 키운다.
+                   동시에 위 여백을 줄여 섹션이 위로 더 크게 올라오게 한다. */
+                .live-main-preview {
+                    width: min(1360px, calc(100vw - 32px));
+                    margin: 18px 0 28px 50%;                     /* 상단 여백↑ → 헤더/선과 간격 확보 */
+                    transform: translateX(-50%);
+                    padding: 22px 0 24px;                        /* 카드 안쪽 상단 여백↑ → 배지가 위에 바짝 안 붙게 */
+                    background: transparent;                     /* 흰 배경 제거 → 오프화이트 페이지에 자연스럽게 녹임 */
+                }
+                .live-main-head { max-width: none; }
+                .live-main-carousel { max-width: none; }
+                .live-main-card { grid-template-columns: minmax(0, 2.3fr) minmax(260px, 0.7fr); }
+                .live-main-head h2 { font-size: 24px; }         /* 섹션 제목도 함께 키움 */
+                .promo-slot-label { font-size:16px; font-weight:800; color:var(--text-main); margin-bottom:12px; }
+                .promo-slot-list { display:flex; flex-direction:column; gap:12px; max-height:100%; overflow-y:auto; padding-right:2px; }
+                .promo-card { display:flex; align-items:center; gap:14px; text-decoration:none; color:inherit;
+                    padding:8px; border-radius:10px; }
                 .promo-card:hover { background:var(--bg-light); }
-                .promo-card-img { flex:0 0 56px; width:56px; height:56px; border-radius:8px; overflow:hidden; background:#f4f4f4; }
+                .promo-card-img { flex:0 0 76px; width:76px; height:76px; border-radius:10px; overflow:hidden; background:#f4f4f4; }
                 .promo-card-img img { width:100%; height:100%; object-fit:cover; display:block; }
                 .promo-card-info { min-width:0; }
-                .promo-card-name { font-size:13px; font-weight:600; line-height:1.35;
+                .promo-card-name { font-size:15px; font-weight:600; line-height:1.4;
                     white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-                .promo-card-price { font-size:13px; font-weight:800; margin-top:2px; }
+                .promo-card-price { font-size:16px; font-weight:800; margin-top:4px; }
                 @media (max-width:900px) {
                     .live-main-row { flex-direction:column; }
                     .promo-slot { width:100%; flex:none; }
