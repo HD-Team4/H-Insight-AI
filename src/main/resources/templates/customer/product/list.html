@@ -90,7 +90,7 @@
                 </div>
 
                 <div class="promo-slot" th:if="${promotedProducts != null and !#lists.isEmpty(promotedProducts)}">
-                    <div class="promo-slot-label">✨ 추천 상품</div>
+                    <div class="promo-slot-label">✨ H-Insight 추천 픽</div>
                     <div class="promo-slot-list">
                         <a class="promo-card" th:each="p : ${promotedProducts}"
                            th:href="@{/customer/products/{id}(id=${p.productId})}">
@@ -171,7 +171,7 @@
         </section>
 
         <h2 class="section-title" th:if="${condition.categoryGroup() == null}">
-            H-Insight 추천 픽
+            전체 상품
         </h2>
 
         <p class="did-you-mean"
