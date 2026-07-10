@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/default}">
+<th:block layout:fragment="content">
+    <div class="auth-wrap">
+        <div class="auth-card">
+            <h1 class="auth-title">회원가입</h1>
+            <p class="auth-subtitle">몇 가지 정보만 입력하면 가입이 완료됩니다</p>
+
+            <!--
+              SignupRequest 는 record 이므로 th:field(getter 필요) 대신
+              name + th:value(접근자 호출)로 값을 다룬다. th:errors 는 BindingResult 를 읽어 record 에서도 안전.
+            -->
+            <form th:action="@{/customer/users/signup}" th:object="${signupRequest}" method="post">
+                <div class="auth-field">
+                    <label for="userName">이름</label>
+                    <input type="text" id="userName" name="userName" th:value="${signupRequest.userName()}"
+                           placeholder="이름" required>
+                    <span class="auth-error" th:if="${#fields.hasErrors('userName')}" th:errors="*{userName}"></span>
+                </div>
+
+                <div class="auth-field">
+                    <label for="loginId">아이디</label>
+                    <input type="text" id="loginId" name="loginId" th:value="${signupRequest.loginId()}"
+                           placeholder="4~50자" required>
+                    <span class="auth-error" th:if="${#fields.hasErrors('loginId')}" th:errors="*{loginId}"></span>
+                </div>
+
+                <div class="auth-field">
+                    <label for="password">비밀번호</label>
+                    <input type="password" id="password" name="password" placeholder="8자 이상" required>
+                    <span class="auth-error" th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></span>
+                </div>
+
+                <div class="auth-field">
+                    <label for="gender">성별</label>
+                    <select id="gender" name="gender">
+                        <option value="">선택 안 함</option>
+                        <option value="M" th:selected="${signupRequest.gender() == 'M'}">남</option>
+                        <option value="F" th:selected="${signupRequest.gender() == 'F'}">여</option>
+                    </select>
+                </div>
+
+                <div class="auth-field">
+                    <label for="birthDate">생년월일</label>
+                    <input type="date" id="birthDate" name="birthDate" th:value="${signupRequest.birthDate()}">
+                    <span class="auth-error" th:if="${#fields.hasErrors('birthDate')}" th:errors="*{birthDate}"></span>
+                </div>
+
+                <div class="auth-field">
+                    <label for="ageGroup">연령대</label>
+                    <select id="ageGroup" name="ageGroup">
+                        <option value="">선택 안 함</option>
+                        <option th:each="g : ${ {'10대','20대','30대','40대','50대','60대 이상'} }"
+                                th:value="${g}" th:text="${g}" th:selected="${signupRequest.ageGroup() == g}"></option>
+                    </select>
+                </div>
+
+                <div class="auth-field">
+                    <label for="email">이메일</label>
+                    <input type="email" id="email" name="email" th:value="${signupRequest.email()}"
+                           placeholder="example@email.com">
+                    <span class="auth-error" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></span>
+                </div>
+
+                <button type="submit" class="auth-btn">가입하기</button>
+            </form>
+
+            <div class="auth-links">
+                <span>이미 계정이 있으신가요?</span>
+                <a th:href="@{/customer/login}">로그인</a>
+            </div>
+        </div>
+    </div>
+</th:block>
+</html>

@@ -1,0 +1,54 @@
+# ============================================================
+# 모니터링 스택 (별도 "모니터링 EC2" 에서 실행)
+#  - Prometheus + Grafana. 대상 서버의 앱 actuator + exporter 들을 스크레이프.
+#  - 대상 서버(H-Insight-AI)의 docker-compose 와는 완전히 별개.
+#  - 데이터는 named volume 에 영속화 → 재시작해도 baseline 이 남는다.
+#
+# 사용:
+#   1) prometheus/prometheus.yml 의 <TARGET_EC2_PRIVATE_IP> 를 대상 서버 IP 로 치환
+#   2) (선택) .env 에 GRAFANA_ADMIN_PASSWORD 설정  (미설정 시 admin)
+#   3) docker compose -f monitoring/docker-compose.yml up -d
+#   4) Grafana http://<이 서버>:3000  /  Prometheus http://<이 서버>:9090
+# ============================================================
+services:
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: monitoring-prometheus
+    restart: unless-stopped
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus                       # baseline 영속화
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'               # 30일 보관(before/after 비교 여유)
+      - '--web.enable-lifecycle'                          # /-/reload 로 무중단 설정 리로드
+    ports:
+      - "9090:9090"
+    networks:
+      - monitoring
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: monitoring-grafana
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}   # 비번은 env 로
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana                     # 대시보드/설정 영속화
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    networks:
+      - monitoring
+
+volumes:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  monitoring:
+    driver: bridge

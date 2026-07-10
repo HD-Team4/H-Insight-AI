@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hinsight.product.dao.ProductDao">
+
+    <select id="getAllProducts" resultType="Product">
+        SELECT *
+        FROM products
+    </select>
+
+    <select id="getProductById" parameterType="long" resultType="Product">
+        SELECT *
+        FROM products
+        WHERE product_id = #{productId}
+    </select>
+
+    <select id="getProductDetailById" parameterType="long" resultType="ProductDetailDto">
+        SELECT
+            p.product_id,
+            b.company_name AS brand_name,
+            p.product_name,
+            p.price,
+            p.image_url,
+            p.description,
+            p.product_info
+        FROM products p
+        LEFT JOIN biz_users b
+            ON p.biz_id = b.biz_id
+        WHERE p.product_id = #{productId}
+    </select>
+
+    <sql id="searchConditions">
+        WHERE 1=1
+        <if test="keyword != null and keyword != ''">
+            AND product_name LIKE CONCAT('%', #{keyword}, '%')
+        </if>
+
+        <if test="categoryIds != null and categoryIds.size() > 0">
+            AND category_id IN
+            <foreach collection="categoryIds" item="cid" open="(" separator="," close=")">
+                #{cid}
+            </foreach>
+        </if>
+
+        <if test="minPrice != null">
+            AND price <![CDATA[ >= ]]> #{minPrice}
+        </if>
+
+        <if test="maxPrice != null">
+            AND price <![CDATA[ <= ]]> #{maxPrice}
+        </if>
+    </sql>
+
+    <select id="search" resultType="Product">
+        SELECT *
+        FROM products
+        <include refid="searchConditions"/>
+        ORDER BY product_id
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countSearch" resultType="long">
+        SELECT COUNT(*)
+        FROM products
+        <include refid="searchConditions"/>
+    </select>
+
+    <select id="findByIds" resultType="Product">
+        SELECT *
+        FROM products
+        WHERE product_id IN
+        <foreach collection="list" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        ORDER BY FIELD(product_id,
+        <foreach collection="list" item="id" separator=",">
+            #{id}
+        </foreach>
+        )
+    </select>
+
+
+    <select id="getPriceRange" resultType="PriceRange">
+        SELECT MIN(price) AS minPrice, MAX(price) AS maxPrice
+        FROM products
+    </select>
+
+    <update id="updateProductName">
+        UPDATE products
+        SET product_name = #{productName}
+        WHERE product_id = #{productId}
+          AND biz_id = #{bizId}
+    </update>
+
+    <update id="updateDescription">
+        UPDATE products
+        SET description = #{description}
+        WHERE product_id = #{productId}
+          AND biz_id = #{bizId}
+    </update>
+
+    <update id="promoteProduct">
+        UPDATE products
+        SET is_promoted = 'Y', promoted_at = NOW()
+        WHERE product_id = #{productId}
+          AND biz_id = #{bizId}
+    </update>
+
+    <select id="findProductIdsByBiz" resultType="long">
+        SELECT product_id
+        FROM products
+        WHERE biz_id = #{bizId}
+    </select>
+
+    <select id="findPromotedProducts" resultType="Product">
+        SELECT *
+        FROM products
+        WHERE is_promoted = 'Y'
+        ORDER BY promoted_at DESC
+        LIMIT #{limit}
+    </select>
+
+</mapper>

@@ -1,0 +1,21 @@
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  elasticsearch:
+    uris: ${ES_URIS:http://localhost:9200}
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      timeout: 3s                 # 안전망: 막힌 명령이 60초 커넥션을 붙잡지 않고 빨리 실패 (근본해결은 top()의 ZUNIONSTORE 제거)
+      lettuce:
+        pool:
+          max-active: 16
+
+logging:
+  level:
+    com.hinsight: INFO
+    org.mybatis: INFO

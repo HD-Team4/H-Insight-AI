@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- 상품 카드 목록 조각: 초기 렌더와 무한스크롤 추가 로드에서 공용으로 사용 -->
+<th:block th:fragment="cards">
+    <a th:each="product : ${products}"
+       th:href="@{/customer/products/{id}(id=${product.productId})}"
+       class="product-card">
+
+        <div class="product-img">
+            <img th:if="${product.imageUrl}"
+                 th:src="${product.imageUrl}"
+                 th:alt="${product.productName}"
+                 style="width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 12px;"/>
+            <span class="product-live-badge"
+                  th:if="${showLiveBroadcast and onAirProductIds != null and #lists.contains(onAirProductIds, product.productId)}">LIVE ON</span>
+        </div>
+
+        <div class="product-info">
+            <div class="product-name" th:text="${product.productName}">상품명</div>
+            <div class="product-price" th:text="${#numbers.formatInteger(product.price, 0, 'COMMA')} + '원'">0원</div>
+        </div>
+    </a>
+</th:block>
+</body>
+</html>

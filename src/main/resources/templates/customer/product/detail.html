@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{layout/default}">
+<th:block layout:fragment="content">
+    <div class="product-detail-page container">
+        <a class="live-entry-banner live-entry-banner-detail"
+           th:if="${onAirLiveSession != null}"
+           th:href="@{/live/{id}(id=${onAirLiveSession.liveSessionId})}">
+            <div>
+                <span>LIVE</span>
+                <strong>이 상품은 지금 라이브 방송중입니다</strong>
+                <p>방송 화면에서 실시간 혜택과 채팅을 확인하세요.</p>
+            </div>
+            <em>라이브 보기</em>
+        </a>
+
+        <section class="product-detail-hero">
+            <aside class="product-thumbnails" aria-label="상품 이미지 목록">
+                <button class="product-thumb is-active" type="button">
+                    <img th:if="${product.imageUrl != null and !product.imageUrl.isBlank()}"
+                         th:src="${product.imageUrl}"
+                         th:alt="${product.productName}">
+                    <span th:unless="${product.imageUrl != null and !product.imageUrl.isBlank()}">No image</span>
+                </button>
+            </aside>
+
+            <div class="product-main-image">
+                <img th:if="${product.imageUrl != null and !product.imageUrl.isBlank()}"
+                     th:src="${product.imageUrl}"
+                     th:alt="${product.productName}">
+                <div th:unless="${product.imageUrl != null and !product.imageUrl.isBlank()}" class="product-image-empty">
+                    이미지 준비중
+                </div>
+            </div>
+
+            <section class="product-purchase-panel">
+                <p class="detail-brand"
+                   th:text="${product.brandName != null and !product.brandName.isBlank()} ? ${product.brandName} : 'H-Insight-Brand'">
+                    H-Insight-Brand
+                </p>
+                <h1 th:text="${product.productName}">상품명</h1>
+
+                <div class="detail-rating-row">
+                    <span class="detail-stars" th:text="${reviewAverageRatingStars}">☆☆☆☆☆</span>
+                    <span class="detail-rating-score"
+                          th:text="${#numbers.formatDecimal(reviewAverageRating, 1, 1)}">0.0</span>
+                    <a href="#productReviews" th:text="'리뷰 ' + ${reviewCount} + '건'">리뷰 0건</a>
+                </div>
+
+                <div class="detail-price-row">
+                    <strong th:if="${product.price != null}"
+                            th:text="${#numbers.formatInteger(product.price, 3, 'COMMA')} + '원'">0원</strong>
+                    <strong th:unless="${product.price != null}">가격 문의</strong>
+                </div>
+
+                <div class="detail-benefit-box">
+                    <dl>
+                        <div>
+                            <dt>첫 구매 혜택</dt>
+                            <dd>처음이라면 누구나 첫 구매 쿠폰 적용</dd>
+                        </div>
+                        <div>
+                            <dt>포인트 적립</dt>
+                            <dd>구매 확정 시 멤버십 포인트 적립</dd>
+                        </div>
+                        <div>
+                            <dt>배송방법</dt>
+                            <dd>택배배송</dd>
+                        </div>
+                    </dl>
+                </div>
+
+                <div class="detail-option-group">
+                    <span>색상</span>
+                    <div class="detail-chip-row">
+                        <button class="detail-chip is-selected" type="button">기본</button>
+                    </div>
+                </div>
+
+                <div class="detail-option-group">
+                    <span>수량</span>
+                    <div class="detail-quantity" th:data-unit-price="${product.price}">
+                        <button type="button" data-quantity-action="decrease" aria-label="수량 감소">-</button>
+                        <input type="number"
+                               value="1"
+                               min="1"
+                               aria-label="구매 수량">
+                        <button type="button" data-quantity-action="increase" aria-label="수량 증가">+</button>
+                    </div>
+                </div>
+
+                <div class="detail-total">
+                    <span>총 상품금액</span>
+                    <strong class="detail-total-price"
+                            th:if="${product.price != null}"
+                            th:text="${#numbers.formatInteger(product.price, 3, 'COMMA')} + '원'">0원</strong>
+                    <strong th:unless="${product.price != null}">가격 문의</strong>
+                </div>
+
+                <div class="detail-action-row" th:data-product-id="${product.productId}">
+                    <button class="detail-action detail-action-secondary" type="button">장바구니</button>
+                    <button class="detail-action detail-action-primary" type="button">바로구매</button>
+                </div>
+            </section>
+        </section>
+
+        <nav class="detail-tab-nav" aria-label="상품 상세 메뉴">
+            <a class="is-active" href="#productInfo">상품정보</a>
+            <a href="#productSpecs">상세정보</a>
+            <a href="#productReviews" th:text="'리뷰 (' + ${reviewCount} + ')'">리뷰 (0)</a>
+        </nav>
+
+        <section id="productInfo" class="detail-content-section">
+            <div class="detail-content-image">
+                <img th:if="${product.imageUrl != null and !product.imageUrl.isBlank()}"
+                     th:src="${product.imageUrl}"
+                     th:alt="${product.productName}">
+            </div>
+            <div class="detail-content-copy">
+                <p class="detail-product-code" th:text="'상품번호 : ' + ${product.productId}">상품번호</p>
+                <h2 th:text="${product.productName}">상품명</h2>
+                <p th:if="${product.description != null and !product.description.isBlank()}"
+                   th:text="${product.description}">상품 설명</p>
+                <p th:unless="${product.description != null and !product.description.isBlank()}">
+                    제품 설명은 준비 중입니다. 상품 정보 영역에서 소재, 관리 방법, 제조 정보 등을 확인해 주세요.
+                </p>
+            </div>
+        </section>
+
+        <section id="productSpecs" class="detail-spec-section">
+            <h2>상품 필수 정보</h2>
+            <table class="detail-spec-table">
+                <tbody>
+                <tr th:if="${productInfoRows == null or productInfoRows.isEmpty()}">
+                    <th scope="row">제품 정보</th>
+                    <td>등록된 제품 정보가 없습니다.</td>
+                </tr>
+                <tr th:each="info : ${productInfoRows}">
+                    <th scope="row" th:text="${info.key}">제품 정보</th>
+                    <td th:text="${info.value}">상세 정보</td>
+                </tr>
+                </tbody>
+            </table>
+        </section>
+        <section id="productReviews" class="detail-review-section">
+            <div class="detail-review-heading">
+                <div>
+                    <h2>고객 리뷰</h2>
+                    <p th:text="'총 ' + ${reviewCount} + '개의 리뷰'">총 0개의 리뷰</p>
+                </div>
+            </div>
+
+            <p class="detail-review-flash is-success" th:if="${reviewMessage}" th:text="${reviewMessage}"></p>
+            <p class="detail-review-flash is-error" th:if="${reviewError}" th:text="${reviewError}"></p>
+
+            <form id="writeReview" class="detail-review-form" sec:authorize="isAuthenticated()" th:if="${canWriteReview}"
+                  th:action="@{/customer/reviews}" method="post">
+                <input type="hidden" name="productId" th:value="${product.productId}"/>
+                <div class="detail-review-form-top">
+                    <span class="detail-review-form-label">별점</span>
+                    <div class="detail-review-stars">
+                        <input type="radio" id="review-star-5" name="rating" value="5"/>
+                        <label for="review-star-5" title="5점">★</label>
+                        <input type="radio" id="review-star-4" name="rating" value="4"/>
+                        <label for="review-star-4" title="4점">★</label>
+                        <input type="radio" id="review-star-3" name="rating" value="3"/>
+                        <label for="review-star-3" title="3점">★</label>
+                        <input type="radio" id="review-star-2" name="rating" value="2"/>
+                        <label for="review-star-2" title="2점">★</label>
+                        <input type="radio" id="review-star-1" name="rating" value="1"/>
+                        <label for="review-star-1" title="1점">★</label>
+                    </div>
+                </div>
+                <textarea name="content" class="detail-review-form-textarea" rows="4" maxlength="1000"
+                          placeholder="상품에 대한 솔직한 리뷰를 남겨주세요. (최대 1000자)"></textarea>
+                <div class="detail-review-form-actions">
+                    <button type="submit" class="detail-review-form-submit">리뷰 등록</button>
+                </div>
+            </form>
+            <p class="detail-review-login-prompt" sec:authorize="isAuthenticated()" th:unless="${canWriteReview}">
+                구매한 상품만 리뷰를 작성할 수 있습니다.
+            </p>
+            <p class="detail-review-login-prompt" sec:authorize="!isAuthenticated()">
+                <a th:href="@{/customer/login}">로그인</a> 후 리뷰를 작성할 수 있습니다.
+            </p>
+
+            <p class="detail-review-empty" th:if="${reviewPage.content().isEmpty()}">
+                등록된 리뷰가 없습니다.
+            </p>
+            <div class="detail-review-list" th:if="${!reviewPage.content().isEmpty()}">
+                <article class="detail-review-card" th:each="review : ${reviewPage.content()}">
+                    <div class="detail-review-card-head">
+                        <div class="detail-review-user">
+                            <span class="detail-review-avatar"
+                                  th:text="${#strings.substring(review.maskedUserName, 0, 1)}">홍</span>
+                            <div>
+                                <strong th:text="${review.maskedUserName}">홍길동</strong>
+                                <span th:text="${review.ratingStars}">★★★★★</span>
+                            </div>
+                        </div>
+                        <time th:if="${review.createdAt != null}"
+                              th:datetime="${review.createdAt}"
+                              th:text="${#temporals.format(review.createdAt, 'yyyy.MM.dd')}">2026.07.01</time>
+                    </div>
+                    <p th:text="${review.content}">리뷰 내용</p>
+                </article>
+            </div>
+            <nav class="detail-review-pagination"
+                 th:if="${reviewPage != null and reviewPage.totalPages() > 1}"
+                 aria-label="리뷰 페이지">
+                <a class="detail-review-page-control"
+                   th:classappend="${reviewPage.page() <= 1} ? ' is-disabled'"
+                   th:href="@{/customer/products/{id}(id=${product.productId}, reviewPage=${reviewPage.page() - 1})} + '#productReviews'">
+                    이전
+                </a>
+                <a class="detail-review-page-number"
+                   th:each="pageNumber : ${#numbers.sequence(1, reviewPage.totalPages())}"
+                   th:classappend="${pageNumber == reviewPage.page()} ? ' is-active'"
+                   th:href="@{/customer/products/{id}(id=${product.productId}, reviewPage=${pageNumber})} + '#productReviews'"
+                   th:text="${pageNumber}">1</a>
+                <a class="detail-review-page-control"
+                   th:classappend="${reviewPage.page() >= reviewPage.totalPages()} ? ' is-disabled'"
+                   th:href="@{/customer/products/{id}(id=${product.productId}, reviewPage=${reviewPage.page() + 1})} + '#productReviews'">
+                    다음
+                </a>
+            </nav>
+        </section>
+    </div>
+</th:block>
+<th:block layout:fragment="script">
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const quantityControl = document.querySelector('.detail-quantity');
+            if (!quantityControl) {
+                return;
+            }
+
+            const input = quantityControl.querySelector('input');
+            const totalPrice = document.querySelector('.detail-total-price');
+            const unitPrice = Number(quantityControl.dataset.unitPrice);
+
+            const getMax = () => {
+                const max = Number(input.max);
+                return Number.isFinite(max) && max > 0 ? max : Infinity;
+            };
+
+            const setQuantity = (nextValue) => {
+                const min = Number(input.min) || 1;
+                const max = getMax();
+                const quantity = Math.min(Math.max(nextValue, min), max);
+
+                input.value = quantity;
+
+                if (totalPrice && Number.isFinite(unitPrice)) {
+                    totalPrice.textContent = `${(unitPrice * quantity).toLocaleString('ko-KR')}원`;
+                }
+            };
+
+            quantityControl.addEventListener('click', (event) => {
+                const button = event.target.closest('[data-quantity-action]');
+                if (!button) {
+                    return;
+                }
+
+                const currentValue = Number(input.value) || 1;
+                const delta = button.dataset.quantityAction === 'increase' ? 1 : -1;
+                setQuantity(currentValue + delta);
+            });
+
+            input.addEventListener('change', () => {
+                setQuantity(Number(input.value) || 1);
+            });
+        });
+    </script>
+    <script th:inline="javascript">
+        // CSRF 토큰 (시큐리티 기본 설정에서도 POST가 동작하도록)
+        const csrfToken  = /*[[${_csrf != null ? _csrf.token : null}]]*/ null;
+        const csrfHeader = /*[[${_csrf != null ? _csrf.headerName : null}]]*/ null;
+
+        async function postJson(url, body) {
+            const headers = {'Content-Type': 'application/json'};
+            if (csrfToken) headers[csrfHeader] = csrfToken;
+            return fetch(url, {
+                method: 'POST',
+                headers,
+                body: body ? JSON.stringify(body) : undefined
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const actionRow = document.querySelector('.detail-action-row');
+            if (!actionRow) {
+                return;
+            }
+
+            const productId = Number(actionRow.dataset.productId);
+            const getQuantity = () =>
+                Number(document.querySelector('.detail-quantity input').value) || 1;
+
+            // 장바구니 담기
+            document.querySelector('.detail-action-secondary').addEventListener('click', async () => {
+                const res = await postJson('/customer/cart/items', {productId, quantity: getQuantity()});
+                if (res.ok) {
+                    if (await showConfirm('장바구니에 담았습니다. 장바구니로 이동할까요?', { title: '장바구니' })) {
+                        location.href = '/customer/cart';
+                    }
+                } else {
+                    await showAlert('장바구니 담기에 실패했습니다.');
+                }
+            });
+
+            // 바로구매
+            document.querySelector('.detail-action-primary').addEventListener('click', async () => {
+                const res = await postJson('/customer/orders/direct', {productId, quantity: getQuantity()});
+                if (res.ok) {
+                    await showAlert('주문이 완료되었습니다.', { title: '주문 완료' });
+                } else {
+                    await showAlert('주문에 실패했습니다.');
+                }
+            });
+        });
+    </script>
+</th:block>
+</html>

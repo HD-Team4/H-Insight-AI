@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/default}">
+
+<th:block layout:fragment="css">
+    <style>
+        .mypage { padding: 40px 0 80px; }
+
+        /* 상단: 개인정보 요약 카드 */
+        .mypage-profile-card {
+            display: flex;
+            align-items: center;
+            gap: 28px;
+            padding: 32px;
+            background: var(--bg-light);
+            border: 2px solid var(--border);
+            border-radius: 16px;
+            margin-bottom: 32px;
+        }
+        .mypage-avatar {
+            width: 84px;
+            height: 84px;
+            flex-shrink: 0;
+            border-radius: 50%;
+            background: var(--primary);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 34px;
+            font-weight: 800;
+        }
+        .mypage-profile-body { flex: 1; min-width: 0; }
+        .mypage-name { font-size: 24px; font-weight: 800; }
+        .mypage-name span { color: var(--text-sub); font-weight: 500; font-size: 17px; }
+        .mypage-loginid { color: var(--text-sub); font-size: 15px; margin-bottom: 18px; }
+        .mypage-meta {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px 40px;
+        }
+        .mypage-meta > div { display: flex; gap: 14px; font-size: 15px; }
+        .mypage-meta dt { color: var(--text-sub); min-width: 64px; }
+        .mypage-meta dd { color: var(--text-main); font-weight: 600; }
+
+        /* 섹션 공통 */
+        .mypage-section {
+            border: 2px solid var(--border);
+            border-radius: 16px;
+            padding: 28px 32px;
+            margin-bottom: 24px;
+        }
+        .mypage-section-title { font-size: 22px; font-weight: 800; margin-bottom: 20px; }
+        .mypage-password-form { max-width: 420px; }
+
+        /* 최근 구매 상품 목록 */
+        .mypage-purchase-list { display: flex; flex-direction: column; gap: 4px; }
+        .mypage-purchase-item + .mypage-purchase-item { border-top: 1px solid var(--border); }
+        .mypage-purchase-item { display: flex; align-items: center; gap: 8px; }
+        .mypage-purchase-link {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 12px 8px;
+            border-radius: 12px;
+            text-decoration: none;
+            color: inherit;
+            transition: background 0.15s;
+        }
+        .mypage-review-btn {
+            flex-shrink: 0;
+            margin-right: 8px;
+            padding: 9px 16px;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+            background: #fff;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 700;
+            text-decoration: none;
+            white-space: nowrap;
+            transition: background 0.15s, color 0.15s;
+        }
+        .mypage-review-btn:hover { background: var(--primary); color: #fff; }
+        .mypage-purchase-link:hover { background: var(--bg-light); }
+        .mypage-purchase-img {
+            width: 56px;
+            height: 56px;
+            flex-shrink: 0;
+            border-radius: 10px;
+            background: var(--bg-light);
+            overflow: hidden;
+        }
+        .mypage-purchase-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .mypage-purchase-info { flex: 1; min-width: 0; }
+        .mypage-purchase-name {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .mypage-purchase-meta {
+            display: flex;
+            gap: 6px;
+            font-size: 14px;
+            color: var(--text-sub);
+        }
+
+        /* 최근 본 상품 캐러셀 */
+        .recentview-carousel { position: relative; }
+        .recentview-track {
+            display: flex;
+            gap: 16px;
+            overflow-x: auto;
+            scroll-behavior: smooth;
+            padding: 4px 2px;
+            scrollbar-width: none;            /* Firefox */
+        }
+        .recentview-track::-webkit-scrollbar { display: none; } /* Chrome/Safari */
+        .recentview-card {
+            flex: 0 0 140px;
+            width: 140px;
+            text-decoration: none;
+            color: inherit;
+        }
+        .recentview-thumb {
+            width: 140px;
+            height: 140px;
+            border-radius: 12px;
+            background: var(--bg-light);
+            border: 2px solid var(--border);
+            overflow: hidden;
+        }
+        .recentview-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .recentview-name {
+            margin-top: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            line-height: 1.35;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .recentview-price { margin-top: 4px; font-size: 14px; color: var(--text-sub); }
+
+        /* 좌우 넘김 버튼 (썸네일 세로 중앙에 살짝 겹치게) */
+        .recentview-nav {
+            position: absolute;
+            top: 74px;
+            transform: translateY(-50%);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 1px solid var(--border);
+            background: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: var(--text-main);
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            z-index: 2;
+        }
+        .recentview-nav:hover { background: var(--bg-light); }
+        .recentview-nav.prev { left: -12px; }
+        .recentview-nav.next { right: -12px; }
+        .recentview-nav[hidden] { display: none; }
+
+        /* 하단: 준비중 placeholder */
+        .mypage-empty {
+            color: var(--text-sub);
+            font-size: 14px;
+            text-align: center;
+            padding: 28px 0;
+        }
+
+        @media (max-width: 768px) {
+            .mypage-profile-card { flex-direction: column; text-align: center; gap: 18px; }
+            .mypage-meta { grid-template-columns: 1fr; }
+            .mypage-meta > div { justify-content: center; }
+        }
+    </style>
+</th:block>
+
+<th:block layout:fragment="content">
+    <div class="mypage container">
+        <h1 class="section-title">마이페이지</h1>
+
+        <!-- 비밀번호 변경 성공 안내 -->
+        <div class="auth-alert is-success" th:if="${param.pwChanged}">비밀번호가 변경되었습니다.</div>
+
+        <!-- ===== 상단: 개인정보 요약 ===== -->
+        <section class="mypage-profile-card">
+            <div class="mypage-avatar" th:text="${#strings.substring(profile.userName(), 0, 1)}">홍</div>
+            <div class="mypage-profile-body">
+                <p class="mypage-name">
+                    <span th:text="${profile.userName()}">홍길동</span> <span>님</span>
+                </p>
+                <p class="mypage-loginid" th:text="'@' + ${profile.loginId()}">@loginId</p>
+                <dl class="mypage-meta">
+                    <div>
+                        <dt>이메일</dt>
+                        <dd th:text="${profile.email() != null ? profile.email() : '미설정'}">-</dd>
+                    </div>
+                    <div>
+                        <dt>성별</dt>
+                        <dd th:text="${profile.genderLabel()}">-</dd>
+                    </div>
+                    <div>
+                        <dt>생년월일</dt>
+                        <dd th:text="${profile.birthDate() != null ? #temporals.format(profile.birthDate(), 'yyyy년 M월 d일') : '미설정'}">-</dd>
+                    </div>
+                    <div>
+                        <dt>연령대</dt>
+                        <dd th:text="${profile.ageGroup() != null ? profile.ageGroup() : '미설정'}">-</dd>
+                    </div>
+                </dl>
+            </div>
+        </section>
+
+        <!-- ===== 비밀번호 변경 ===== -->
+        <section class="mypage-section">
+            <h2 class="mypage-section-title">비밀번호 변경</h2>
+            <form th:action="@{/customer/mypage/password}" th:object="${passwordChangeRequest}" method="post"
+                  class="mypage-password-form">
+                <div class="auth-field">
+                    <label for="currentPassword">현재 비밀번호</label>
+                    <input type="password" id="currentPassword" name="currentPassword"
+                           placeholder="현재 비밀번호" required>
+                    <span class="auth-error" th:if="${#fields.hasErrors('currentPassword')}"
+                          th:errors="*{currentPassword}"></span>
+                </div>
+                <div class="auth-field">
+                    <label for="newPassword">새 비밀번호</label>
+                    <input type="password" id="newPassword" name="newPassword"
+                           placeholder="8자 이상" required>
+                    <span class="auth-error" th:if="${#fields.hasErrors('newPassword')}"
+                          th:errors="*{newPassword}"></span>
+                </div>
+                <div class="auth-field">
+                    <label for="confirmPassword">새 비밀번호 확인</label>
+                    <input type="password" id="confirmPassword" name="confirmPassword"
+                           placeholder="새 비밀번호 다시 입력" required>
+                    <span class="auth-error" th:if="${#fields.hasErrors('confirmPassword')}"
+                          th:errors="*{confirmPassword}"></span>
+                </div>
+                <button type="submit" class="auth-btn">비밀번호 변경</button>
+            </form>
+        </section>
+
+        <!-- ===== 최근 구매 상품 ===== -->
+        <section class="mypage-section">
+            <h2 class="mypage-section-title">최근 구매 상품</h2>
+
+            <p class="mypage-empty" th:if="${#lists.isEmpty(recentPurchases)}">아직 구매한 상품이 없습니다.</p>
+
+            <ul class="mypage-purchase-list" th:unless="${#lists.isEmpty(recentPurchases)}">
+                <li th:each="item : ${recentPurchases}" class="mypage-purchase-item">
+                    <a th:href="@{/customer/products/{id}(id=${item.productId()})}" class="mypage-purchase-link">
+                        <div class="mypage-purchase-img">
+                            <img th:if="${item.imageUrl()}"
+                                 th:src="${item.imageUrl()}"
+                                 th:alt="${item.productName()}"/>
+                        </div>
+                        <div class="mypage-purchase-info">
+                            <div class="mypage-purchase-name" th:text="${item.productName()}">상품명</div>
+                            <div class="mypage-purchase-meta">
+                                <span th:text="${#numbers.formatInteger(item.price(), 0, 'COMMA')} + '원'">0원</span>
+                                <span>·</span>
+                                <span th:text="${item.quantity()} + '개'">1개</span>
+                                <span>·</span>
+                                <span th:text="${#temporals.format(item.createdAt(), 'yyyy.MM.dd')}">2026.01.01</span>
+                            </div>
+                        </div>
+                    </a>
+                    <a class="mypage-review-btn"
+                       th:href="@{/customer/products/{id}(id=${item.productId()})} + '#writeReview'">리뷰 작성</a>
+                </li>
+            </ul>
+        </section>
+        <!-- ===== 최근 본 상품 ===== -->
+        <section class="mypage-section">
+            <h2 class="mypage-section-title">최근 본 상품</h2>
+
+            <div id="recentview-content" th:fragment="recentViewContent">
+                <p class="mypage-empty" th:if="${#lists.isEmpty(recentViews)}">최근 본 상품이 없습니다.</p>
+
+                <div class="recentview-carousel" th:unless="${#lists.isEmpty(recentViews)}">
+                    <button type="button" class="recentview-nav prev" aria-label="이전" hidden>&lsaquo;</button>
+                    <div class="recentview-track">
+                        <a th:each="item : ${recentViews}"
+                           th:href="@{/customer/products/{id}(id=${item.productId})}"
+                           class="recentview-card">
+                            <div class="recentview-thumb">
+                                <img th:if="${item.imageUrl}" th:src="${item.imageUrl}" th:alt="${item.productName}"/>
+                            </div>
+                            <div class="recentview-name" th:text="${item.productName}">상품명</div>
+                            <div class="recentview-price" th:if="${item.price != null}"
+                                 th:text="${#numbers.formatInteger(item.price, 0, 'COMMA')} + '원'">0원</div>
+                        </a>
+                    </div>
+                    <button type="button" class="recentview-nav next" aria-label="다음" hidden>&rsaquo;</button>
+                </div>
+            </div>
+        </section>
+    </div>
+</th:block>
+
+<th:block layout:fragment="script">
+    <script>
+        // 최근 본 상품 캐러셀 좌우 넘김 초기화
+        const initRecentViewCarousel = () => {
+            const carousel = document.querySelector('.recentview-carousel');
+            if (!carousel) {
+                return;
+            }
+            const track = carousel.querySelector('.recentview-track');
+            const prev = carousel.querySelector('.recentview-nav.prev');
+            const next = carousel.querySelector('.recentview-nav.next');
+
+            // 카드 폭(140) + 간격(16)
+            const CARD_STEP = 156;
+
+            // 화면에 보이는 카드 개수만큼 스크롤
+            const getStep = () => {
+                const visibleCount = Math.max(1, Math.floor(track.clientWidth / CARD_STEP));
+                return CARD_STEP * visibleCount;
+            };
+
+            const update = () => {
+                const overflow = track.scrollWidth > track.clientWidth + 1;
+                const atStart = track.scrollLeft <= 0;
+                const atEnd = track.scrollLeft >= track.scrollWidth - track.clientWidth - 1;
+                prev.hidden = !overflow || atStart;
+                next.hidden = !overflow || atEnd;
+            };
+
+            prev.addEventListener('click', () => track.scrollBy({ left: -getStep(), behavior: 'smooth' }));
+            next.addEventListener('click', () => track.scrollBy({ left: getStep(), behavior: 'smooth' }));
+            track.addEventListener('scroll', update);
+            window.addEventListener('resize', update);
+            update();
+        };
+
+        // 최근 본 상품 영역만 비동기로 다시 받아 교체(전체 새로고침 없이 깜빡임 방지)
+        const refreshRecentViews = async () => {
+            try {
+                const res = await fetch('/customer/mypage/recent-views', {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                if (!res.ok) {
+                    return;
+                }
+                const html = await res.text();
+                const container = document.getElementById('recentview-content');
+                if (container) {
+                    container.outerHTML = html;
+                    initRecentViewCarousel();
+                }
+            } catch (e) {
+                // 실패 시 기존 화면 유지
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', initRecentViewCarousel);
+
+        // 상품 상세를 보고 뒤로가기로 돌아왔을 때(bfcache 복원) 최근 본 상품만 갱신
+        window.addEventListener('pageshow', (event) => {
+            if (event.persisted) {
+                refreshRecentViews();
+            }
+        });
+    </script>
+</th:block>
+</html>

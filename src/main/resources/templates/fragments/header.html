@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<div th:fragment="headerFragment">
+    <div class="top-bar"></div>
+
+    <header class="container">
+        <div class="header-main">
+            <a th:href="@{/customer/products}" class="logo"><span class="logo-accent">H</span>-Insight<span class="logo-accent">-AI</span></a>
+
+            <div class="search-wrapper">
+                <form th:action="@{/customer/products}" method="get" class="search-bar">
+                    <input type="hidden" name="categoryGroup"
+                           th:if="${condition != null and condition.categoryGroup() != null}"
+                           th:value="${condition.categoryGroup()}">
+                    <input type="hidden" name="minPrice"
+                           th:if="${condition != null and condition.minPrice() != null}"
+                           th:value="${condition.minPrice()}">
+                    <input type="hidden" name="maxPrice"
+                           th:if="${condition != null and condition.maxPrice() != null}"
+                           th:value="${condition.maxPrice()}">
+                    <input type="text" name="keyword" placeholder="어떤 스타일을 찾으시나요?"
+                           th:value="${condition != null ? condition.keyword() : ''}">
+                </form>
+            </div>
+
+            <div class="header-utils">
+                <!-- 비로그인: 로그인/회원가입 -->
+                <a sec:authorize="!isAuthenticated()" th:href="@{/customer/login}">로그인</a>
+                <a sec:authorize="!isAuthenticated()" th:href="@{/customer/users/signup}">회원가입</a>
+                <!-- 로그인: 마이페이지 + 아이디 표시 + 로그아웃(POST, CSRF 자동) -->
+                <a sec:authorize="hasRole('CUSTOMER')" th:href="@{/customer/mypage}">마이페이지</a>
+                <span sec:authorize="isAuthenticated()">
+                    <span sec:authentication="name">사용자</span>님
+                    <form th:action="@{/customer/logout}" method="post" style="display:inline; margin:0;">
+                        <button type="submit"
+                                style="background:none; border:none; padding:0; cursor:pointer; color:inherit; font:inherit;">
+                            로그아웃
+                        </button>
+                    </form>
+                </span>
+                <a th:href="@{/customer/cart}">장바구니 </a>
+            </div>
+        </div>
+    </header>
+</div>
+</html>

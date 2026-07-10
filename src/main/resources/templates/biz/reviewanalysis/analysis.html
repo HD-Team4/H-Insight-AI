@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>H-Insight-AI 상품 분석</title>
+    <link rel="stylesheet" as="style" crossorigin
+          href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css"/>
+    <link rel="stylesheet" th:href="${@environment.getProperty('app.cdn.url') + '/static/css/style.css'}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        .biz-nav { display:flex; gap:4px; margin-left:28px; }
+        .biz-nav a { padding:8px 14px; border-radius:8px; font-size:14px; font-weight:600; color:var(--text-sub); text-decoration:none; }
+        .biz-nav a.active { color:var(--primary); background:rgba(0,137,130,.08); }
+
+        .gen-at { color:var(--text-sub); font-size:13px; margin:6px 0 24px; }
+        .panel { background:var(--bg-base); border:1px solid var(--border); border-radius:14px; padding:20px 24px; }
+        .panel h3 { font-size:16px; font-weight:800; margin:0 0 16px; }
+
+        .mover-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px; }
+        table.top-table { width:100%; border-collapse:collapse; }
+        .top-table th, .top-table td { padding:11px 8px; font-size:14px; text-align:right; border-bottom:1px solid var(--border); }
+        .top-table th { color:var(--text-sub); font-weight:700; font-size:13px; }
+        .top-table th:nth-child(2), .top-table td:nth-child(2) { text-align:left; }
+        .top-table td.name { font-weight:600; color:var(--text-main); }
+        .top-table tbody tr { cursor:pointer; }
+        .top-table tbody tr:hover { background:var(--bg-light); }
+        .top-table tbody tr.selected { background:rgba(0,137,130,.07); box-shadow:inset 3px 0 0 var(--primary); }
+        .growth-up { color:#c0392b; font-weight:700; }
+        .growth-down { color:#2471a3; font-weight:700; }
+
+        /* 상세 */
+        .detail-head { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:18px; }
+        .detail-head h2 { font-size:20px; font-weight:800; margin:0; }
+        .chip { font-size:12px; font-weight:700; padding:4px 10px; border-radius:999px; background:var(--bg-light); color:var(--text-sub); }
+        .chip.up { background:rgba(192,57,43,.09); color:#c0392b; }
+        .chip.down { background:rgba(36,113,163,.09); color:#2471a3; }
+
+        .stat-row { display:grid; grid-template-columns:repeat(6,1fr); gap:12px; margin-bottom:16px; }
+        .stat-card { background:var(--bg-light); border:1px solid var(--border); border-radius:12px; padding:14px 16px; }
+        .stat-card .lbl { font-size:12.5px; color:var(--text-sub); }
+        .stat-card .val { display:block; margin-top:6px; font-size:20px; font-weight:800; color:var(--text-main); }
+        .stat-card .val small { font-size:13px; font-weight:600; color:var(--text-sub); }
+
+        .detail-grid { display:grid; grid-template-columns:1fr 1.4fr; gap:16px; margin-bottom:16px; }
+        .canvas-wrap { position:relative; height:220px; }
+        .kw-title { font-size:13px; font-weight:700; color:var(--text-sub); margin:14px 0 8px; }
+        .kw-title:first-child { margin-top:0; }
+        .kw-chips { display:flex; flex-wrap:wrap; gap:8px; }
+        .kw { font-size:13px; font-weight:600; padding:6px 12px; border-radius:999px; background:rgba(0,137,130,.08); color:var(--primary); }
+        .kw.pain { background:rgba(192,57,43,.08); color:#c0392b; }
+
+        /* AI 전략 */
+        .strategy { border-left:4px solid var(--accent); }
+        .strategy .ai-badge { font-size:11px; font-weight:800; letter-spacing:.04em; background:rgba(226,168,7,.14); color:var(--accent); padding:3px 9px; border-radius:999px; margin-left:8px; vertical-align:2px; }
+        .strategy h4 { font-size:17px; font-weight:800; margin:6px 0 8px; }
+        .strategy p.sum { color:var(--text-main); font-size:14.5px; margin:0 0 14px; line-height:1.6; }
+        .signal-row { display:flex; align-items:baseline; gap:10px; padding:9px 0; border-bottom:1px solid var(--border); font-size:14px; }
+        .signal-row:last-of-type { border-bottom:none; }
+        .signal-row .sn { font-weight:700; min-width:110px; }
+        .signal-row .sd { color:var(--text-sub); flex:1; }
+        .lv { font-size:11.5px; font-weight:800; padding:2px 9px; border-radius:999px; white-space:nowrap; }
+        .lv.high { background:rgba(192,57,43,.1); color:#c0392b; }
+        .lv.mid { background:rgba(226,168,7,.14); color:#b8860b; }
+        .lv.low { background:var(--bg-light); color:var(--text-sub); }
+        .strategy ul { margin:10px 0 14px; padding-left:20px; }
+        .strategy li { font-size:14px; line-height:1.7; }
+        .strategy .concl { font-size:14px; font-weight:700; color:var(--primary); }
+        .strategy .pending { color:var(--text-sub); font-size:14px; padding:18px 0; text-align:center; }
+        .strategy .pending .tag { display:inline-block; background:var(--bg-light); border:1px dashed var(--border); border-radius:8px; padding:4px 12px; font-size:12px; margin-bottom:8px; }
+
+        @media (max-width:1100px){ .stat-row{grid-template-columns:repeat(3,1fr)} }
+        @media (max-width:900px){ .mover-grid,.detail-grid{grid-template-columns:1fr} .stat-row{grid-template-columns:repeat(2,1fr)} }
+    </style>
+    <!-- 발표용 고대비 테마 -->
+    <div th:replace="~{fragments/present :: presentTheme}"></div>
+</head>
+<body>
+<div class="top-bar"></div>
+<header class="container">
+    <div class="header-main">
+        <div style="display:flex; align-items:center;">
+            <a th:href="@{/biz/dashboard}" class="logo">H-Insight <span style="color: var(--accent);">Biz</span></a>
+            <nav class="biz-nav">
+                <a th:href="@{/biz/dashboard}">대시보드</a>
+                <a th:href="@{/biz/review-analysis}" class="active">상품 분석</a>
+            </nav>
+        </div>
+        <div class="header-utils">
+            <span><span sec:authentication="name">기업</span> 님</span>
+            <form th:action="@{/biz/logout}" method="post" style="display:inline; margin:0;">
+                <button type="submit"
+                        style="background:none; border:none; padding:0; cursor:pointer; color:inherit; font:inherit; font-weight:500;">
+                    로그아웃
+                </button>
+            </form>
+        </div>
+    </div>
+</header>
+
+<main class="container" style="padding-top: 32px; padding-bottom:64px;">
+    <h1 class="section-title" style="margin:0;">상품 분석</h1>
+    <p class="gen-at" id="genAt">상품 분석 데이터 로딩 중…</p>
+
+    <!-- 주간 급등 / 급락 TOP5 -->
+    <div class="mover-grid">
+        <div class="panel">
+            <h3>🔺 주간 매출 상승률 TOP 5</h3>
+            <table class="top-table">
+                <thead><tr><th>#</th><th>상품</th><th>주간 매출</th><th>증감</th></tr></thead>
+                <tbody id="surgingBody"></tbody>
+            </table>
+        </div>
+        <div class="panel">
+            <h3>🔻 주간 매출 하락률 TOP 5</h3>
+            <table class="top-table">
+                <thead><tr><th>#</th><th>상품</th><th>주간 매출</th><th>증감</th></tr></thead>
+                <tbody id="plungingBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 선택 상품 상세 -->
+    <section id="detailSection" style="display:none;">
+        <div class="panel" style="margin-bottom:16px;">
+            <div class="detail-head">
+                <h2 id="dName"></h2>
+                <span class="chip" id="dCategory"></span>
+                <span class="chip" id="dGrowth"></span>
+            </div>
+            <div class="stat-row">
+                <div class="stat-card"><span class="lbl">주간 매출</span><span class="val" id="dRevenue"></span></div>
+                <div class="stat-card"><span class="lbl">직전 주 매출</span><span class="val" id="dPrevRevenue"></span></div>
+                <div class="stat-card"><span class="lbl">주간 판매량</span><span class="val" id="dUnits"></span></div>
+                <div class="stat-card"><span class="lbl">카테고리 평균 대비</span><span class="val" id="dCatDiff"></span></div>
+                <div class="stat-card"><span class="lbl">평균 평점</span><span class="val" id="dRating"></span></div>
+                <div class="stat-card"><span class="lbl">리뷰 수</span><span class="val" id="dReviewCount"></span></div>
+            </div>
+            <div class="detail-grid" style="margin-bottom:0;">
+                <div>
+                    <div class="kw-title">리뷰 감성 비율 <span id="dAccNote" style="font-weight:500;"></span></div>
+                    <div class="canvas-wrap"><canvas id="sentimentChart"></canvas></div>
+                </div>
+                <div>
+                    <div class="kw-title">주요 언급 키워드</div>
+                    <div class="kw-chips" id="dKeywords"></div>
+                    <div class="kw-title">부정 리뷰 주요 원인</div>
+                    <div class="kw-chips" id="dPains"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel strategy">
+            <h3 style="margin-bottom:4px;">AI 향상 전략 <span class="ai-badge">LLM 생성</span></h3>
+            <div id="dStrategy"></div>
+        </div>
+    </section>
+</main>
+
+<script th:inline="none">
+    const DATA_URL = '/biz/review-analysis/data';
+    const won = n => (n ?? 0).toLocaleString('ko-KR');
+    let mart, sentimentChart;
+
+    async function init() {
+        const res = await fetch(DATA_URL);
+        if (!res.ok) { document.getElementById('genAt').textContent = '데이터를 불러오지 못했습니다.'; return; }
+        mart = await res.json();
+        document.getElementById('genAt').textContent =
+            `주간(${mart.anchor} 기준) · ${mart.basis} · 감성분석 정확도 ${mart.sentimentAccuracy}%`;
+        renderTable('surgingBody', mart.surging);
+        renderTable('plungingBody', mart.plunging);
+        if (mart.surging.length) select(mart.surging[0].productId);   // 첫 급등 상품 자동 선택
+    }
+
+    function growthHtml(g) {
+        if (g === null || g === undefined) return '<span class="growth-new">NEW</span>';
+        return g >= 0 ? `<span class="growth-up">▲ ${g}%</span>` : `<span class="growth-down">▼ ${Math.abs(g)}%</span>`;
+    }
+
+    function renderTable(bodyId, rows) {
+        document.getElementById(bodyId).innerHTML = rows.map((p, i) => `
+            <tr data-pid="${p.productId}" onclick="select(${p.productId})">
+                <td>${i + 1}</td>
+                <td class="name">${p.productName}<br><small style="color:var(--text-sub); font-weight:400;">${p.category}</small></td>
+                <td>${won(p.revenue)}원</td>
+                <td>${growthHtml(p.growth)}</td>
+            </tr>`).join('');
+    }
+
+    function select(pid) {
+        document.querySelectorAll('.top-table tr.selected').forEach(tr => tr.classList.remove('selected'));
+        document.querySelectorAll(`tr[data-pid="${pid}"]`).forEach(tr => tr.classList.add('selected'));
+
+        const d = mart.details[String(pid)];
+        if (!d) return;
+        document.getElementById('detailSection').style.display = '';
+
+        document.getElementById('dName').textContent = d.productName;
+        document.getElementById('dCategory').textContent = d.category;
+        const g = document.getElementById('dGrowth');
+        g.textContent = d.growth >= 0 ? `전주 대비 +${d.growth}%` : `전주 대비 ${d.growth}%`;
+        g.className = 'chip ' + (d.growth >= 0 ? 'up' : 'down');
+
+        document.getElementById('dRevenue').innerHTML = `${won(d.revenue)}<small> 원</small>`;
+        document.getElementById('dPrevRevenue').innerHTML = `${won(d.prevRevenue)}<small> 원</small>`;
+        document.getElementById('dUnits').innerHTML = `${won(d.unitsSold)}<small> 개</small>`;
+        const cd = d.categoryDiff;
+        document.getElementById('dCatDiff').innerHTML = (cd === null || cd === undefined) ? '–'
+            : `<span class="${cd >= 0 ? 'growth-up' : 'growth-down'}">${cd >= 0 ? '+' : ''}${cd}%</span>`;
+        document.getElementById('dRating').innerHTML = (d.avgRating === null || d.avgRating === undefined)
+            ? '–' : `${d.avgRating}<small> / 5</small>`;
+        document.getElementById('dReviewCount').innerHTML = `${won(d.reviewCount)}<small> 건</small>`;
+
+        // 감성 도넛
+        const s = d.reviewSentiment;
+        if (sentimentChart) sentimentChart.destroy();
+        sentimentChart = new Chart(document.getElementById('sentimentChart'), {
+            type: 'doughnut',
+            data: {
+                labels: [`긍정 ${s.positive}%`, `중립 ${s.neutral}%`, `부정 ${s.negative}%`],
+                datasets: [{ data: [s.positive, s.neutral, s.negative],
+                             backgroundColor: ['#008982', '#c8cfd6', '#c0392b'], borderWidth: 0 }]
+            },
+            options: { maintainAspectRatio: false, cutout: '62%',
+                       plugins: { legend: { position: 'right' } } }
+        });
+
+        document.getElementById('dKeywords').innerHTML =
+            d.keywords.map(k => `<span class="kw">${k}</span>`).join('');
+        document.getElementById('dPains').innerHTML =
+            d.painPoints.map(k => `<span class="kw pain">${k}</span>`).join('');
+
+        renderStrategy(d.aiStrategy);
+    }
+
+    function renderStrategy(st) {
+        const box = document.getElementById('dStrategy');
+        if (!st) {
+            box.innerHTML = `<div class="pending"><div class="tag">전략 배치 생성 대기</div><br>
+                리뷰 분석 마트와 매출 마트를 입력으로 LLM 전략이 생성되면 여기에 표시됩니다.</div>`;
+            return;
+        }
+        const lv = l => l === '높음' ? 'high' : (l === '중간' ? 'mid' : 'low');
+        box.innerHTML = `
+            <h4>${st.title ?? ''}</h4>
+            <p class="sum">${st.summary ?? ''}</p>
+            ${(st.signals ?? []).map(sg => `
+                <div class="signal-row">
+                    <span class="sn">${sg.name}</span>
+                    <span class="sd">${sg.detail}</span>
+                    <span class="lv ${lv(sg.level)}">${sg.level}</span>
+                </div>`).join('')}
+            <div class="kw-title" style="margin-top:16px;">개선 액션</div>
+            <ul>${(st.improvements ?? []).map(x => `<li>${x}</li>`).join('')}</ul>
+            <div class="concl">💡 ${st.conclusion ?? ''}</div>`;
+    }
+
+    init();
+</script>
+</body>
+</html>

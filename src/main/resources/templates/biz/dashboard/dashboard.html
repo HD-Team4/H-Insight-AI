@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- CSRF (노션 전송 AJAX POST 에서 사용) -->
+    <meta name="_csrf" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:content="${_csrf.headerName}">
+    <title>H-Insight-AI 비즈니스 대시보드</title>
+    <link rel="stylesheet" as="style" crossorigin
+          href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css"/>
+    <link rel="stylesheet" th:href="${@environment.getProperty('app.cdn.url') + '/static/css/style.css'}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/wordcloud@1.2.2/src/wordcloud2.js"></script>
+    <style>
+        .biz-nav { display:flex; gap:4px; margin-left:28px; }
+        .biz-nav a { padding:8px 14px; border-radius:8px; font-size:14px; font-weight:600; color:var(--text-sub); text-decoration:none; }
+        .biz-nav a.active { color:var(--primary); background:rgba(0,137,130,.08); }
+
+        .dash-head { display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:16px; margin-top:8px; }
+        .period-tabs { display:flex; gap:6px; background:var(--bg-light); border:1px solid var(--border); border-radius:10px; padding:4px; }
+        .period-tabs button { border:none; background:none; padding:8px 18px; border-radius:7px; font-size:14px; font-weight:600; color:var(--text-sub); cursor:pointer; }
+        .period-tabs button.active { background:var(--primary); color:#fff; }
+        .gen-at { color:var(--text-sub); font-size:13px; margin:6px 0 24px; }
+
+        .dash-actions { display:flex; align-items:center; gap:10px; }
+        .notion-btn { display:inline-flex; align-items:center; gap:7px; border:1px solid var(--border);
+            background:var(--bg-base); color:var(--text-main); font-size:14px; font-weight:600;
+            padding:9px 16px; border-radius:10px; cursor:pointer; transition:background .15s, border-color .15s; }
+        .notion-btn:hover { background:var(--bg-light); border-color:var(--text-sub); }
+        .notion-btn:disabled { opacity:.55; cursor:progress; }
+        .notion-btn .dot { width:16px; height:16px; border-radius:4px; background:#000; color:#fff;
+            font-size:11px; font-weight:800; display:inline-flex; align-items:center; justify-content:center; }
+
+        .kpi-row { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:24px; }
+        .kpi-card { background:var(--bg-base); border:1px solid var(--border); border-radius:14px; padding:22px 24px; }
+        .kpi-label { font-size:14px; color:var(--text-sub); }
+        .kpi-value { display:block; margin-top:10px; font-size:30px; font-weight:800; color:var(--text-main); letter-spacing:-.02em; }
+        .kpi-value small { font-size:16px; font-weight:600; color:var(--text-sub); margin-left:2px; }
+        .kpi-card.muted .kpi-value { color:var(--border); }
+        .kpi-note { font-size:11px; color:var(--accent); margin-top:6px; }
+
+        .chart-grid { display:grid; grid-template-columns:2fr 1fr; gap:16px; margin-bottom:16px; align-items:start; }
+        .panel { background:var(--bg-base); border:1px solid var(--border); border-radius:14px; padding:20px 24px; }
+        .panel h3 { font-size:16px; font-weight:800; margin:0 0 16px; }
+        .panel .canvas-wrap { position:relative; height:280px; }
+
+        table.top-table { width:100%; border-collapse:collapse; }
+        .top-table th, .top-table td { padding:11px 8px; font-size:14px; text-align:right; border-bottom:1px solid var(--border); }
+        .top-table th { color:var(--text-sub); font-weight:700; font-size:13px; }
+        .top-table th:nth-child(2), .top-table td:nth-child(2) { text-align:left; }
+        .top-table td.name { font-weight:600; color:var(--text-main); }
+        .top-table td.cat { color:var(--text-sub); font-size:13px; }
+        .growth-up { color:#c0392b; font-weight:700; }     /* 매출 상승 = 빨강(상승) */
+        .growth-down { color:#2471a3; font-weight:700; }
+        .growth-new { color:var(--accent); font-weight:700; font-size:12px; }
+
+        .placeholder { display:flex; flex-direction:column; align-items:center; justify-content:center; height:280px; color:var(--text-sub); text-align:center; gap:8px; }
+        .placeholder .tag { background:var(--bg-light); border:1px dashed var(--border); border-radius:8px; padding:4px 12px; font-size:12px; }
+
+        @media (max-width:900px){ .kpi-row{grid-template-columns:repeat(2,1fr)} .chart-grid{grid-template-columns:1fr} }
+    </style>
+    <!-- 발표용 고대비 테마 (인라인 style 뒤에서 값만 덧씌움) -->
+    <div th:replace="~{fragments/present :: presentTheme}"></div>
+</head>
+<body>
+<div class="top-bar"></div>
+<header class="container">
+    <div class="header-main">
+        <div style="display:flex; align-items:center;">
+            <a th:href="@{/biz/dashboard}" class="logo">H-Insight <span style="color: var(--accent);">Biz</span></a>
+            <nav class="biz-nav">
+                <a th:href="@{/biz/dashboard}" class="active">대시보드</a>
+                <a th:href="@{/biz/review-analysis}">상품 분석</a>
+            </nav>
+        </div>
+        <div class="header-utils">
+            <span><span sec:authentication="name">기업</span> 님</span>
+            <form th:action="@{/biz/logout}" method="post" style="display:inline; margin:0;">
+                <button type="submit"
+                        style="background:none; border:none; padding:0; cursor:pointer; color:inherit; font:inherit; font-weight:500;">
+                    로그아웃
+                </button>
+            </form>
+        </div>
+    </div>
+</header>
+
+<main class="container" style="padding-top: 32px; padding-bottom:64px;">
+    <div class="dash-head">
+        <h1 class="section-title" style="margin:0;">비즈니스 대시보드</h1>
+        <div class="dash-actions">
+            <button type="button" class="notion-btn" id="notionBtn" title="리포트 블록 + 대시보드 이미지를 노션 페이지에 첨부">
+                <span class="dot">N</span> 노션 발송
+            </button>
+            <button type="button" class="notion-btn" id="mailBtn" title="노션과 동일한 리포트를 메일로 발송">
+                ✉ 메일 발송
+            </button>
+            <div class="period-tabs" id="periodTabs">
+                <button data-period="1w">1주</button>
+                <button data-period="1m" class="active">1개월</button>
+                <button data-period="6m">6개월</button>
+                <button data-period="1y">1년</button>
+            </div>
+        </div>
+    </div>
+    <p class="gen-at" id="genAt">집계 데이터 로딩 중…</p>
+
+    <!-- KPI -->
+    <div class="kpi-row">
+        <div class="kpi-card">
+            <span class="kpi-label">총 매출</span>
+            <span class="kpi-value" id="kpiSales">–</span>
+        </div>
+        <div class="kpi-card">
+            <span class="kpi-label">주문 수</span>
+            <span class="kpi-value" id="kpiOrders">–</span>
+        </div>
+        <div class="kpi-card">
+            <span class="kpi-label">판매 수량</span>
+            <span class="kpi-value" id="kpiQty">–</span>
+        </div>
+        <div class="kpi-card">
+            <span class="kpi-label">방문자</span>
+            <span class="kpi-value" id="kpiVisitors">–</span>
+        </div>
+    </div>
+
+    <!-- 매출 추이 + 카테고리 -->
+    <div class="chart-grid">
+        <div class="panel">
+            <h3>일별 매출 추이</h3>
+            <div class="canvas-wrap"><canvas id="dailyChart"></canvas></div>
+        </div>
+        <div class="panel">
+            <h3>카테고리 점유율</h3>
+            <div class="canvas-wrap"><canvas id="categoryChart"></canvas></div>
+        </div>
+    </div>
+
+    <!-- 상품 TOP + 인기 검색어 -->
+    <div class="chart-grid">
+        <div class="panel">
+            <h3>상품 매출 TOP 10</h3>
+            <table class="top-table">
+                <thead>
+                <tr><th>#</th><th>상품</th><th>판매량</th><th>매출</th><th>증감</th></tr>
+                </thead>
+                <tbody id="topBody"></tbody>
+            </table>
+        </div>
+        <div class="panel">
+            <h3>인기 검색어</h3>
+            <div class="canvas-wrap" id="searchWrap"><canvas id="searchCloud"></canvas></div>
+        </div>
+    </div>
+</main>
+
+<!-- 공통 모달 (window.showAlert / showConfirm) — 레이아웃 미사용 페이지라 직접 include -->
+<div th:replace="~{fragments/modal :: modalFragment}"></div>
+
+<script th:inline="none">
+    const DATA_URL = '/biz/dashboard/data';
+    const TEAL = '#008982', GOLD = '#E2A807', SUB = '#666';
+    const DONUT = ['#008982','#00706a','#E2A807','#4dabf7','#f783ac','#9775fa','#69db7c','#ffa94d'];
+    const CLOUD_COLORS = ['#008982','#00706a','#E2A807','#b8860b','#4dabf7','#9775fa','#f783ac'];
+    const won = n => (n ?? 0).toLocaleString('ko-KR');
+    let dailyChart, categoryChart;
+
+    async function load(period) {
+        const res = await fetch(`${DATA_URL}?period=${period}`);
+        if (!res.ok) { document.getElementById('genAt').textContent = '데이터를 불러오지 못했습니다.'; return; }
+        render(await res.json());
+    }
+
+    function render(d) {
+        document.getElementById('genAt').textContent =
+            `${d.period} 기준 · 생성 ${new Date(d.generatedAt).toLocaleString('ko-KR')}`;
+
+        // KPI
+        document.getElementById('kpiSales').innerHTML = `${won(d.kpi.totalSales)}<small>원</small>`;
+        document.getElementById('kpiOrders').innerHTML = `${won(d.kpi.orderCount)}<small>건</small>`;
+        document.getElementById('kpiQty').innerHTML = `${won(d.kpi.totalQuantity)}<small>개</small>`;
+        document.getElementById('kpiVisitors').innerHTML = d.kpi.visitors
+            ? `${won(d.kpi.visitors)}<small>명</small>` : '–';
+
+        // 일별 매출 (라인)
+        dailyChart?.destroy();
+        dailyChart = new Chart(document.getElementById('dailyChart'), {
+            type: 'line',
+            data: {
+                labels: d.dailySales.map(x => x.date),
+                datasets: [{
+                    label: '매출', data: d.dailySales.map(x => x.sales),
+                    borderColor: TEAL, backgroundColor: 'rgba(0,137,130,.08)',
+                    fill: true, tension: .3, pointRadius: 2, borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false },
+                    tooltip: { callbacks: { label: c => `${won(c.parsed.y)}원` } } },
+                scales: { y: { ticks: { callback: v => (v/10000).toLocaleString() + '만' } } }
+            }
+        });
+
+        // 카테고리 (도넛) — 상위 8개 + 나머지 '기타'로 묶어 범례 정리
+        const catsSorted = [...d.categorySales].sort((a, b) => b.sales - a.sales);
+        const catTop = catsSorted.slice(0, 8);
+        const catRest = catsSorted.slice(8).reduce((s, x) => s + x.sales, 0);
+        const catLabels = catTop.map(x => x.category);
+        const catValues = catTop.map(x => x.sales);
+        if (catRest > 0) { catLabels.push('기타'); catValues.push(catRest); }
+        categoryChart?.destroy();
+        categoryChart = new Chart(document.getElementById('categoryChart'), {
+            type: 'doughnut',
+            data: {
+                labels: catLabels,
+                datasets: [{ data: catValues, backgroundColor: [...DONUT, '#ced4da'], borderWidth: 0 }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false, cutout: '62%',
+                plugins: { legend: { position: 'right', labels: { boxWidth: 12, padding: 8, font: { size: 12 } } },
+                    tooltip: { callbacks: { label: c => `${c.label}: ${won(c.parsed)}원` } } }
+            }
+        });
+
+        // 상품 TOP (표)
+        document.getElementById('topBody').innerHTML = d.topProducts.map((p, i) => {
+            let g;
+            if (p.growth === null || p.growth === undefined) g = '<span class="growth-new">신규</span>';
+            else if (p.growth >= 0) g = `<span class="growth-up">▲ ${p.growth}%</span>`;
+            else g = `<span class="growth-down">▼ ${Math.abs(p.growth)}%</span>`;
+            return `<tr>
+                <td>${i + 1}</td>
+                <td class="name">${p.productName}<div class="cat">${p.category}</div></td>
+                <td>${won(p.unitsSold)}</td>
+                <td>${won(p.revenue)}원</td>
+                <td>${g}</td></tr>`;
+        }).join('');
+
+        // 인기 검색어 — 워드클라우드 (검색 빈도 = 글자 크기)
+        const cloud = document.getElementById('searchCloud');
+        const cloudWrap = document.getElementById('searchWrap');
+        if (cloud && cloudWrap && d.searchRanking && d.searchRanking.length) {
+            if (window.WordCloud) {
+                cloud.width = cloudWrap.clientWidth;
+                cloud.height = cloudWrap.clientHeight;
+                WordCloud(cloud, {
+                    list: d.searchRanking.map(s => [s.keyword, s.count]),
+                    gridSize: 4,
+                    weightFactor: n => Math.sqrt(n) * 3,
+                    minSize: 12,
+                    fontFamily: 'Pretendard, sans-serif',
+                    color: () => CLOUD_COLORS[Math.floor(Math.random() * CLOUD_COLORS.length)],
+                    rotateRatio: 0.25, rotationSteps: 2,
+                    backgroundColor: 'transparent',
+                    drawOutOfBound: false, shrinkToFit: true
+                });
+            } else {
+                // 라이브러리 미로드 폴백: 빈도=글자크기 태그 목록
+                cloudWrap.innerHTML = d.searchRanking.map(s =>
+                    `<span style="display:inline-block;margin:6px 10px;font-weight:700;` +
+                    `color:${CLOUD_COLORS[s.rank % CLOUD_COLORS.length]};` +
+                    `font-size:${Math.round(14 + Math.sqrt(s.count) * 1.6)}px;">${s.keyword}</span>`).join('');
+            }
+        }
+    }
+
+    // 기간 탭
+    document.getElementById('periodTabs').addEventListener('click', e => {
+        const btn = e.target.closest('button'); if (!btn) return;
+        document.querySelectorAll('#periodTabs button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        load(btn.dataset.period);
+    });
+
+    load('1m');
+
+    // ── 노션 발송 / 메일 발송: 대시보드를 이미지로 캡처해 각 채널로 전송 (내용 동일) ──
+    const notionBtn = document.getElementById('notionBtn');
+    const mailBtn = document.getElementById('mailBtn');
+
+    function canvasToBlob(canvas) {
+        return new Promise(res => canvas.toBlob(res, 'image/png'));
+    }
+
+    async function captureDashboard() {
+        const target = document.querySelector('main');
+        const canvas = await html2canvas(target, {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: getComputedStyle(document.body).backgroundColor || '#ffffff'
+        });
+        const blob = await canvasToBlob(canvas);
+        if (!blob) throw new Error('캡처 실패');
+        return blob;
+    }
+
+    // 대시보드 캡처 → 지정 URL 로 전송. 결과는 공통 모달(showAlert)로 안내.
+    async function sendCapture(url, label) {
+        [notionBtn, mailBtn].forEach(b => b.disabled = true);
+        try {
+            const blob = await captureDashboard();
+
+            const form = new FormData();
+            form.append('image', blob, 'dashboard.png');
+
+            const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
+            const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
+            const headers = {};
+            if (csrfHeader && csrfToken) headers[csrfHeader] = csrfToken;
+
+            const res = await fetch(url, { method: 'POST', body: form, headers });
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && data.ok) {
+                // 202: 백그라운드 발송 요청 접수됨
+                await showAlert(data.message || (label + ' 요청됨'), { title: label });
+            } else {
+                await showAlert(data.message || (label + ' 실패'), { title: label });
+            }
+        } catch (e) {
+            await showAlert(e.message || '전송에 실패했습니다.', { title: label });
+        } finally {
+            [notionBtn, mailBtn].forEach(b => b.disabled = false);
+        }
+    }
+
+    notionBtn.addEventListener('click', () => sendCapture('/biz/reports/send/notion', '노션 발송'));
+    mailBtn.addEventListener('click', () => sendCapture('/biz/reports/send/mail', '메일 발송'));
+</script>
+</body>
+</html>

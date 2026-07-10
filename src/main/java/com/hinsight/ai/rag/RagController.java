@@ -1,0 +1,105 @@
+package com.hinsight.ai.rag;
+
+import com.hinsight.ai.rag.dto.RagAskRequest;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.MediaType;
+import org.springframework.http.codec.ServerSentEvent;
+import org.springframework.util.StringUtils;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import reactor.core.publisher.Flux;
+import reactor.core.scheduler.Schedulers;
+
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.util.HashMap;
+import java.util.Map;
+
+/**
+ * 라이브 방송 리뷰 기반 Q&A 챗봇 (KAN-103).
+ * 방송 댓글에서 탐지된 질문을 받아 리뷰/공식 스펙 RAG 답변을 SSE 로 스트리밍한다.
+ * 이벤트: delta({"t":토큰}) 여러 개 → done({}).
+ */
+@Tag(name = "rag-controller", description = "라이브 리뷰 Q&A 챗봇")
+@RestController
+@RequiredArgsConstructor
+@RequestMapping("/customer/rag")
+public class RagController {
+
+    private static final Logger log = LoggerFactory.getLogger(RagController.class);
+    private static final ZoneId KST = ZoneId.of("Asia/Seoul");
+
+    private final RagService ragService;
+
+    @Operation(summary = "라이브 리뷰 Q&A (SSE)", description = "상품 리뷰/스펙 기반 RAG 답변을 SSE로 스트리밍: delta(토큰) → done")
+    @PostMapping(value = "/ask", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public Flux<ServerSentEvent<Object>> ask(@RequestBody RagAskRequest request) {
+        if (request.productId() == null || !StringUtils.hasText(request.question())) {
+            return Flux.just(ServerSentEvent.<Object>builder(
+                    Map.of("message", "productId 와 question 은 필수입니다.")).event("error").build());
+        }
+
+        OffsetDateTime explicit = parseCutoff(request.cutoff());
+
+        return Flux.defer(() -> {
+            // 요청에 cutoff 가 없으면 공식 스펙 게시일로 자동 결정
+            OffsetDateTime cutoff = ragService.resolveCutoff(request.productId(), explicit);
+
+            Flux<ServerSentEvent<Object>> metaEvent = Flux.just(ServerSentEvent.<Object>builder(
+                    metaPayload(cutoff, explicit != null)).event("meta").build());
+
+            // IGNORE(무응답)는 클라이언트로 흘리지 않는다. 정상 답변은 한글로 시작하므로 그대로 스트리밍하고,
+            // 'I' 로 시작할 때만(=IGNORE 가능성) 전량 모아 판별 후 무응답이면 delta 를 내보내지 않는다.
+            Flux<ServerSentEvent<Object>> deltaEvents =
+                    ragService.answer(request.productId(), request.question(), cutoff)
+                            .switchOnFirst((signal, flux) -> {
+                                String first = signal.hasValue() ? signal.get() : null;
+                                if (first != null && first.stripLeading().toUpperCase().startsWith("I")) {
+                                    return flux.collectList().flatMapMany(list ->
+                                            RagService.isNoAnswer(String.join("", list))
+                                                    ? Flux.empty() : Flux.fromIterable(list));
+                                }
+                                return flux;
+                            })
+                            .map(token -> ServerSentEvent.<Object>builder(Map.of("t", token))
+                                    .event("delta").build());
+
+            Flux<ServerSentEvent<Object>> doneEvent = Flux.just(
+                    ServerSentEvent.<Object>builder(Map.of()).event("done").build());
+
+            return Flux.concat(metaEvent, deltaEvents, doneEvent);
+        }).subscribeOn(Schedulers.boundedElastic());  // 블로킹 임베딩/검색을 요청 스레드 밖에서 수행
+    }
+
+    /** 적용된 컷오프 정보(clients 가 어떤 기준으로 필터됐는지 표시용). */
+    private Map<String, Object> metaPayload(OffsetDateTime cutoff, boolean explicit) {
+        Map<String, Object> m = new HashMap<>();
+        m.put("cutoff", cutoff != null ? cutoff.toString() : null);
+        m.put("cutoffSource", explicit ? "request" : (cutoff != null ? "official-spec" : "none"));
+        return m;
+    }
+
+    /** "2026-03-01" 또는 ISO offset datetime 을 허용. 파싱 실패/공백이면 null(필터 없음). */
+    private OffsetDateTime parseCutoff(String raw) {
+        if (!StringUtils.hasText(raw)) return null;
+        String s = raw.trim();
+        try {
+            return OffsetDateTime.parse(s);
+        } catch (Exception ignore) {
+            // 날짜만 온 경우 KST 자정으로 해석
+        }
+        try {
+            return LocalDate.parse(s).atStartOfDay(KST).toOffsetDateTime();
+        } catch (Exception e) {
+            log.warn("[RAG] cutoff 파싱 실패, 필터 없이 진행: {}", raw);
+            return null;
+        }
+    }
+}

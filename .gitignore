@@ -1,0 +1,13 @@
+.gradle/
+build/
+logs/
+*.log
+
+.env
+.env.aws.bak
+application-secret.yml
+src/main/resources/application-secret.yml
+
+.idea/
+*.iml
+out/

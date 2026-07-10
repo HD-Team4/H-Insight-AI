@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hinsight.user.dao.UserDao">
+
+    <resultMap id="UserResultMap" type="User" autoMapping="true">
+        <id column="user_id" property="userId"/>
+        <result column="name" property="userName"/>
+    </resultMap>
+
+    <!-- 로그인 아이디로 회원 조회 (map-underscore-to-camel-case 로 컬럼 자동 매핑) -->
+    <select id="findByLoginId" parameterType="string" resultMap="UserResultMap">
+        SELECT user_id, name, login_id, password, gender, birth_date, age_group,
+               email, enabled, created_at, updated_at
+        FROM users
+        WHERE login_id = #{loginId}
+    </select>
+
+    <!-- PK로 회원 조회 (마이페이지 본인 조회) -->
+    <select id="findById" parameterType="long" resultMap="UserResultMap">
+        SELECT user_id, name, login_id, password, gender, birth_date, age_group,
+               email, enabled, created_at, updated_at
+        FROM users
+        WHERE user_id = #{userId}
+    </select>
+
+    <!-- 아이디 중복 여부 (1/0 -> boolean) -->
+    <select id="existsByLoginId" parameterType="string" resultType="boolean">
+        SELECT EXISTS(SELECT 1 FROM users WHERE login_id = #{loginId})
+    </select>
+
+    <!-- 비밀번호 변경 (updated_at 은 DB on update 로 자동 갱신) -->
+    <update id="updatePassword">
+        UPDATE users
+        SET password = #{password}
+        WHERE user_id = #{userId}
+    </update>
+
+    <!-- 신규 회원 저장. enabled/created_at/updated_at 은 DB 기본값 사용 -->
+    <insert id="insert" parameterType="User"
+            useGeneratedKeys="true" keyProperty="userId">
+        INSERT INTO users (name, login_id, password, gender, birth_date, age_group, email)
+        VALUES (#{userName}, #{loginId}, #{password}, #{gender}, #{birthDate}, #{ageGroup}, #{email})
+    </insert>
+
+</mapper>

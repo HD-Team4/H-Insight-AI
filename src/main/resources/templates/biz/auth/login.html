@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>H-Insight-AI 비즈니스 로그인</title>
+    <!-- CSRF 토큰을 head에서 미리 생성(비로그인+큰 CSS로 응답 커밋 후 세션 생성 실패 방지) -->
+    <meta name="_csrf" th:content="${_csrf != null ? _csrf.token : ''}">
+    <meta name="_csrf_header" th:content="${_csrf != null ? _csrf.headerName : ''}">
+    <link rel="stylesheet" as="style" crossorigin
+          href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css"/>
+    <link rel="stylesheet" th:href="${@environment.getProperty('app.cdn.url') + '/static/css/style.css'}">
+    <!-- 발표용 고대비 테마 -->
+    <div th:replace="~{fragments/present :: presentTheme}"></div>
+</head>
+<body>
+<!-- 고객 레이아웃(상품 헤더)과 분리된 biz 전용 페이지. 공유 디자인 시스템(.auth-*)만 재사용 -->
+<div class="auth-wrap">
+    <div class="auth-card">
+        <h1 class="auth-title">비즈니스 로그인</h1>
+        <p class="auth-subtitle">H-Insight-AI 기업 파트너 센터</p>
+
+        <!-- Spring Security failureUrl(?error) / 로그아웃 안내 -->
+        <div class="auth-alert is-error" th:if="${param.error}">아이디 또는 비밀번호가 올바르지 않습니다.</div>
+        <div class="auth-alert is-success" th:if="${param.logout}">로그아웃되었습니다.</div>
+
+        <!-- th:action 사용 시 CSRF 토큰 자동 삽입. 처리 URL 은 /biz/login (biz 체인) -->
+        <form th:action="@{/biz/login}" method="post">
+            <div class="auth-field">
+                <label for="username">아이디</label>
+                <input type="text" id="username" name="username" placeholder="기업 아이디" required autofocus>
+            </div>
+            <div class="auth-field">
+                <label for="password">비밀번호</label>
+                <input type="password" id="password" name="password" placeholder="비밀번호를 입력하세요" required>
+            </div>
+            <button type="submit" class="auth-btn">로그인</button>
+        </form>
+
+        <!-- biz 는 회원가입 없음 -->
+        <div class="auth-divider">
+            <a th:href="@{/customer/login}">일반 회원이신가요? 일반 로그인 →</a>
+        </div>
+    </div>
+</div>
+</body>
+</html>

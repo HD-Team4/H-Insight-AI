@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/default}">
+
+<th:block layout:fragment="css">
+    <style>
+        .cart-page { padding: 40px 0 80px; }
+        .cart-table {
+            width: 100%;
+            border-collapse: collapse;
+            border-top: 2px solid var(--text-main);
+        }
+        .cart-table th {
+            padding: 14px 8px;
+            font-size: 13px;
+            color: var(--text-sub);
+            border-bottom: 1px solid var(--border);
+        }
+        .cart-table td {
+            padding: 20px 8px;
+            border-bottom: 1px solid var(--border);
+            text-align: center;
+            font-size: 15px;
+        }
+        .cart-product-cell {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            text-align: left;
+        }
+        .cart-thumb {
+            width: 72px;
+            height: 72px;
+            border-radius: 8px;
+            object-fit: cover;
+            background: var(--bg-light);
+            border: 1px solid var(--border);
+        }
+        .cart-qty-input {
+            width: 64px;
+            height: 36px;
+            text-align: center;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 15px;
+        }
+        .cart-remove-btn {
+            border: 1px solid var(--border);
+            background: var(--bg-base);
+            color: var(--text-sub);
+            padding: 6px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .cart-remove-btn:hover { border-color: var(--text-sub); color: var(--text-main); }
+        .cart-line-total { font-weight: 700; }
+        .cart-summary {
+            margin-top: 24px;
+            margin-left: auto;
+            max-width: 380px;
+            background: var(--bg-light);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+        }
+        .cart-summary-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 15px;
+            color: var(--text-sub);
+            margin-bottom: 10px;
+        }
+        .cart-summary-total {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 14px;
+            margin-bottom: 18px;
+            border-top: 1px solid var(--border);
+            font-weight: 800;
+            font-size: 18px;
+        }
+        .cart-summary-total strong { color: var(--primary); font-size: 22px; }
+        .cart-order-btn { width: 100%; }
+        .cart-empty { text-align: center; padding: 100px 0; }
+        .cart-empty p { color: var(--text-sub); margin-bottom: 24px; }
+        .cart-empty a {
+            display: inline-block;
+            background: var(--primary);
+            color: #fff;
+            padding: 14px 32px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 700;
+        }
+    </style>
+</th:block>
+
+<th:block layout:fragment="content">
+    <div class="cart-page container">
+        <h1 class="section-title">장바구니</h1>
+
+        <!-- 비어있을 때 -->
+        <div class="cart-empty" th:if="${cart.items.isEmpty()}">
+            <p>장바구니가 비어 있습니다.</p>
+            <a th:href="@{/customer/products}">쇼핑 계속하기</a>
+        </div>
+
+        <!-- 항목 목록 -->
+        <th:block th:unless="${cart.items.isEmpty()}">
+            <table class="cart-table">
+                <thead>
+                <tr>
+                    <th style="text-align:left;">상품정보</th>
+                    <th>가격</th>
+                    <th>수량</th>
+                    <th>합계</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="item : ${cart.items}">
+                    <td>
+                        <div class="cart-product-cell">
+                            <img class="cart-thumb"
+                                 th:if="${item.imageUrl != null and !item.imageUrl.isBlank()}"
+                                 th:src="${item.imageUrl}"
+                                 th:alt="${item.productName}">
+                            <div class="cart-thumb" th:unless="${item.imageUrl != null and !item.imageUrl.isBlank()}"></div>
+                            <a th:href="@{'/customer/products/' + ${item.productId}}"
+                               th:text="${item.productName}">상품명</a>
+                        </div>
+                    </td>
+                    <td th:text="${#numbers.formatInteger(item.price, 3, 'COMMA')} + '원'">0원</td>
+                    <td>
+                        <input type="number" min="1" class="cart-qty-input"
+                               th:value="${item.quantity}"
+                               th:attr="data-cart-id=${item.cartId}">
+                    </td>
+                    <td class="cart-line-total"
+                        th:text="${#numbers.formatInteger(item.lineTotal, 3, 'COMMA')} + '원'">0원</td>
+                    <td>
+                        <button type="button" class="cart-remove-btn"
+                                th:attr="data-cart-id=${item.cartId}">삭제</button>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+
+            <!-- 합계 + 전체 주문 -->
+            <div class="cart-summary">
+                <div class="cart-summary-row">
+                    <span>총 수량</span>
+                    <span th:text="${cart.totalQuantity} + '개'">0개</span>
+                </div>
+                <div class="cart-summary-total">
+                    <span>총 결제금액</span>
+                    <strong th:text="${#numbers.formatInteger(cart.totalPrice, 3, 'COMMA')} + '원'">0원</strong>
+                </div>
+                <button type="button" id="orderAllBtn"
+                        class="detail-action detail-action-primary cart-order-btn">전체 주문</button>
+            </div>
+        </th:block>
+    </div>
+</th:block>
+
+<th:block layout:fragment="script">
+    <script th:inline="javascript">
+        // CSRF 토큰 (시큐리티 기본 설정에서도 POST/PATCH/DELETE가 동작하도록)
+        const csrfToken  = /*[[${_csrf != null ? _csrf.token : null}]]*/ null;
+        const csrfHeader = /*[[${_csrf != null ? _csrf.headerName : null}]]*/ null;
+
+        function withCsrf(headers = {}) {
+            if (csrfToken) headers[csrfHeader] = csrfToken;
+            return headers;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // 수량 변경
+            document.querySelectorAll('.cart-qty-input').forEach(input => {
+                input.addEventListener('change', async (e) => {
+                    const cartId = e.target.dataset.cartId;
+                    const quantity = Number(e.target.value);
+                    await fetch(`/customer/cart/items/${cartId}`, {
+                        method: 'PATCH',
+                        headers: withCsrf({'Content-Type': 'application/json'}),
+                        body: JSON.stringify({quantity})
+                    });
+                    location.reload();
+                });
+            });
+
+            // 삭제
+            document.querySelectorAll('.cart-remove-btn').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    const cartId = e.target.dataset.cartId;
+                    await fetch(`/customer/cart/items/${cartId}`, {
+                        method: 'DELETE',
+                        headers: withCsrf()
+                    });
+                    location.reload();
+                });
+            });
+
+            // 전체 주문
+            const orderAllBtn = document.getElementById('orderAllBtn');
+            if (orderAllBtn) {
+                orderAllBtn.addEventListener('click', async () => {
+                    if (!await showConfirm('장바구니의 모든 상품을 주문할까요?', { title: '주문' })) {
+                        return;
+                    }
+                    const res = await fetch('/customer/orders/cart', {
+                        method: 'POST',
+                        headers: withCsrf()
+                    });
+                    if (res.ok) {
+                        await showAlert('주문이 완료되었습니다.', { title: '주문 완료' });
+                        location.reload();   // ← 새로고침 → 백엔드가 비운 장바구니가 그대로 보임
+                    } else {
+                        await showAlert('주문에 실패했습니다.');
+                    }
+                });
+            }
+        });
+    </script>
+</th:block>
+</html>

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hinsight.order.dao.PurchaseHistoryDao">
+
+    <!-- 구매이력 저장 -->
+    <insert id="insert" parameterType="PurchaseHistory"
+            useGeneratedKeys="true" keyProperty="historyId">
+        INSERT INTO purchase_history (user_id, product_id, quantity, price)
+        VALUES (#{userId}, #{productId}, #{quantity}, #{price})
+    </insert>
+
+    <!-- 유저의 구매이력 전체 (최신순) -->
+    <select id="findByUserId" parameterType="long" resultType="PurchaseHistory">
+        SELECT *
+        FROM purchase_history
+        WHERE user_id = #{userId}
+        ORDER BY created_at DESC
+    </select>
+
+    <!-- 유저의 최근 구매이력 N건 (최신순, 마이페이지 요약용) -->
+    <select id="findRecentByUserId" resultType="PurchaseHistory">
+        SELECT *
+        FROM purchase_history
+        WHERE user_id = #{userId}
+        ORDER BY created_at DESC
+        LIMIT #{limit}
+    </select>
+
+</mapper>

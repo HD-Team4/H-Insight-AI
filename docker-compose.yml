@@ -1,0 +1,273 @@
+services:
+  # ==========================================
+  # 1. 카프카 에코시스템 (Kafka Ecosystem)
+  # ==========================================
+  zookeeper:
+    image: quay.io/debezium/zookeeper:3.0
+    container_name: hinsight-zookeeper
+    profiles: ["local"]
+    ports:
+      - "2181:2181"
+    environment:
+      - ZOOKEEPER_CLIENT_PORT=2181
+    networks:
+      - hinsight
+
+  kafka:
+    image: quay.io/debezium/kafka:3.0
+    container_name: hinsight-kafka
+    profiles: ["local"]
+    restart: unless-stopped   # OOM kill(137) 후 죽은 채 방치돼 앱 기동 실패(KafkaAdmin timeout) 재발 방지
+    ports:
+      - "9092:9092"
+    depends_on:
+      - zookeeper
+    environment:
+      - ZOOKEEPER_CONNECT=zookeeper:2181
+      # 내부 통신용(INTERNAL:29092), 호스트 PC 접근용(EXTERNAL:9092)
+      - KAFKA_LISTENERS=INTERNAL://0.0.0.0:29092,EXTERNAL://0.0.0.0:9092
+      - KAFKA_ADVERTISED_LISTENERS=INTERNAL://kafka:29092,EXTERNAL://localhost:9092
+      - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+      - KAFKA_INTER_BROKER_LISTENER_NAME=INTERNAL
+    networks:
+      - hinsight
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: hinsight-kafka-ui
+    profiles: ["local"]
+    restart: unless-stopped
+    ports:
+      - "8090:8080"
+    depends_on:
+      - kafka
+    environment:
+      - KAFKA_CLUSTERS_0_NAME=local-kafka
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:29092
+    networks:
+      - hinsight
+
+  # 앱이 직접 produce 한 로그 토픽(purchase-history)을 S3(로컬은 MinIO)로 적재하는 Kafka Connect (Aiven S3 Sink)
+  connect:
+    build:
+      context: ./docker/connect
+    image: hinsight/kafka-connect-s3:3.0
+    container_name: hinsight-connect
+    profiles: ["local"]
+    ports:
+      - "8083:8083"
+    depends_on:
+      - kafka
+      - minio
+    environment:
+      - BOOTSTRAP_SERVERS=kafka:29092
+      - GROUP_ID=1
+      - CONFIG_STORAGE_TOPIC=my_connect_configs
+      - OFFSET_STORAGE_TOPIC=my_connect_offsets
+      - STATUS_STORAGE_TOPIC=my_connect_statuses
+    networks:
+      - hinsight
+
+  # 로컬 S3 대체 (데이터 레이크)
+  minio:
+    image: minio/minio:latest
+    container_name: hinsight-minio
+    profiles: ["local"]
+    command: server /data --console-address ":9001"
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin
+    ports:
+      - "9000:9000"   # S3 API
+      - "9001:9001"   # 웹 콘솔
+    volumes:
+      - minio-data:/data
+    networks:
+      - hinsight
+
+  # MinIO 버킷(hf4-datalake) 최초 1회 생성용 one-shot
+  minio-setup:
+    image: minio/mc:latest
+    container_name: hinsight-minio-setup
+    profiles: ["local"]
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      until mc alias set local http://minio:9000 minioadmin minioadmin; do sleep 2; done;
+      mc mb -p local/hf4-datalake;
+      exit 0;
+      "
+    networks:
+      - hinsight
+
+  # ==========================================
+  # 2. 엘라스틱 스택 (Elastic Stack)
+  # ==========================================
+  elasticsearch:
+    build:
+      context: ./docker/elasticsearch
+      args:
+        ES_VERSION: 8.18.1
+    image: hinsight/elasticsearch-nori:8.18.1
+    container_name: hinsight-es
+    restart: unless-stopped                 # EC2 재부팅/크래시 시 자동 복구 (로컬에도 무해)
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false        # 내부 공용(로컬/팀 EC2). 외부 공개 시 반드시 true + TLS
+      - ES_JAVA_OPTS=-Xms${ES_HEAP:-512m} -Xmx${ES_HEAP:-512m}  # 기본 512m, EC2에선 export ES_HEAP=2g
+      - bootstrap.memory_lock=true
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    ports:
+      - "9200:9200"
+    volumes:
+      - es-data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:9200/_cluster/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    networks:
+      - hinsight
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.15.3
+    container_name: hinsight-kibana
+    restart: unless-stopped
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - hinsight
+
+  # (임베딩 서버(Ollama+BGE-M3)는 AWS Lambda(hf4-embedding)로 이전됨 — lambda/embedding 참고)
+
+  # 3. Redis (마이페이지 "최근 본 상품" 캐시)
+  # ==========================================
+  redis:
+    image: redis:7-alpine
+    container_name: hinsight-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]   # 재시작해도 최근 본 상품 유지
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - hinsight
+
+  # ==========================================
+  # 4. 모니터링 Exporter (별도 모니터링 EC2 의 Prometheus 가 스크레이프)
+  #    - Prometheus/Grafana 는 이 프로젝트에 없음 → monitoring/ 폴더의 별도 스택에서 수집
+  #    - 아래 ports 는 모니터링 EC2 가 접근하도록 호스트에 노출.
+  #      운영(EC2)에선 보안그룹으로 "모니터링 EC2 IP" 만 각 포트 허용할 것.
+  #    - 각 포트 용도는 README 의 "모니터링" 표 참고.
+  # ==========================================
+
+  # 호스트(대상 서버) 자원 지표: CPU/메모리/디스크/네트워크 → :9100
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    container_name: hinsight-node-exporter
+    restart: unless-stopped
+    command:
+      - '--path.rootfs=/host'
+    pid: host
+#    volumes: # 윈도우 환경에서 불가
+#      - '/:/host:ro,rslave'
+    ports:
+      - "9100:9100"
+    networks:
+      - hinsight
+
+  # 컨테이너별 리소스 지표 → 컨테이너 내부 8080, 앱과 충돌 피하려 호스트는 8085 로 노출
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    container_name: hinsight-cadvisor
+    restart: unless-stopped
+    privileged: true
+    ports:
+      - "8085:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    devices:
+      - /dev/kmsg
+    networks:
+      - hinsight
+
+  # Redis 지표(메모리/커맨드/키스페이스) → :9121. 내부적으로 redis 컨테이너에 접속
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.62.0
+    container_name: hinsight-redis-exporter
+    restart: unless-stopped
+    environment:
+      - REDIS_ADDR=redis://redis:6379
+    ports:
+      - "9121:9121"
+    depends_on:
+      - redis
+    networks:
+      - hinsight
+
+  # MySQL 서버 지표(QPS/스레드/버퍼풀 등) → :9104. 외부 매니지드 MySQL 대상.
+  #  ※ .env 에 MYSQLD_EXPORTER_DSN 을 채워야 실제로 수집됨(계정은 나중에):
+  #     MYSQLD_EXPORTER_DSN=모니터유저:비번@(호스트:3306)/
+  #     (모니터 계정 권한: GRANT PROCESS, REPLICATION CLIENT, SELECT)
+  #  DSN 미설정 시 이 컨테이너만 기동 실패로 뜸 — 나머지 스택엔 영향 없음.
+  mysqld-exporter:
+    image: prom/mysqld-exporter:v0.14.0
+    container_name: hinsight-mysqld-exporter
+    restart: unless-stopped
+    environment:
+      - DATA_SOURCE_NAME=${MYSQLD_EXPORTER_DSN:-}
+    ports:
+      - "9104:9104"
+    networks:
+      - hinsight
+
+  # Kafka 지표(토픽/컨슈머 랙 등) → :9308.
+  #  Kafka 가 local 프로파일이라 exporter 도 동일하게 local 로 묶음
+  #  → `docker compose --profile local up` 일 때만 기동/수집됨.
+  kafka-exporter:
+    image: danielqsj/kafka-exporter:v1.8.0
+    container_name: hinsight-kafka-exporter
+    profiles: ["local"]
+    restart: unless-stopped
+    command:
+      - '--kafka.server=kafka:29092'
+    ports:
+      - "9308:9308"
+    depends_on:
+      - kafka
+    networks:
+      - hinsight
+
+# ==========================================
+# 볼륨 및 네트워크 정의
+# ==========================================
+volumes:
+  es-data:
+  minio-data:
+  redis-data:
+
+networks:
+  hinsight:
+    driver: bridge

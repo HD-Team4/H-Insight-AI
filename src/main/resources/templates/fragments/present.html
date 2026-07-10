@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<!--
+  발표용 고대비 테마 (Presentation Theme)
+  ─────────────────────────────────────────────────────────
+  · 목적: 프로젝터/스크린 발표 환경에서 원거리 가독성을 높인다.
+  · 원칙: 기존 style.css(CDN)·UI 구조는 그대로 두고, 뒤에서 "값만" 덧씌운다.
+          (레이아웃/여백/그리드는 건드리지 않아 깨질 위험이 없다)
+  · 핵심 레버: 디자인 토큰(CSS 변수) 재정의 → 모든 페이지·인라인 스타일에
+              대비가 일괄 반영된다. + 발표 노출이 큰 표면만 타이핑/경계선 강화.
+  · 사용: style.css 링크 "다음"에 <div th:replace="~{fragments/present :: presentTheme}"></div>
+  ─────────────────────────────────────────────────────────
+-->
+<style th:fragment="presentTheme">
+    /* ===== 1. 디자인 토큰 재정의: 고대비 팔레트 ===== */
+    :root {
+        --primary: #00736C;        /* 틸을 조금 더 진하게 → 흰 배경 대비 ↑ */
+        --primary-hover: #005B55;
+        --accent: #E8730A;         /* 골드 → 선명한 오렌지(원거리 식별) */
+        --text-main: #0B1B2B;      /* 순검정 대신 네이비-블랙: 깊고 선명 */
+        --text-sub: #34424F;       /* #666 → 확실히 진하게(보조 텍스트 가독성) */
+        --bg-base: #FFFFFF;
+        --bg-light: #EEF2F6;       /* 살짝 진하게 → 카드/섹션 구분감 ↑ */
+        --border: #B7C0CA;         /* #EAEAEA(옅음) → 굵고 진한 경계 */
+    }
+
+    /* ===== 2. 본문 기본 타이포 상향 (발표장 원거리 가독성) ===== */
+    /* 페이지(body)를 아주 옅은 오프화이트로 → 흰색 헤더/카드가 그 위에 떠 보인다.
+       (--bg-base 는 흰색 그대로 두어 카드·검색창 등은 흰색 유지)
+       푸른기 없는 중립 회색으로: 하늘색 톤 제거 */
+    body { font-size: 16px; letter-spacing: -0.01em; background-color: #F5F5F4; }
+
+    /* ===== 3. 구조 경계선 ===== */
+    /* 헤더 밑 줄은 제거(요청) — 로고/메뉴가 시원하게 보이도록 */
+    .header-main::after { display: none; }
+    .filter-bar { border-bottom-width: 2px; }
+    footer::before { height: 2px; }
+
+    /* ===== 4. 헤더 ===== */
+    .logo { font-size: 34px; }
+    /* 로그인 시 유틸 메뉴(마이페이지/이름/로그아웃/장바구니)가 줄바꿈되지 않도록
+       고정폭 + nowrap. 폭이 부족하면 검색창이 대신 줄어들며 한 줄을 유지한다. */
+    .header-utils { flex: 0 0 auto; flex-wrap: nowrap; gap: 20px; font-size: 18px; font-weight: 600; }
+    .header-utils a, .header-utils > span, .header-utils button { white-space: nowrap; }
+    .search-wrapper { min-width: 0; }
+
+    /* 헤더 ↔ 본문 구분: 선도 색 밴드도 아닌 '부드러운 그림자'로 자연스럽게.
+       흰 헤더를 화면 폭 전체로 깔고 본문 위에 살짝 띄워, 아래로 은은히 번지는
+       그림자만으로 경계를 만든다. (안쪽 콘텐츠는 1200px 정렬 유지) */
+    header.container {
+        max-width: none;
+        padding: 0;
+        background: var(--bg-base);
+        position: relative;
+        z-index: 2;
+        box-shadow: 0 5px 12px rgba(11, 27, 43, .06), 0 1px 3px rgba(11, 27, 43, .05);
+    }
+    .header-main {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 22px 20px;
+    }
+    @media (max-width: 768px) {
+        .header-main { padding: 16px 20px; }
+    }
+    .search-bar { border-width: 2px; border-color: #9AA4AF; }
+    .search-bar input { font-size: 16px; }
+
+    /* ===== 5. 카테고리 탭 / 필터: 경계선·글자 강화 ===== */
+    .category-tab {
+        font-size: 16px;
+        border-width: 2px;
+        border-color: #8D99A6;
+        color: var(--text-main);
+    }
+    .category-tab.active {
+        box-shadow: 0 4px 12px rgba(0, 115, 108, .28);
+    }
+    .price-input { border-width: 2px; border-color: #9AA4AF; font-size: 15px; }
+    .price-apply-btn, .price-reset-btn { font-size: 14px; padding: 9px 18px; }
+
+    /* ===== 6. 섹션 타이틀 ===== */
+    .section-title {
+        font-size: 30px;
+        font-weight: 800;
+        color: var(--text-main);
+        letter-spacing: -0.02em;
+    }
+
+    /* ===== 7. 상품 카드: 경계선을 부여해 카드 단위를 또렷하게 ===== */
+    .product-card {
+        border: 2px solid var(--border);
+        background: var(--bg-base);
+    }
+    .product-card:hover {
+        border-color: var(--primary);
+        box-shadow: 0 12px 26px rgba(11, 27, 43, .14);
+    }
+    .product-img {
+        border: 0;
+        border-bottom: 2px solid var(--border);
+        border-radius: 10px 10px 0 0;
+    }
+    .brand-name { font-size: 13px; color: var(--text-sub); font-weight: 700; }
+    .product-name { font-size: 17px; font-weight: 600; }
+    .product-price { font-size: 21px; font-weight: 800; }
+    .badge-new, .product-live-badge { font-size: 13px; }
+
+    /* ===== 8. 인증 카드 / 모달: 테두리 강화 ===== */
+    .auth-card { border-width: 2px; box-shadow: 0 12px 34px rgba(11, 27, 43, .10); }
+    .auth-title { font-size: 28px; }
+    .auth-field label { font-size: 14px; color: var(--text-sub); }
+    .auth-field input, .auth-field select { border-width: 2px; border-color: #9AA4AF; font-size: 16px; }
+    .auth-btn { font-size: 17px; }
+    .modal-card { border: 2px solid var(--border); }
+    .modal-title { font-size: 20px; }
+    .modal-message { font-size: 16px; color: var(--text-main); }
+
+    /* ===== 8-b. 상품 상세 + 리뷰: 상품목록과 동일한 발표 스타일로 통일 =====
+       상세 페이지는 자체 CSS가 없어 여기 오버라이드가 그대로 적용된다.
+       하드코딩된 옅은 회색 경계(#D2D2D7·#D7D7DC)를 공통 --border(굵게)로 통일하고
+       핵심 타이포를 키운다. (min-height·object-fit 등 레이아웃 값은 건드리지 않음) */
+    .product-purchase-panel h1 { font-size: 30px; }
+    .detail-brand { font-size: 16px; }
+    .detail-rating-row { font-size: 16px; border-bottom: 2px solid var(--border); }
+    .detail-rating-score { color: var(--text-main); }
+    .detail-price-row span { font-size: 15px; }
+    .detail-benefit-box { border-top: 2px solid var(--border); border-bottom: 2px solid var(--border); }
+    .detail-benefit-box div { font-size: 15px; }
+    .detail-benefit-box dt { color: var(--text-sub); }
+    .detail-benefit-box dd { color: var(--text-main); }
+    .detail-chip { border: 2px solid var(--border); font-size: 15px; color: var(--text-main); }
+    .detail-chip.is-selected { border: 2px solid var(--text-main); }
+    .detail-quantity { border: 2px solid var(--border); }
+    .detail-total strong { font-size: 30px; }
+    .detail-action { border-width: 2px; font-size: 17px; }
+    .detail-tab-nav { border: 2px solid var(--border); }
+    .detail-tab-nav a { border-right: 2px solid var(--border); font-size: 16px; }
+    .detail-content-copy h2, .detail-spec-section h2, .detail-review-section h2 { font-size: 26px; }
+    .detail-content-copy p { font-size: 17px; }
+    .detail-spec-table { border: 2px solid var(--border); }
+    .detail-spec-table th, .detail-spec-table td { border: 1px solid var(--border); font-size: 15px; }
+    .detail-spec-table th { color: var(--text-sub); }
+    /* 리뷰 영역 */
+    .detail-review-heading p { font-size: 15px; }
+    .detail-review-form { border: 2px solid var(--border); }
+    .detail-review-form-textarea { border-width: 2px; font-size: 16px; }
+    .detail-review-card { border: 2px solid var(--border); }
+    .detail-review-card p { font-size: 17px; }
+    .detail-review-user strong { font-size: 16px; }
+    .detail-review-card time { font-size: 15px; }
+    .detail-review-empty, .detail-review-login-prompt { border-width: 2px; font-size: 15px; }
+    .detail-review-pagination a { border-width: 2px; font-size: 15px; }
+
+    /* ===== 8-c. 라이브룸(/live): 경계·타이포 강화 =====
+       .live-* 는 style.css에 하드코딩 색으로 정의돼 있어 여기서 공통 --border(굵게)로
+       통일하고 채팅/상품/시청 정보 글자를 키운다. (영상·레이아웃 값은 유지) */
+    .live-product-strip { border: 2px solid var(--border); }
+    .live-product-strip p { font-size: 14px; }
+    .live-product-strip h1 { font-size: 22px; }
+    .live-product-name { font-size: 15px; color: var(--text-sub); }
+    .live-message { font-size: 15px; color: var(--text-main); }
+    .live-product-link { font-size: 15px; }
+    .live-chat-panel { border: 2px solid var(--border); }
+    .live-panel-head { border-bottom: 2px solid var(--border); }
+    .live-panel-head h2 { font-size: 18px; }
+    .live-chat-message span { font-size: 15px; }
+    .live-chat-message strong { font-size: 13px; }
+    .live-chat-form { border-top: 2px solid var(--border); }
+    .live-chat-form input { font-size: 15px; }
+    .live-chat-form button { font-size: 15px; }
+    .live-status-pill, .live-viewers { font-size: 15px; }
+
+    /* ===== 9. 비즈니스 대시보드/분석: 카드·패널·표 경계 강화 =====
+       (해당 클래스는 각 페이지 인라인 <style>에 정의돼 있으나
+        border-width만 덧씌우면 되고 색은 위 --border 값을 그대로 물려받는다) */
+    .kpi-card, .panel { border-width: 2px !important; }
+    .kpi-label { font-size: 15px; }
+    .kpi-value { font-size: 34px !important; }
+    .panel h3 { font-size: 18px; }
+    .top-table th, .top-table td { font-size: 15px; }
+    .biz-nav a { font-size: 15px; }
+    .period-tabs { border-width: 2px; }
+    .period-tabs button { font-size: 15px; }
+    .notion-btn { border-width: 2px; font-size: 15px; }
+
+    /* ===== 10. 챗봇 버튼: 발표 중 강조 ===== */
+    .chatbot-btn { box-shadow: 0 10px 28px rgba(0, 115, 108, .5); }
+</style>
+</html>
