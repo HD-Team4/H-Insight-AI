@@ -8,15 +8,14 @@
           href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css"/>
     <style>
         :root {
-            --bg: #0b1220; --panel: #121b2e; --panel-2: #0f1728; --line: #23324f;
-            --text: #e7eefc; --muted: #8ea2c6; --accent: #34c759; --danger: #ff5470;
-            --edge: #35507e; --llm: #a06bff;
+            --bg: #ffffff; --panel: #ffffff; --panel-2: #f8fafc; --line: #e2e8f0;
+            --text: #1f2937; --muted: #64748b; --accent: #34c759; --danger: #ff5470;
+            --edge: #475569; --llm: #a06bff; --inset: #f8fafc;
         }
         * { box-sizing: border-box; }
         body {
             margin: 0; font-family: "Pretendard", -apple-system, system-ui, sans-serif;
-            background: radial-gradient(1200px 600px at 30% -10%, #16233d 0%, var(--bg) 55%);
-            color: var(--text); min-height: 100vh;
+            background: var(--bg); color: var(--text); min-height: 100vh;
         }
         .wrap { max-width: 1200px; margin: 0 auto; padding: 32px 24px 64px; }
         header h1 { margin: 0 0 6px; font-size: 26px; letter-spacing: -0.5px; }
@@ -25,7 +24,7 @@
             border: 1px solid var(--llm); border-radius: 999px; padding: 3px 9px; vertical-align: middle; margin-left: 10px;
         }
         header p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.6; max-width: 800px; }
-        code.k { color: #ffcf5c; background: #1c2942; padding: 1px 6px; border-radius: 5px; font-size: 12px; }
+        code.k { color: #b45309; background: #fef3c7; padding: 1px 6px; border-radius: 5px; font-size: 12px; }
         .nav { margin-top: 10px; font-size: 13px; }
         .nav a { color: var(--edge); text-decoration: none; }
         .nav a:hover { color: var(--text); }
@@ -33,21 +32,20 @@
         .grid { display: grid; grid-template-columns: 330px 1fr; gap: 18px; margin-top: 24px; }
         @media (max-width: 940px) { .grid { grid-template-columns: 1fr; } }
         .card {
-            background: linear-gradient(180deg, var(--panel) 0%, var(--panel-2) 100%);
-            border: 1px solid var(--line); border-radius: 14px; padding: 18px;
+            background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px;
+            box-shadow: 0 1px 3px rgba(15,23,42,.06);
         }
         .card h2 { margin: 0 0 12px; font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
 
         .slider-row { margin: 16px 0 6px; display: flex; align-items: center; justify-content: space-between; }
         .slider-row label { font-size: 13px; color: var(--muted); }
-        .slider-row .val { font-weight: 800; color: var(--accent); font-size: 15px; }
+        .slider-row .val { font-weight: 800; color: #16a34a; font-size: 15px; }
         input[type=range] { width: 100%; accent-color: var(--accent); }
-        .rng-hint { font-size: 11px; color: var(--edge); margin-top: 2px; }
         button.run {
-            width: 100%; margin-top: 14px; padding: 12px; font-size: 15px; font-weight: 700; color: #150a2b;
+            width: 100%; margin-top: 14px; padding: 12px; font-size: 15px; font-weight: 700; color: #ffffff;
             background: var(--llm); border: 0; border-radius: 10px; cursor: pointer; transition: .15s;
         }
-        button.run:hover { filter: brightness(1.08); }
+        button.run:hover { filter: brightness(1.05); }
         button.run:disabled { opacity: .55; cursor: progress; }
 
         /* 질문 선택 칩 */
@@ -60,20 +58,20 @@
         .pool-group .glabel { font-size: 11px; color: var(--edge); margin-bottom: 6px; letter-spacing: .5px; text-transform: uppercase; }
         .pchips { display: flex; flex-wrap: wrap; gap: 6px; }
         .pchip {
-            font-size: 13px; color: var(--muted); background: #0c1424; border: 1px solid var(--line);
+            font-size: 13px; color: var(--muted); background: var(--inset); border: 1px solid var(--line);
             border-radius: 999px; padding: 6px 12px; cursor: pointer; transition: .12s; user-select: none;
         }
         .pchip:hover { border-color: var(--edge); color: var(--text); }
-        .pchip.on { background: rgba(160,107,255,.18); border-color: var(--llm); color: #e7ddff; font-weight: 600; }
+        .pchip.on { background: rgba(160,107,255,.14); border-color: var(--llm); color: #6d28d9; font-weight: 600; }
         .pchip.on::before { content: "✓ "; }
 
-        .kpi { margin-top: 16px; background: #0c1424; border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
-        .kpi .big { font-size: 30px; font-weight: 800; color: var(--accent); }
+        .kpi { margin-top: 16px; background: var(--inset); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+        .kpi .big { font-size: 30px; font-weight: 800; color: #16a34a; }
         .kpi .big small { font-size: 14px; color: var(--muted); font-weight: 600; }
         .kpi .sub { font-size: 13px; color: var(--muted); margin-top: 4px; }
-        .bar { margin-top: 12px; height: 10px; border-radius: 6px; background: #1a2740; overflow: hidden; display: flex; }
+        .bar { margin-top: 12px; height: 10px; border-radius: 6px; background: #e2e8f0; overflow: hidden; display: flex; }
         .bar .b-with { background: var(--accent); }
-        .bar .b-saved { background: repeating-linear-gradient(45deg, #2a3a5c 0 6px, #22314f 6px 12px); }
+        .bar .b-saved { background: repeating-linear-gradient(45deg, #cbd5e1 0 6px, #dbe2ec 6px 12px); }
         .bar-legend { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-top: 5px; }
 
         .clist { margin-top: 14px; display: flex; flex-direction: column; gap: 7px; }
@@ -82,24 +80,23 @@
         .citem .rep { color: var(--text); }
         .citem .cnt { color: var(--muted); font-size: 12px; }
 
-        .viz-wrap { overflow-x: auto; border-radius: 10px; background: #0a1120; border: 1px solid var(--line); }
+        .viz-wrap { overflow-x: auto; border-radius: 10px; background: var(--inset); border: 1px solid var(--line); }
         .viz-hint { color: var(--muted); font-size: 13px; padding: 60px 20px; text-align: center; }
         .viz-hint.err { color: var(--danger); }
         svg text { font-family: inherit; }
         .legend { display: flex; gap: 16px; margin-top: 12px; font-size: 12px; color: var(--muted); flex-wrap: wrap; }
         .legend span { display: inline-flex; align-items: center; gap: 6px; }
         .lg-dash { width: 20px; height: 0; border-top: 2px dashed var(--accent); display: inline-block; }
-        .lg-arrow { color: var(--accent); font-weight: 800; }
+        .lg-arrow { color: #16a34a; font-weight: 800; }
 
         .matrix-card { margin-top: 18px; }
         .mwrap { overflow-x: auto; }
         table.sim { border-collapse: collapse; font-size: 12px; }
-        table.sim th, table.sim td { border: 1px solid #18263f; padding: 6px 8px; text-align: center; min-width: 46px; }
-        table.sim th { color: var(--muted); font-weight: 600; background: #0c1424; position: sticky; }
+        table.sim th, table.sim td { border: 1px solid #e2e8f0; padding: 6px 8px; text-align: center; min-width: 46px; color: var(--text); }
+        table.sim th { color: var(--muted); font-weight: 600; background: var(--inset); position: sticky; }
         table.sim th.rowh { text-align: right; white-space: nowrap; max-width: 190px; overflow: hidden; text-overflow: ellipsis; }
-        table.sim td.bond { outline: 2px solid var(--accent); outline-offset: -2px; font-weight: 800; color: #eafff0; }
-        table.sim td.diag { color: var(--edge); }
-        .mnote { font-size: 12px; color: var(--muted); margin-top: 10px; line-height: 1.6; }
+        table.sim td.bond { outline: 2px solid var(--accent); outline-offset: -2px; font-weight: 800; color: #065f46; }
+        table.sim td.diag { color: #94a3b8; }
         .qmap { font-size: 12px; color: var(--muted); margin-top: 10px; line-height: 1.9; }
         .qmap b { color: var(--text); }
     </style>
@@ -112,7 +109,6 @@
             문자가 아예 달라도(<code class="k">색상 어두운가요</code> vs <code class="k">옷색 어떰</code>)
             <b>1024차원 벡터 공간</b>에서는 거리가 가깝습니다. 코사인 유사도가 임계치 이상인 질문을 <b>한 군집으로 누적</b>하고,
             같은 군집이 <b>반복 임계치(예: 2회) 이상</b> 쌓이면 그때 <b>대표질문 1개만</b> LLM으로 태웁니다.
-            → 한 번만 나온(한산한) 질문은 호출하지 않고 <b>대기</b>, 여러 표현으로 반복된 <b>인기 질문만</b> 답합니다.
             아래 좌표는 실제 BGE-M3 임베딩을 <b>PCA로 2D 투영</b>한 것입니다.
         </p>
         <div class="nav">
@@ -136,14 +132,12 @@
                 <span class="val" id="thVal">0.75</span>
             </div>
             <input type="range" id="threshold" min="0.5" max="0.95" step="0.01" value="0.75"/>
-            <div class="rng-hint">높일수록 더 엄격하게(가까운 것만) 묶입니다 · 운영 라이브봇 기본값 0.85</div>
 
             <div class="slider-row" style="margin-top:16px">
                 <label>트리거 반복 횟수 (이만큼 쌓여야 호출)</label>
                 <span class="val" id="rtVal">2</span>
             </div>
             <input type="range" id="repeat" min="1" max="5" step="1" value="2"/>
-            <div class="rng-hint">군집이 이 횟수 이상 반복돼야 LLM 호출 · 운영 rag.bot.threshold 기본값 3</div>
             <button class="run" id="runBtn">임베딩 &amp; 군집화 ▶</button>
 
             <div class="kpi">
@@ -169,13 +163,9 @@
 
     <!-- 유사도 행렬 -->
     <div class="card matrix-card">
-        <h2>코사인 유사도 행렬 <span style="text-transform:none;letter-spacing:0;color:var(--edge)">— 문자가 달라도 의미가 같으면 값이 높다(수학적 근거)</span></h2>
+        <h2>코사인 유사도 행렬</h2>
         <div class="mwrap" id="matrixWrap"><div class="viz-hint">—</div></div>
         <div class="qmap" id="qmap"></div>
-        <div class="mnote">
-            초록 테두리 = 임계치 이상(같은 군집으로 묶임). 대각선(자기 자신)은 1.00.
-            문구가 전혀 달라도 <b>의미</b>가 가까우면 값이 높게 나오는 것이 이 방어의 핵심입니다.
-        </div>
     </div>
 </div>
 
@@ -239,11 +229,11 @@
 
         // 배경 격자 + 축 라벨
         for (var gx = px0; gx <= px0 + plotW; gx += 47)
-            s += '<line x1="' + gx + '" y1="' + py0 + '" x2="' + gx + '" y2="' + (py0 + plotH) + '" stroke="#111d33" stroke-width="1"/>';
+            s += '<line x1="' + gx + '" y1="' + py0 + '" x2="' + gx + '" y2="' + (py0 + plotH) + '" stroke="#eef2f7" stroke-width="1"/>';
         for (var gy = py0; gy <= py0 + plotH; gy += 47)
-            s += '<line x1="' + px0 + '" y1="' + gy + '" x2="' + (px0 + plotW) + '" y2="' + gy + '" stroke="#111d33" stroke-width="1"/>';
-        s += '<text x="' + (px0 + 4) + '" y="' + (py0 + plotH + 16) + '" fill="#3a4d72" font-size="11">PCA 축 1 →</text>';
-        s += '<text x="' + px0 + '" y="' + (py0 - 10) + '" fill="#3a4d72" font-size="11">↑ PCA 축 2</text>';
+            s += '<line x1="' + px0 + '" y1="' + gy + '" x2="' + (px0 + plotW) + '" y2="' + gy + '" stroke="#eef2f7" stroke-width="1"/>';
+        s += '<text x="' + (px0 + 4) + '" y="' + (py0 + plotH + 16) + '" fill="#94a3b8" font-size="11">PCA 축 1 →</text>';
+        s += '<text x="' + px0 + '" y="' + (py0 - 10) + '" fill="#94a3b8" font-size="11">↑ PCA 축 2</text>';
 
         // 군집 반경 원 (트리거=진하게 실선, 대기=흐리게 점선) + 반복 카운트 배지
         clusters.forEach(function (c) {
@@ -253,8 +243,8 @@
                + '" stroke="' + col + '" stroke-opacity="' + (0.7 * op) + '" stroke-width="1.6" stroke-dasharray="6 4"/>';
             // 반복 카운트 배지 (n/threshold)
             var bx = sx(c.cx) + rpx * 0.62, by = sy(c.cy) - rpx * 0.62;
-            s += '<rect x="' + (bx - 15) + '" y="' + (by - 11) + '" width="34" height="18" rx="9" fill="' + (c.triggered ? col : '#25324c') + '" fill-opacity="' + (c.triggered ? 0.95 : 0.8) + '"/>';
-            s += '<text x="' + bx + '" y="' + (by + 3) + '" text-anchor="middle" font-size="11" font-weight="800" fill="' + (c.triggered ? '#08160c' : '#8ea2c6') + '">' + c.count + '/' + data.repeatThreshold + '</text>';
+            s += '<rect x="' + (bx - 15) + '" y="' + (by - 11) + '" width="34" height="18" rx="9" fill="' + (c.triggered ? col : '#cbd5e1') + '" fill-opacity="' + (c.triggered ? 0.95 : 0.9) + '"/>';
+            s += '<text x="' + bx + '" y="' + (by + 3) + '" text-anchor="middle" font-size="11" font-weight="800" fill="' + (c.triggered ? '#08160c' : '#475569') + '">' + c.count + '/' + data.repeatThreshold + '</text>';
         });
 
         // 임계치 이상 결속선(같은 군집 근거)
@@ -270,10 +260,10 @@
         }
 
         // LLM 박스
-        s += '<rect x="' + llmX + '" y="' + llmY + '" width="' + llmW + '" height="' + llmH + '" rx="12" fill="#1b1233" stroke="' + '#a06bff' + '" stroke-width="1.6"/>';
-        s += '<text x="' + (llmX + llmW / 2) + '" y="' + (llmY + 34) + '" text-anchor="middle" fill="#c9b3ff" font-size="15" font-weight="800">LLM · RAG</text>';
-        s += '<text x="' + (llmX + llmW / 2) + '" y="' + (llmY + 58) + '" text-anchor="middle" fill="#8ea2c6" font-size="12">호출 ' + data.llmCallsWith + '회</text>';
-        s += '<text x="' + (llmX + llmW / 2) + '" y="' + (llmY + 76) + '" text-anchor="middle" fill="#5a4a86" font-size="11">(질문 ' + data.llmCallsWithout + '개)</text>';
+        s += '<rect x="' + llmX + '" y="' + llmY + '" width="' + llmW + '" height="' + llmH + '" rx="12" fill="#f3edff" stroke="' + '#a06bff' + '" stroke-width="1.6"/>';
+        s += '<text x="' + (llmX + llmW / 2) + '" y="' + (llmY + 34) + '" text-anchor="middle" fill="#7c3aed" font-size="15" font-weight="800">LLM · RAG</text>';
+        s += '<text x="' + (llmX + llmW / 2) + '" y="' + (llmY + 58) + '" text-anchor="middle" fill="#64748b" font-size="12">호출 ' + data.llmCallsWith + '회</text>';
+        s += '<text x="' + (llmX + llmW / 2) + '" y="' + (llmY + 76) + '" text-anchor="middle" fill="#a78bda" font-size="11">(질문 ' + data.llmCallsWithout + '개)</text>';
 
         // 대표질문 → LLM 화살표 : "트리거된" 군집만 대표 1개가 날아간다
         clusters.forEach(function (c) {
@@ -284,7 +274,7 @@
                + '" stroke="' + col + '" stroke-width="2.4" stroke-opacity="0.9" marker-end="url(#arw)"/>';
         });
 
-        // 점 + 라벨 (대기 군집은 흐리게, 트리거된 군집의 시드는 흰 테두리로 강조)
+        // 점 + 라벨 (대기 군집은 흐리게, 트리거된 군집의 시드는 어두운 테두리로 강조)
         var firedOf = {};
         clusters.forEach(function (c) { firedOf[c.id] = c.triggered; });
         pts.forEach(function (p) {
@@ -294,10 +284,10 @@
             var cx = sx(p.x), cy = sy(p.y);
             var op = fired ? 1 : 0.4;
             s += '<circle cx="' + cx + '" cy="' + cy + '" r="' + (isSeed ? 8 : 6) + '" fill="' + col + '" fill-opacity="' + op + '"'
-               + (isSeed && fired ? ' stroke="#fff" stroke-width="2"' : '') + '/>';
+               + (isSeed && fired ? ' stroke="#0f172a" stroke-width="2"' : '') + '/>';
             var lx = cx < (px0 + plotW - 120) ? cx + 11 : cx - 11;
             var anchor = cx < (px0 + plotW - 120) ? "start" : "end";
-            s += '<text x="' + lx + '" y="' + (cy + 4) + '" text-anchor="' + anchor + '" fill="' + (fired ? '#dbe6fb' : '#6a7ea3') + '" font-size="12"'
+            s += '<text x="' + lx + '" y="' + (cy + 4) + '" text-anchor="' + anchor + '" fill="' + (fired ? '#1f2937' : '#94a3b8') + '" font-size="12"'
                + (isSeed ? ' font-weight="700"' : '') + '>' + esc(short(p.text, 12)) + (isSeed && fired ? ' ★' : '') + '</text>';
         });
 
@@ -326,7 +316,7 @@
             var el = document.createElement("div");
             el.className = "citem";
             var status = c.triggered
-                ? '<span class="cnt" style="color:var(--accent)">✔ 호출(대표 1개) · 반복 ' + c.count + '</span>'
+                ? '<span class="cnt" style="color:#16a34a">✔ 호출(대표 1개) · 반복 ' + c.count + '</span>'
                 : '<span class="cnt">◌ 대기 ' + c.count + '/' + data.repeatThreshold + '</span>';
             el.innerHTML = '<span class="cdot" style="background:' + col + ';opacity:' + (c.triggered ? 1 : 0.4) + '"></span>'
                 + '<span class="rep" style="opacity:' + (c.triggered ? 1 : 0.6) + '">' + esc(c.representative) + '</span>'

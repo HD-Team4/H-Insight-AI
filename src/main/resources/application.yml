@@ -10,7 +10,8 @@ spring:
     cache: true
     prefix: classpath:/templates/
     suffix: .html
-  # 정적 리소스 핸들러 체인 캐시 — jar 내부 리소스 URL 반복 해석(CPU 병목) 방지용 CachingResourceResolver 등록
+  # 정적 리소스 핸들러 체인 캐시
+  # — jar 내부 리소스 URL 반복 해석(CPU 병목)
   web:
     resources:
       chain:

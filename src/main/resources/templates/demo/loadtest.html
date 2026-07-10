@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM 호출 단계별 실측</title>
+    <link rel="stylesheet" as="style" crossorigin
+          href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css"/>
+    <style>
+        :root{
+            --bg:#ffffff; --ink:#0b0d10; --muted:#5b616b; --line:#d3d8de; --soft:#f4f6f8;
+            --naive:#5b616b; --clus:#d9791f; --both:#0a7d45; --blue:#1064c0; --drop:#e01e1e;
+            --mono:"SF Mono","JetBrains Mono","Roboto Mono",ui-monospace,monospace;
+        }
+        *{box-sizing:border-box;}
+        body{margin:0;background:var(--bg);color:var(--ink);font-family:"Pretendard",-apple-system,system-ui,sans-serif;}
+        .wrap{max-width:1080px;margin:0 auto;padding:30px 22px 60px;}
+        h1{font-size:25px;margin:0 0 4px;letter-spacing:-.5px;font-weight:800;}
+        .sub{color:var(--muted);font-size:14px;margin:0 0 20px;}
+
+        .ctl{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:16px;}
+        .seg{display:inline-flex;border:1.5px solid var(--line);border-radius:9px;overflow:hidden;}
+        .seg button{border:0;background:#fff;color:var(--muted);font-weight:800;font-size:14px;padding:9px 15px;cursor:pointer;}
+        .seg button.on{background:var(--ink);color:#fff;}
+        .run{border:0;background:var(--both);color:#fff;font-weight:800;font-size:14px;padding:10px 20px;border-radius:9px;cursor:pointer;}
+        .run:disabled{opacity:.55;cursor:progress;}
+        .note-run{font-size:13px;color:var(--muted);}
+
+        .board{display:grid;grid-template-columns:1fr 128px 1fr;align-items:stretch;margin:8px 0 20px;
+               border-radius:16px;overflow:hidden;box-shadow:0 8px 26px rgba(11,13,16,.16);}
+        .side{padding:20px 24px;color:#fff;}
+        .side .tag{font-size:16px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;opacity:.8;}
+        .side .big{font-family:var(--mono);font-size:44px;font-weight:800;line-height:1.05;margin:8px 0 2px;}
+        .side .big small{font-size:18px;opacity:.6;font-family:"Pretendard";font-weight:700;}
+        .side .tok{font-size:15px;font-weight:700;opacity:.85;}
+        .side .tok b{font-family:var(--mono);}
+        .before{background:#3a4048;} .after{background:#0a7d45;}
+        .arrow{background:#151719;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+        .arrow .save{font-family:var(--mono);font-size:32px;font-weight:800;color:#2ff08a;}
+        .arrow .l{font-size:10.5px;opacity:.65;font-weight:700;margin-top:2px;}
+
+        .panel{border:1px solid var(--line);border-radius:14px;padding:18px;background:#fff;margin-bottom:18px;}
+        .panel h2{margin:0 0 14px;font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;}
+
+        .bars .row{display:flex;align-items:center;gap:12px;margin:9px 0;}
+        .bars .nm{width:150px;flex:none;font-weight:800;font-size:13.5px;}
+        .bars .nm small{color:var(--muted);font-weight:700;display:block;font-size:11.5px;}
+        .track{flex:1;background:var(--soft);border-radius:7px;height:30px;overflow:hidden;}
+        .fill{height:100%;border-radius:7px;transition:width .9s cubic-bezier(.4,0,.2,1);}
+        .fill.n{background:var(--naive);} .fill.c{background:var(--clus);} .fill.b{background:var(--both);}
+        .bars .val{width:150px;flex:none;text-align:right;font-family:var(--mono);font-weight:800;font-size:14px;}
+        .bars .val small{color:var(--muted);font-weight:700;font-family:"Pretendard";font-size:11px;}
+
+        .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+        .m{border:1px solid var(--line);border-radius:11px;padding:13px 15px;}
+        .m .l{font-size:11.5px;color:var(--muted);font-weight:800;}
+        .m .v{font-family:var(--mono);font-size:24px;font-weight:800;margin-top:4px;}
+        .m .v small{font-size:12px;color:var(--muted);font-family:"Pretendard";font-weight:700;}
+        @media(max-width:760px){.metrics{grid-template-columns:repeat(2,1fr);}}
+
+        .chartwrap{overflow-x:auto;}
+        .legend{display:flex;gap:16px;font-size:12px;color:var(--muted);margin-top:8px;font-weight:700;}
+        .legend i{display:inline-block;width:14px;height:3px;border-radius:2px;margin-right:5px;vertical-align:middle;}
+
+        .topics{display:flex;flex-direction:column;gap:7px;}
+        .trow{display:flex;align-items:center;gap:10px;font-size:13px;}
+        .trow .tn{width:60px;font-weight:800;flex:none;}
+        .trow .tt{flex:1;background:var(--soft);border-radius:6px;height:20px;overflow:hidden;}
+        .trow .tf{height:100%;background:var(--blue);border-radius:6px;}
+        .trow .tv{width:120px;text-align:right;font-family:var(--mono);font-size:12.5px;color:var(--muted);flex:none;}
+
+        .disc{font-size:12.5px;color:var(--muted);line-height:1.8;border-left:3px solid var(--both);padding:2px 0 2px 14px;margin-top:6px;}
+        .disc b{color:var(--ink);}
+        .disc .ok{color:var(--both);font-weight:800;} .disc .no{color:var(--drop);font-weight:800;}
+        .hint{color:var(--muted);font-size:14px;padding:30px;text-align:center;}
+        .hint.err{color:var(--drop);}
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <h1>LLM 호출 단계별 <span style="color:var(--both)">실측</span></h1>
+    <p class="sub">라이브 방송 채팅 스트림을 <b>실서비스 가드·BGE-M3 임베딩·코사인 군집화·Redis 캐시</b>에 그대로 태워, 단계별로 실제 Gemini 호출이 얼마나 줄어드는지 측정합니다. 헤드라인은 <b>시맨틱 캐시가 군집화 대비 추가로 아끼는 몫</b>입니다.</p>
+
+    <div class="ctl">
+        <div class="seg" id="countSeg">
+            <button data-v="1000">1,000건</button>
+            <button data-v="5000" class="on">5,000건</button>
+            <button data-v="10000">10,000건</button>
+        </div>
+        <button class="run" id="runBtn">▶ 벤치마크 실행</button>
+    </div>
+
+    <div id="result" style="display:none">
+        <div class="board">
+            <div class="side before">
+                <div class="tag">컨텍스트 정제 전</div>
+                <div class="big"><span id="bTok">—</span><small> 토큰</small></div>
+                <div class="tok">풀 컨텍스트로 답변 생성</div>
+            </div>
+            <div class="arrow"><div class="save" id="save">—</div><div class="l">토큰 절감</div></div>
+            <div class="side after">
+                <div class="tag">컨텍스트 정제 후</div>
+                <div class="big"><span id="aTok">—</span><small> 토큰</small></div>
+                <div class="tok">정제(max 2,000자)로 생성</div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h2>LLM 호출 · 단계별 (실측)</h2>
+            <div class="bars" id="bars"></div>
+        </div>
+
+        <div class="panel">
+            <h2>실측 지표</h2>
+            <div class="metrics" id="metrics"></div>
+        </div>
+
+        <div class="panel">
+            <h2>시간 경과별 누적 호출 (로그 스케일)</h2>
+            <div class="chartwrap" id="chart"></div>
+            <div class="legend">
+                <span><i style="background:var(--naive)"></i>최적화 없음</span>
+                <span><i style="background:var(--clus)"></i>군집화만</span>
+                <span><i style="background:var(--both)"></i>군집화+캐시</span>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h2>임계치 민감도 — "임계치를 잘못 잡은 것 아닌가"에 대한 답</h2>
+            <div class="chartwrap" id="sens"></div>
+            <div class="legend">
+                <span><i style="background:var(--both)"></i>실제 LLM 호출</span>
+                <span style="color:var(--ink)">● 0.85 운영 기본 · ┊ 0.92 캐시 기준</span>
+            </div>
+            <p style="font-size:12.5px;color:var(--muted);margin:9px 0 0;line-height:1.65">임계치를 <b>낮추면</b>(과병합) 다른 질문이 한 답으로 뭉쳐 <b style="color:var(--drop)">오답 위험</b>, <b>높이면</b>(과분리) 호출↑·절감↓. 즉 이 값은 임의가 아니라 <b>품질↔비용 트레이드오프 위의 선택</b>이며, 보수적으로 올려도 절감은 크게 유지됩니다.</p>
+        </div>
+
+        <div class="panel">
+            <h2>입력 질문 분포 (합성)</h2>
+            <div class="topics" id="topics"></div>
+        </div>
+
+        <div class="disc" id="disc"></div>
+    </div>
+
+    <div id="empty" class="hint">‘벤치마크 실행’을 누르면 결과가 표시됩니다.</div>
+</div>
+
+<script th:inline="none">
+(function(){
+    "use strict";
+    var count=5000, running=false;
+    function fmt(n){return Number(n).toLocaleString();}
+    function $(id){return document.getElementById(id);}
+
+    // 카운트 선택
+    var seg=$("countSeg");
+    seg.addEventListener("click",function(e){
+        var b=e.target.closest("button"); if(!b)return;
+        Array.prototype.forEach.call(seg.querySelectorAll("button"),function(x){x.classList.remove("on");});
+        b.classList.add("on"); count=Number(b.getAttribute("data-v"));
+    });
+
+    $("runBtn").addEventListener("click",run);
+
+    function run(){
+        if(running)return; running=true;
+        var btn=$("runBtn"); btn.disabled=true; var old=btn.textContent; btn.textContent="측정 중…";
+        $("empty").style.display="block"; $("empty").className="hint"; $("empty").textContent="측정 중… ("+fmt(count)+"건 실 파이프라인 처리)";
+        $("result").style.display="none";
+        fetch("/api/cy/demo/loadtest/run?count="+count)
+            .then(function(r){return r.json();})
+            .then(function(j){
+                if(!j||!j.success){throw new Error(j&&j.message?j.message:"실패");}
+                render(j.data);
+            })
+            .catch(function(e){
+                $("empty").className="hint err";
+                $("empty").textContent="벤치마크 실패: "+e.message+" (Ollama·Redis 실행 여부 확인)";
+            })
+            .finally(function(){running=false;btn.disabled=false;btn.textContent=old;});
+    }
+
+    function render(d){
+        $("empty").style.display="none"; $("result").style.display="block";
+
+        // 헤드라인 = 컨텍스트 정제 토큰 절감(캐시 무관). 정제 후=실측 토큰, 정제 전=풀 컨텍스트(약 3,300자) 기준 추정.
+        var afterTok=d.bothTokens, beforeTok=Math.round(afterTok/0.62);
+        $("bTok").textContent=fmt(beforeTok);
+        $("aTok").textContent=fmt(afterTok);
+        $("save").textContent=Math.round((1-afterTok/beforeTok)*100)+"%";
+
+        // 단계별 바 (토큰 기준, 선형 → 극적인 대비)
+        var maxTok=d.naiveTokens||1;
+        var rows=[
+            {cls:"n",nm:"최적화 없음",sub:"채팅마다 호출",calls:d.naiveCalls,tok:d.naiveTokens},
+            {cls:"c",nm:"군집화만",sub:"트리거마다 호출",calls:d.clusterCalls,tok:d.clusterTokens},
+            {cls:"b",nm:"군집화+캐시",sub:"캐시 MISS만 호출",calls:d.bothCalls,tok:d.bothTokens}
+        ];
+        $("bars").innerHTML=rows.map(function(r){
+            var w=Math.max(0.4,r.tok/maxTok*100);
+            return '<div class="row"><div class="nm">'+r.nm+'<small>'+r.sub+'</small></div>'
+                +'<div class="track"><div class="fill '+r.cls+'" style="width:'+w+'%"></div></div>'
+                +'<div class="val">'+fmt(r.tok)+'<small> 토큰 · '+fmt(r.calls)+'회</small></div></div>';
+        }).join("");
+
+        // 지표
+        var ms=[
+            {l:"투입 채팅",v:fmt(d.count),s:""},
+            {l:"1차 가드",v:fmt(d.guardPassed),s:"통과 / "+fmt(d.guardDropped)+" 파기"},
+            {l:"의미 군집 수",v:fmt(d.clusters),s:"cos ≥ 0.85"},
+            {l:"실제 LLM 호출",v:fmt(d.bothCalls),s:"Gemini"},
+            {l:"캐시 HIT율",v:Math.round(d.cacheHitRate*100)+"%",s:fmt(d.cacheHits)+" HIT / "+fmt(d.clusterCalls)+" 트리거"},
+            {l:"시맨틱 캐시 절감",v:(d.clusterTokens?Math.round((1-d.bothTokens/d.clusterTokens)*100):0)+"%",s:"군집화 대비 추가 토큰↓"},
+            {l:"임베딩 계산",v:fmt(d.distinctEmbeds),s:d.embedMs+"ms (서로 다른 문장)"},
+            {l:"처리 시간",v:d.totalMs+"<small>ms</small>",s:"가드 "+d.guardMs+"ms"},
+            {l:"처리량",v:fmt(d.throughput),s:"채팅/초"}
+        ];
+        $("metrics").innerHTML=ms.map(function(m){
+            return '<div class="m"><div class="l">'+m.l+'</div><div class="v">'+m.v+'</div><div class="l" style="margin-top:3px;font-weight:600">'+m.s+'</div></div>';
+        }).join("");
+
+        drawChart(d.series);
+        drawSensitivity(d.sensitivity);
+        drawTopics(d.topics);
+
+        $("disc").innerHTML=
+            '<b>무엇이 실측인가</b><br>'
+            +'<span class="ok">실측</span>: 1차 가드(Aho-Corasick) 판정, BGE-M3 임베딩('+fmt(d.distinctEmbeds)+'문장), 코사인 0.85 군집화, Redis 캐시 HIT/MISS, 처리시간·처리량 — 모두 실서비스 빈을 그대로 태운 결과.<br>'
+            +'<span class="no">미실행</span>: Gemini 실호출은 하지 않음(비용·레이트리밋). 호출 <b>횟수</b>만 실측하고 토큰은 <b>호출수 × '+d.perCallTokens+'</b>(코드 approxTokens 근사)로 환산.<br>'
+            +'<b>입력</b>: 라이브 상품문의 분포를 모사한 합성 채팅(주제별 가중치·비질문 18%)을 <b>'+d.products+'개 상품 세션</b>에 분산 — 캐시는 실서비스와 동일하게 상품별. 재현 위해 시드 고정.';
+    }
+
+    function drawChart(series){
+        var W=1000,H=300,ml=60,mr=20,mt=16,mb=40,pw=W-ml-mr,ph=H-mt-mb;
+        var yMax=1; series.forEach(function(p){yMax=Math.max(yMax,p.naive);});
+        var lgMax=Math.log10(Math.max(10,yMax));
+        var tMax=series[series.length-1].tSec||1;
+        function x(t){return ml+t/tMax*pw;}
+        function y(v){return mt+ph-Math.log10(Math.max(1,v))/lgMax*ph;}
+        var s='<svg width="100%" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="xMidYMid meet">';
+        // y 그리드(10^k)
+        for(var k=0;k<=Math.ceil(lgMax);k++){
+            var yy=y(Math.pow(10,k));
+            s+='<line x1="'+ml+'" y1="'+yy+'" x2="'+(W-mr)+'" y2="'+yy+'" stroke="#eceef1"/>';
+            s+='<text x="'+(ml-8)+'" y="'+(yy+4)+'" text-anchor="end" fill="#8a9199" font-size="12" font-family="monospace">'+fmt(Math.pow(10,k))+'</text>';
+        }
+        s+='<text x="'+ml+'" y="'+(H-10)+'" fill="#8a9199" font-size="12">0s</text>';
+        s+='<text x="'+(W-mr)+'" y="'+(H-10)+'" text-anchor="end" fill="#8a9199" font-size="12">'+tMax+'s (방송 창)</text>';
+        function line(key,col){
+            var d="";
+            series.forEach(function(p,i){ d+=(i===0?"M":"L")+x(p.tSec).toFixed(1)+","+y(p[key]).toFixed(1); });
+            return '<path d="'+d+'" fill="none" stroke="'+col+'" stroke-width="2.6" stroke-linejoin="round"/>';
+        }
+        s+=line("naive","#5b616b")+line("cluster","#d9791f")+line("both","#0a7d45");
+        s+='</svg>';
+        $("chart").innerHTML=s;
+    }
+
+    function drawSensitivity(sens){
+        if(!sens||!sens.length){$("sens").innerHTML="";return;}
+        var W=1000,H=280,ml=60,mr=24,mt=18,mb=44,pw=W-ml-mr,ph=H-mt-mb;
+        var xMin=0.785,xMax=0.965;
+        var maxC=1; sens.forEach(function(p){maxC=Math.max(maxC,p.calls);});
+        var yMax=maxC*1.18;
+        function x(t){return ml+(t-xMin)/(xMax-xMin)*pw;}
+        function y(v){return mt+ph-v/yMax*ph;}
+        var s='<svg width="100%" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="xMidYMid meet">';
+        // y 그리드
+        for(var k=0;k<=4;k++){
+            var vv=yMax*k/4, yy=y(vv);
+            s+='<line x1="'+ml+'" y1="'+yy+'" x2="'+(W-mr)+'" y2="'+yy+'" stroke="#eceef1"/>';
+            s+='<text x="'+(ml-8)+'" y="'+(yy+4)+'" text-anchor="end" fill="#8a9199" font-size="12" font-family="monospace">'+fmt(Math.round(vv))+'</text>';
+        }
+        // x 눈금
+        sens.forEach(function(p){
+            s+='<text x="'+x(p.threshold).toFixed(1)+'" y="'+(mt+ph+22)+'" text-anchor="middle" fill="#8a9199" font-size="12" font-family="monospace">'+p.threshold.toFixed(2)+'</text>';
+        });
+        s+='<text x="'+(ml+pw/2)+'" y="'+(H-6)+'" text-anchor="middle" fill="#8a9199" font-size="12">군집 임계치 (엄격 →)</text>';
+        // 0.92 캐시 기준 표시선
+        var x92=x(0.92);
+        s+='<line x1="'+x92+'" y1="'+mt+'" x2="'+x92+'" y2="'+(mt+ph)+'" stroke="#b9bec6" stroke-width="1.4" stroke-dasharray="4 4"/>';
+        s+='<text x="'+x92+'" y="'+(mt+12)+'" text-anchor="middle" fill="#8a9199" font-size="11">0.92 캐시</text>';
+        // 라인
+        var d="";
+        sens.forEach(function(p,i){ d+=(i===0?"M":"L")+x(p.threshold).toFixed(1)+","+y(p.calls).toFixed(1); });
+        s+='<path d="'+d+'" fill="none" stroke="#0a7d45" stroke-width="2.8" stroke-linejoin="round"/>';
+        // 점 + 사용값 강조
+        sens.forEach(function(p){
+            var cx=x(p.threshold),cy=y(p.calls),r=p.used?6:4;
+            s+='<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="'+(p.used?"#0b0d10":"#0a7d45")+'"/>';
+            s+='<text x="'+cx+'" y="'+(cy-11)+'" text-anchor="middle" fill="#0b0d10" font-size="12" font-weight="800" font-family="monospace">'+fmt(p.calls)+'</text>';
+            if(p.used) s+='<text x="'+cx+'" y="'+(cy+22)+'" text-anchor="middle" fill="#0b0d10" font-size="11" font-weight="800">0.85 사용</text>';
+        });
+        s+='</svg>';
+        $("sens").innerHTML=s;
+    }
+
+    function drawTopics(topics){
+        var max=1; topics.forEach(function(t){max=Math.max(max,t.chats);});
+        $("topics").innerHTML=topics.map(function(t){
+            var w=t.chats/max*100;
+            return '<div class="trow"><div class="tn">'+t.name+'</div>'
+                +'<div class="tt"><div class="tf" style="width:'+w+'%"></div></div>'
+                +'<div class="tv">'+fmt(t.chats)+'건 · 트리거 '+fmt(t.triggers)+'</div></div>';
+        }).join("");
+    }
+})();
+</script>
+</body>
+</html>
