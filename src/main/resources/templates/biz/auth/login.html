@@ -4,9 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>H-Insight-AI 비즈니스 로그인</title>
+    <!-- CSRF 토큰을 head에서 미리 생성(비로그인+큰 CSS로 응답 커밋 후 세션 생성 실패 방지) -->
+    <meta name="_csrf" th:content="${_csrf != null ? _csrf.token : ''}">
+    <meta name="_csrf_header" th:content="${_csrf != null ? _csrf.headerName : ''}">
     <link rel="stylesheet" as="style" crossorigin
           href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css"/>
     <link rel="stylesheet" th:href="${@environment.getProperty('app.cdn.url') + '/static/css/style.css'}">
+    <!-- 발표용 고대비 테마 -->
+    <div th:replace="~{fragments/present :: presentTheme}"></div>
 </head>
 <body>
 <!-- 고객 레이아웃(상품 헤더)과 분리된 biz 전용 페이지. 공유 디자인 시스템(.auth-*)만 재사용 -->

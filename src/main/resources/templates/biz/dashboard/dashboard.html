@@ -63,6 +63,8 @@
 
         @media (max-width:900px){ .kpi-row{grid-template-columns:repeat(2,1fr)} .chart-grid{grid-template-columns:1fr} }
     </style>
+    <!-- 발표용 고대비 테마 (인라인 style 뒤에서 값만 덧씌움) -->
+    <div th:replace="~{fragments/present :: presentTheme}"></div>
 </head>
 <body>
 <div class="top-bar"></div>

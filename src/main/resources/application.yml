@@ -1,6 +1,22 @@
 spring:
+  datasource:
+    hikari:
+      maximum-pool-size: ${DB_POOL_SIZE:20}   # RDS db.t3.micro(max_connections≈85) 여유 내. 폭주 시 DB 병목 완화
   config:
     import: optional:file:.env[.properties]
+  # 메일(SMTP) — .env 를 properties 로 로드하면 SPRING_MAIL_* 대문자키가 relaxed binding 되지 않으므로
+  # 여기서 명시적으로 placeholder 참조해야 JavaMailSender 가 자동 구성됨(미설정 시 리포트 메일 skip)
+  mail:
+    host: ${SPRING_MAIL_HOST:}
+    port: ${SPRING_MAIL_PORT:587}
+    username: ${SPRING_MAIL_USERNAME:}
+    password: ${SPRING_MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: ${SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH:true}
+          starttls:
+            enable: ${SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE:true}
   application:
     name: H-Insight-AI
   profiles:
@@ -17,6 +33,15 @@ spring:
       chain:
         enabled: true
   ai:
+    # Gemini 429(무료 쿼터 소진) 시 기본 재시도(10회·지수백오프)가 챗봇 head 를 33초까지 붙잡음(실측)
+    #  → 2회로 잘라 빠르게 실패시키고 조건추출은 무필터 폴백, 추천멘트는 템플릿 폴백으로 넘어가게 한다.
+    #  참고: gemini-2.5-flash 무료 티어는 하루 20건(2026-07 실측) — 질문 1건당 Gemini 2회 소모 주의.
+    retry:
+      max-attempts: 2
+      backoff:
+        initial-interval: 1s
+        multiplier: 2
+        max-interval: 3s
     google:
       genai:
         api-key: ${GEMINI_API_KEY:}
@@ -63,6 +88,41 @@ product:
   list:
     page-size: 20
 
+# 가상 대기열(virtual waiting room) — paths(기본 /customer/** 도메인 전체) 접근 게이트
+#  - 대기 페이지 정적 파일: waiting-room/ → s3://hf4-s3/waiting-room/ (CloudFront 서빙)
+#  - 용량 기반: 평상시 즉시 통과, CPU≥cpu-target 로 포화되면 새 유입만 번호표(seq/serving) 대기.
+#    입장자는 세션 통과권으로 도메인 전체 자유 이용.
+#  - 대기열 상태는 전용 Redis(ElastiCache hf4-ticketing-queue-redis)에 저장.
+#    redis.host: 로컬은 localhost(도커 redis), EC2/운영은 WAITING_ROOM_REDIS_HOST 로 ElastiCache 지정
+#    (ElastiCache 는 프라이빗 서브넷이라 로컬에서 직접 접근 불가 → 로컬은 로컬 Redis 사용)
+waiting-room:
+  enabled: ${WAITING_ROOM_ENABLED:true}
+  page-url: ${WAITING_ROOM_PAGE_URL:https://d3czavkc472er9.cloudfront.net/waiting-room/index.html}
+  paths: ${WAITING_ROOM_PATHS:/customer/**}   # 콤마 구분, Ant 패턴. 도메인(고객 사이트) 전체
+  redis:
+    host: ${WAITING_ROOM_REDIS_HOST:localhost}
+    port: ${WAITING_ROOM_REDIS_PORT:6379}
+  queue:
+    key-prefix: ${WAITING_ROOM_KEY_PREFIX:wr:}
+    # 게이트 주 신호 = 동시 처리 중 요청 수. 이 수 이상이면 새 유입은 대기(이 앱은 CPU 낮고 DB 가 병목).
+    # ★반드시 DB 커넥션 풀(DB_POOL_SIZE:20)보다 낮게 둔다(여유분 확보). 풀과 같거나 크면 풀이 먼저
+    #  고갈돼 초과 요청이 대기 페이지로 안 가고 Hikari 커넥션 대기에서 '버퍼링(멈춤)'만 한다 — 대기열이 안 뜨던 근본 원인.
+    max-concurrent: ${WAITING_ROOM_MAX_CONCURRENT:15}
+    # AIMD 자기조정 방출: 여유(inFlight<max & CPU<target) → rate 가산 증가, 포화 → 승산 감소. [rate-min, rate-max]
+    cpu-target: ${WAITING_ROOM_CPU_TARGET:0.50}                     # CPU 이 값 이상이면 포화로 보고 대기(0~1)
+    rate-max: ${WAITING_ROOM_RATE_MAX:200}                          # 방출 레이트 상한(/s)
+    rate-min: ${WAITING_ROOM_RATE_MIN:35}                           # 방출 레이트 하한(/s)
+    rate-initial: ${WAITING_ROOM_RATE_INITIAL:35}                   # 시작 방출 레이트(/s)
+    aimd-increase: ${WAITING_ROOM_AIMD_INCREASE:20}                 # CPU 여유 시 매 틱 가산 증가(/s)
+    aimd-decrease: ${WAITING_ROOM_AIMD_DECREASE:0.5}                # CPU 포화 시 승산 감소 계수
+    release-interval-ms: ${WAITING_ROOM_RELEASE_INTERVAL_MS:1000}   # 방출/조정 틱 주기
+    token-ttl-minutes: 30
+    # 부하 테스트 전용 스위치 — 입장한 요청이 primary(MySQL) 풀에서 실제 커넥션을 빌려 이 시간(ms)만큼
+    #  SELECT SLEEP 으로 붙잡았다 놓는다. 실제 트래픽 소진을 못 만드는 테스트에서 "DB 가 동시에
+    #  max-concurrent 개만 처리" 병목을 인위 재현해 대기열이 실제로 차게 만든다.
+    #  ★현재 부하 테스트 중이라 기본 1000(1초)으로 켜둠. 운영 복귀 시 WAITING_ROOM_TEST_HOLD_MS=0 으로 끈다.
+    test-hold-ms: ${WAITING_ROOM_TEST_HOLD_MS:1000}
+
 # 정적 리소스(CSS/JS/영상 mp4) 오프로드 대상 CDN(CloudFront) 도메인
 #  - S3(hf4-s3)의 static/ 경로를 오리진으로 서빙. 템플릿은 이 설정값을 참조(하드코딩 금지)
 #  - 로컬/다른 환경에선 CDN_URL 로 오버라이드 가능
@@ -70,10 +130,12 @@ app:
   cdn:
     url: ${CDN_URL:https://d3czavkc472er9.cloudfront.net}
 
-# Ollama (BGE-M3 임베딩 서버) — 상품추천 챗봇 쿼리 임베딩
-ollama:
-  base-url: http://localhost:11434
-  embedding-model: bge-m3
+# BGE-M3 임베딩 — AWS Lambda(hf4-embedding) SDK invoke (상품추천 챗봇/리뷰 RAG 쿼리 임베딩)
+#  - 모델은 Lambda 컨테이너 이미지에 베이크(ONNX fp32), EventBridge 5분 워밍 핑으로 상주 유지
+#  - 기존 EC2 로컬 Ollama 제거 → 앱 기동 시 모델을 메모리에 올리지 않음
+embedding:
+  lambda:
+    function-name: ${EMBED_LAMBDA_FUNCTION:hf4-embedding}
 
 # 라이브 리뷰 Q&A RAG 튜닝
 rag:

@@ -74,6 +74,8 @@
         @media (max-width:1100px){ .stat-row{grid-template-columns:repeat(3,1fr)} }
         @media (max-width:900px){ .mover-grid,.detail-grid{grid-template-columns:1fr} .stat-row{grid-template-columns:repeat(2,1fr)} }
     </style>
+    <!-- 발표용 고대비 테마 -->
+    <div th:replace="~{fragments/present :: presentTheme}"></div>
 </head>
 <body>
 <div class="top-bar"></div>

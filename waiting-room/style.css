@@ -1,0 +1,200 @@
+/* ================= Design System (프로젝트 static/css/style.css 토큰과 동일하게 유지) ================= */
+:root {
+    --primary: #008982;
+    --primary-hover: #00706a;
+    --accent: #E2A807;
+    --text-main: #000000;
+    --text-sub: #666666;
+    --bg-base: #FFFFFF;
+    --bg-light: #F8F9FA;
+    --border: #EAEAEA;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Pretendard', sans-serif;
+}
+
+body {
+    background-color: var(--bg-light);
+    color: var(--text-main);
+    line-height: 1.5;
+}
+
+/* ================= Layout ================= */
+.waiting-wrap {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+    padding: 40px 20px;
+}
+
+.waiting-card {
+    width: 100%;
+    max-width: 460px;
+    background-color: var(--bg-base);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 40px 36px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+    text-align: center;
+}
+
+.logo {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--primary);
+    letter-spacing: -0.5px;
+    margin-bottom: 24px;
+}
+
+.logo-accent {
+    color: var(--accent);
+}
+
+/* ================= Status Badge ================= */
+.waiting-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    background-color: #E8F5F4;
+    color: var(--primary-hover);
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 20px;
+}
+
+.waiting-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--primary);
+    animation: waiting-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes waiting-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.8); }
+}
+
+.waiting-title {
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    margin-bottom: 6px;
+}
+
+.waiting-subtitle {
+    color: var(--text-sub);
+    font-size: 14px;
+    margin-bottom: 28px;
+}
+
+/* ================= Queue Number ================= */
+.queue-number {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 20px;
+}
+
+.queue-number-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-sub);
+}
+
+.queue-number-value {
+    font-size: 48px;
+    font-weight: 800;
+    color: var(--primary);
+    letter-spacing: -1px;
+    line-height: 1.2;
+}
+
+/* ================= Progress ================= */
+.queue-progress {
+    height: 10px;
+    border-radius: 5px;
+    background-color: var(--border);
+    overflow: hidden;
+    margin-bottom: 24px;
+}
+
+.queue-progress-bar {
+    height: 100%;
+    border-radius: 5px;
+    background: linear-gradient(90deg, var(--primary-hover), var(--primary));
+    transition: width 0.6s ease;
+}
+
+/* ================= Stats ================= */
+.queue-stats {
+    display: flex;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background-color: var(--bg-light);
+    margin-bottom: 20px;
+}
+
+.queue-stat {
+    flex: 1;
+    padding: 14px 10px;
+}
+
+.queue-stat + .queue-stat {
+    border-left: 1px solid var(--border);
+}
+
+.queue-stat dt {
+    font-size: 12.5px;
+    color: var(--text-sub);
+    margin-bottom: 4px;
+}
+
+.queue-stat dd {
+    font-size: 17px;
+    font-weight: 700;
+}
+
+/* ================= Message ================= */
+.waiting-message {
+    font-size: 13.5px;
+    color: var(--text-sub);
+    min-height: 20px;
+}
+
+.waiting-message.is-error {
+    color: #D64545;
+}
+
+.waiting-message.is-ready {
+    color: var(--primary-hover);
+    font-weight: 700;
+}
+
+.waiting-footnote {
+    font-size: 12.5px;
+    color: var(--text-sub);
+}
+
+@media (max-width: 480px) {
+    .waiting-card {
+        padding: 32px 24px;
+    }
+
+    .waiting-title {
+        font-size: 22px;
+    }
+
+    .queue-number-value {
+        font-size: 40px;
+    }
+}

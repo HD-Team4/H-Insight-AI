@@ -1,6 +1,10 @@
 package com.hinsight.review.service;
 
 import com.hinsight.common.dto.PageResponse;
+import com.hinsight.exception.ErrorCode;
+import com.hinsight.exception.custom.common.LoginRequiredException;
+import com.hinsight.exception.custom.review.ReviewNotPurchasedException;
+import com.hinsight.exception.custom.review.ReviewValidationException;
 import com.hinsight.review.dao.ReviewDao;
 import com.hinsight.review.model.dto.ReviewCreateRequest;
 import com.hinsight.review.model.dto.ReviewDto;
@@ -37,24 +41,24 @@ public class ReviewService {
     @Transactional
     public void createReview(Long userId, ReviewCreateRequest request) {
         if (userId == null) {
-            throw new IllegalArgumentException("로그인이 필요합니다.");
+            throw new LoginRequiredException();
         }
         if (request == null || request.getProductId() == null) {
-            throw new IllegalArgumentException("상품 정보가 올바르지 않습니다.");
+            throw new ReviewValidationException(ErrorCode.REVIEW_INVALID_PRODUCT);
         }
         if (!hasPurchased(userId, request.getProductId())) {
-            throw new IllegalArgumentException("구매한 상품만 리뷰를 작성할 수 있습니다.");
+            throw new ReviewNotPurchasedException();
         }
         Integer rating = request.getRating();
         if (rating == null || rating < 1 || rating > 5) {
-            throw new IllegalArgumentException("별점은 1~5점 사이로 선택해 주세요.");
+            throw new ReviewValidationException(ErrorCode.REVIEW_INVALID_RATING);
         }
         String content = request.getContent() == null ? "" : request.getContent().trim();
         if (content.isBlank()) {
-            throw new IllegalArgumentException("리뷰 내용을 입력해 주세요.");
+            throw new ReviewValidationException(ErrorCode.REVIEW_CONTENT_REQUIRED);
         }
         if (content.length() > MAX_CONTENT_LENGTH) {
-            throw new IllegalArgumentException("리뷰는 최대 " + MAX_CONTENT_LENGTH + "자까지 작성할 수 있습니다.");
+            throw new ReviewValidationException(ErrorCode.REVIEW_CONTENT_TOO_LONG);
         }
         reviewDao.insert(request.getProductId(), userId, rating, content);
     }

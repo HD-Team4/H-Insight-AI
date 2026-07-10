@@ -17,6 +17,7 @@ services:
     image: quay.io/debezium/kafka:3.0
     container_name: hinsight-kafka
     profiles: ["local"]
+    restart: unless-stopped   # OOM kill(137) 후 죽은 채 방치돼 앱 기동 실패(KafkaAdmin timeout) 재발 방지
     ports:
       - "9092:9092"
     depends_on:
@@ -35,6 +36,7 @@ services:
     image: provectuslabs/kafka-ui:latest
     container_name: hinsight-kafka-ui
     profiles: ["local"]
+    restart: unless-stopped
     ports:
       - "8090:8080"
     depends_on:
@@ -148,34 +150,8 @@ services:
     networks:
       - hinsight
 
-  # ==========================================
-  # 3. 임베딩 서버 (Ollama + BGE-M3) — 상품추천 챗봇 쿼리 임베딩
-  # ==========================================
-  ollama:
-    image: ollama/ollama:latest
-    container_name: hinsight-ollama
-    restart: unless-stopped
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollama-data:/root/.ollama       # 받은 모델(bge-m3) 영속화 → 재기동 시 재다운로드 방지
-    networks:
-      - hinsight
+  # (임베딩 서버(Ollama+BGE-M3)는 AWS Lambda(hf4-embedding)로 이전됨 — lambda/embedding 참고)
 
-  # bge-m3 모델 최초 1회 pull 용 one-shot (minio-setup 과 동일 패턴)
-  ollama-setup:
-    image: ollama/ollama:latest
-    container_name: hinsight-ollama-setup
-    depends_on:
-      - ollama
-    environment:
-      - OLLAMA_HOST=http://ollama:11434   # pull 대상 = ollama 서비스(원격 서버)
-    entrypoint: >
-      /bin/sh -c "
-      until ollama list >/dev/null 2>&1; do echo 'waiting for ollama...'; sleep 2; done;
-      ollama pull bge-m3;
-      exit 0;
-      "
   # 3. Redis (마이페이지 "최근 본 상품" 캐시)
   # ==========================================
   redis:
@@ -211,8 +187,8 @@ services:
     command:
       - '--path.rootfs=/host'
     pid: host
-    volumes:
-      - '/:/host:ro,rslave'
+#    volumes: # 윈도우 환경에서 불가
+#      - '/:/host:ro,rslave'
     ports:
       - "9100:9100"
     networks:
@@ -290,7 +266,6 @@ services:
 volumes:
   es-data:
   minio-data:
-  ollama-data:
   redis-data:
 
 networks:

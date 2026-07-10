@@ -7,9 +7,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>H-Insight-AI</title>
 
+    <!-- CSRF 토큰을 head에서 미리 생성한다.
+         비로그인(세션 없음) 사용자는 폼 렌더 시점에 세션을 만드는데,
+         head의 큰 CSS로 응답이 먼저 커밋되면 "세션 생성 실패"로 페이지가 깨진다.
+         출력 초반(여기)에서 토큰을 만들어 두면 이후 폼은 기존 세션을 재사용한다. -->
+    <meta name="_csrf" th:content="${_csrf != null ? _csrf.token : ''}">
+    <meta name="_csrf_header" th:content="${_csrf != null ? _csrf.headerName : ''}">
+
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" />
 
     <link rel="stylesheet" th:href="${@environment.getProperty('app.cdn.url') + '/static/css/style.css'}">
+
+    <!-- 발표용 고대비 테마 (style.css 뒤에서 값만 덧씌움) -->
+    <div th:replace="~{fragments/present :: presentTheme}"></div>
 
     <th:block layout:fragment="css"></th:block>
     <th:block layout:fragment="script"></th:block>

@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="_csrf" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:content="${_csrf.headerName}">
+    <title>상품 판매 개선</title>
+    <link rel="stylesheet" as="style" crossorigin
+          href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css"/>
+    <link rel="stylesheet" th:href="${@environment.getProperty('app.cdn.url') + '/static/css/style.css'}">
+    <style>
+        .biz-nav { display:flex; gap:4px; margin-left:28px; }
+        .biz-nav a { padding:8px 14px; border-radius:8px; font-size:14px; font-weight:600; color:var(--text-sub); text-decoration:none; }
+        .biz-nav a.active { color:var(--primary); background:rgba(0,137,130,.08); }
+        .head { display:flex; justify-content:space-between; gap:16px; align-items:flex-start; margin-bottom:18px; }
+        .panel { background:var(--bg-base); border:1px solid var(--border); border-radius:8px; padding:20px 22px; }
+        .grid { display:grid; grid-template-columns:.9fr 1.1fr; gap:16px; align-items:start; }
+        .metrics { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:14px; }
+        .metric { background:var(--bg-light); border:1px solid var(--border); border-radius:8px; padding:12px; }
+        .metric span { display:block; color:var(--text-sub); font-size:12px; }
+        .metric strong { display:block; margin-top:5px; font-size:18px; }
+        .product-card-preview { display:grid; grid-template-columns:120px 1fr; gap:14px; align-items:center; }
+        .product-card-preview img { width:120px; height:120px; object-fit:cover; border-radius:8px; background:#f4f4f4; }
+        .product-card-preview h3 { margin:0 0 8px; font-size:18px; line-height:1.4; }
+        .chip { display:inline-flex; padding:5px 10px; border-radius:999px; background:var(--bg-light); color:var(--text-sub); font-size:12px; font-weight:800; }
+        .action-copy { color:var(--text-main); line-height:1.7; font-size:14px; margin:0; }
+        .input { width:100%; box-sizing:border-box; border:1px solid var(--border); border-radius:8px; padding:12px 14px; font:inherit; }
+        .btn { border:1px solid var(--border); background:var(--bg-base); color:var(--text-main); font-size:14px; font-weight:800;
+            padding:10px 15px; border-radius:8px; cursor:pointer; text-decoration:none; display:inline-flex; align-items:center; }
+        .btn.primary { border-color:var(--primary); background:var(--primary); color:#fff; }
+        .btn:disabled { opacity:.55; cursor:progress; }
+        @media (max-width:900px){ .grid,.head{grid-template-columns:1fr; display:grid;} .metrics{grid-template-columns:1fr;} }
+    </style>
+    <!-- 발표용 고대비 테마 -->
+    <div th:replace="~{fragments/present :: presentTheme}"></div>
+</head>
+<body>
+<div class="top-bar"></div>
+<header class="container">
+    <div class="header-main">
+        <div style="display:flex; align-items:center;">
+            <a th:href="@{/biz/dashboard}" class="logo">H-Insight <span style="color: var(--accent);">Biz</span></a>
+            <nav class="biz-nav">
+                <a th:href="@{/biz/dashboard}">대시보드</a>
+                <a th:href="@{/biz/review-analysis}" class="active">상품 분석</a>
+            </nav>
+        </div>
+        <div class="header-utils">
+            <span><span sec:authentication="name">기업</span> 님</span>
+            <form th:action="@{/biz/logout}" method="post" style="display:inline; margin:0;">
+                <button type="submit" style="background:none; border:none; padding:0; cursor:pointer; color:inherit; font:inherit; font-weight:500;">로그아웃</button>
+            </form>
+        </div>
+    </div>
+</header>
+
+<main class="container" style="padding-top:32px; padding-bottom:64px;">
+    <div class="head">
+        <div>
+            <h1 class="section-title" style="margin:0;" th:text="${item.label}">판매 개선</h1>
+            <p style="color:var(--text-sub); line-height:1.6; margin:8px 0 0;" th:text="${item.reason}">설명</p>
+        </div>
+        <a class="btn" th:href="@{/biz/review-analysis}">분석으로 돌아가기</a>
+    </div>
+
+    <div class="grid">
+        <section class="panel">
+            <div class="product-card-preview">
+                <img th:if="${item.imageUrl != null and !item.imageUrl.isBlank()}" th:src="${item.imageUrl}" th:alt="${item.productName}">
+                <div th:unless="${item.imageUrl != null and !item.imageUrl.isBlank()}" style="width:120px;height:120px;border-radius:8px;background:#f4f4f4;"></div>
+                <div>
+                    <span class="chip" th:text="${item.caseType}">CASE</span>
+                    <h3 th:text="${item.productName}">상품명</h3>
+                    <a th:href="@{/customer/products/{id}(id=${item.productId})}" target="_blank" rel="noopener" style="color:var(--primary);font-size:13px;font-weight:800;text-decoration:none;">고객 상세페이지 보기</a>
+                </div>
+            </div>
+            <div class="metrics">
+                <div class="metric"><span>검색</span><strong th:text="${#numbers.formatInteger(item.searches, 0, 'COMMA')}">0</strong></div>
+                <div class="metric"><span>클릭</span><strong th:text="${#numbers.formatInteger(item.clicks, 0, 'COMMA')}">0</strong></div>
+                <div class="metric"><span>구매</span><strong th:text="${#numbers.formatInteger(item.purchases, 0, 'COMMA')}">0</strong></div>
+            </div>
+        </section>
+
+        <section class="panel">
+            <h3 style="margin-top:0;">적용 작업</h3>
+            <p class="action-copy" th:if="${item.caseType == 'NO_SEARCH'}">
+                승인하면 이 상품을 메인 상품 목록의 라이브 영상 옆 추천 슬롯에 노출합니다.
+            </p>
+
+            <div th:if="${item.caseType == 'NO_CLICK'}">
+                <p class="action-copy" style="margin-bottom:12px;">
+                    상품의 품목, 색상, 핏과 최근 패션 커머스 표현 흐름을 반영해 클릭을 유도할 수 있는 상품명을 제안합니다.
+                </p>
+                <label style="font-size:13px;font-weight:800;">적용할 상품명</label>
+                <input class="input" id="actionValue" th:value="${item.generatedProductName}">
+            </div>
+
+            <button class="btn primary" id="applyBtn" style="margin-top:16px;">승인하고 적용</button>
+            <input type="hidden" id="caseType" th:value="${item.caseType}">
+            <input type="hidden" id="productId" th:value="${item.productId}">
+        </section>
+    </div>
+</main>
+
+<div th:replace="~{fragments/modal :: modalFragment}"></div>
+
+<script>
+    const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
+    const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
+    const applyBtn = document.getElementById('applyBtn');
+
+    async function notify(message, title) {
+        if (window.showAlert) await showAlert(message, {title});
+        else alert(message);
+    }
+
+    applyBtn.addEventListener('click', async () => {
+        applyBtn.disabled = true;
+        const valueEl = document.getElementById('actionValue');
+        const headers = {'Content-Type': 'application/json'};
+        if (csrfHeader && csrfToken) headers[csrfHeader] = csrfToken;
+        try {
+            const res = await fetch('/biz/review-analysis/boost/apply', {
+                method: 'POST',
+                headers,
+                body: JSON.stringify({
+                    caseType: document.getElementById('caseType').value,
+                    productId: Number(document.getElementById('productId').value),
+                    value: valueEl ? valueEl.value : null
+                })
+            });
+            const data = await res.json().catch(() => ({}));
+            await notify(data.message || (res.ok ? '적용했습니다.' : '적용에 실패했습니다.'), '판매 개선');
+        } finally {
+            applyBtn.disabled = false;
+        }
+    });
+</script>
+</body>
+</html>

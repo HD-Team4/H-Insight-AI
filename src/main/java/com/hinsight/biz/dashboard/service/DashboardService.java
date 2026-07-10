@@ -2,6 +2,7 @@ package com.hinsight.biz.dashboard.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hinsight.exception.custom.biz.MartLoadException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.ClassPathResource;
@@ -10,7 +11,6 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UncheckedIOException;
 import java.util.List;
 
 /**
@@ -50,7 +50,7 @@ public class DashboardService {
             try (InputStream is = new ClassPathResource(MART_RESOURCE).getInputStream()) {
                 return objectMapper.readTree(is);
             } catch (IOException io) {
-                throw new UncheckedIOException("대시보드 mart 로드 실패: " + MART_RESOURCE, io);
+                throw new MartLoadException(io);
             }
         }
     }

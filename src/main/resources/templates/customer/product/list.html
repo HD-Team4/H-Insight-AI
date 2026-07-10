@@ -15,35 +15,94 @@
                 </div>
             </div>
 
-            <div class="live-main-carousel" id="liveMainCarousel">
-                <div class="live-main-grid">
-                    <article class="live-main-card"
-                             th:each="live : ${onAirLiveSessions}">
-                        <a class="live-main-video"
-                           th:href="@{/live/{id}(id=${live.liveSessionId})}"
-                           aria-label="라이브 방송 입장">
-                            <video autoplay muted loop playsinline preload="metadata"
-                                   th:with="cacheVersion=${live.cacheVersion != null ? live.cacheVersion : 1}">
-                                <source th:src="${live.videoUrl != null and !#strings.isEmpty(#strings.trim(live.videoUrl))} ? ${live.videoUrl + '?v=' + cacheVersion} : ${@environment.getProperty('app.cdn.url') + '/static/videos/live/windbreaker.mp4'}"
-                                        type="video/mp4">
-                            </video>
-                        </a>
-                        <div class="live-main-info">
-                            <div class="live-main-meta">
-                                <span>ON AIR</span>
-                            </div>
-                            <h3 th:text="${live.liveTitle}">라이브 제목</h3>
-                            <p th:if="${live.liveMessage != null and !live.liveMessage.isBlank()}"
-                               th:text="${live.liveMessage}">라이브 소개 문구</p>
-                            <div class="live-main-cta">
-                                <a th:href="@{/live/{id}(id=${live.liveSessionId})}">방송 보러가기</a>
-                                <div class="live-main-controls">
-                                    <button type="button" class="live-scroll-btn" data-live-scroll="prev" aria-label="이전 라이브">‹</button>
-                                    <button type="button" class="live-scroll-btn" data-live-scroll="next" aria-label="다음 라이브">›</button>
+            <!-- 판매 개선(검색 없음 승인) 추천 슬롯 — 라이브 영상 옆에 세로로 노출 -->
+            <style>
+                .live-main-row { display:flex; gap:16px; align-items:stretch; }
+                .live-main-row .live-main-carousel { flex:1 1 auto; min-width:0; }
+                .promo-slot { flex:0 0 288px; width:288px; }
+
+                /* ── 라이브 섹션 확대 (발표용) ──
+                   비율(16/9)·object-fit:cover 는 그대로 → 잘림/검은 여백 없이 크기만 키움.
+                   컨테이너(1200px) 안에선 추천슬롯 때문에 영상이 안 커지므로,
+                   라이브 섹션만 좌우 대칭으로 컨테이너 밖으로 넓혀(최대 1360px) 영상을 키운다.
+                   동시에 위 여백을 줄여 섹션이 위로 더 크게 올라오게 한다. */
+                .live-main-preview {
+                    width: min(1360px, calc(100vw - 32px));
+                    margin: 18px 0 28px 50%;                     /* 상단 여백↑ → 헤더/선과 간격 확보 */
+                    transform: translateX(-50%);
+                    padding: 22px 0 24px;                        /* 카드 안쪽 상단 여백↑ → 배지가 위에 바짝 안 붙게 */
+                    background: transparent;                     /* 흰 배경 제거 → 오프화이트 페이지에 자연스럽게 녹임 */
+                }
+                .live-main-head { max-width: none; }
+                .live-main-carousel { max-width: none; }
+                .live-main-card { grid-template-columns: minmax(0, 2.3fr) minmax(260px, 0.7fr); }
+                .live-main-head h2 { font-size: 24px; }         /* 섹션 제목도 함께 키움 */
+                .promo-slot-label { font-size:16px; font-weight:800; color:var(--text-main); margin-bottom:12px; }
+                .promo-slot-list { display:flex; flex-direction:column; gap:12px; max-height:100%; overflow-y:auto; padding-right:2px; }
+                .promo-card { display:flex; align-items:center; gap:14px; text-decoration:none; color:inherit;
+                    padding:8px; border-radius:10px; }
+                .promo-card:hover { background:var(--bg-light); }
+                .promo-card-img { flex:0 0 76px; width:76px; height:76px; border-radius:10px; overflow:hidden; background:#f4f4f4; }
+                .promo-card-img img { width:100%; height:100%; object-fit:cover; display:block; }
+                .promo-card-info { min-width:0; }
+                .promo-card-name { font-size:15px; font-weight:600; line-height:1.4;
+                    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+                .promo-card-price { font-size:16px; font-weight:800; margin-top:4px; }
+                @media (max-width:900px) {
+                    .live-main-row { flex-direction:column; }
+                    .promo-slot { width:100%; flex:none; }
+                    .promo-slot-list { flex-direction:row; overflow-x:auto; overflow-y:visible; max-height:none; }
+                    .promo-card { flex-direction:column; align-items:flex-start; flex:0 0 132px; width:132px; }
+                    .promo-card-img { width:100%; height:132px; }
+                }
+            </style>
+            <div class="live-main-row">
+                <div class="live-main-carousel" id="liveMainCarousel">
+                    <div class="live-main-grid">
+                        <article class="live-main-card"
+                                 th:each="live : ${onAirLiveSessions}">
+                            <a class="live-main-video"
+                               th:href="@{/live/{id}(id=${live.liveSessionId})}"
+                               aria-label="라이브 방송 입장">
+                                <video autoplay muted loop playsinline preload="metadata"
+                                       th:with="cacheVersion=${live.cacheVersion != null ? live.cacheVersion : 1}">
+                                    <source th:src="${live.videoUrl != null and !#strings.isEmpty(#strings.trim(live.videoUrl))} ? ${live.videoUrl + '?v=' + cacheVersion} : ${@environment.getProperty('app.cdn.url') + '/static/videos/live/windbreaker.mp4'}"
+                                            type="video/mp4">
+                                </video>
+                            </a>
+                            <div class="live-main-info">
+                                <div class="live-main-meta">
+                                    <span>ON AIR</span>
+                                </div>
+                                <h3 th:text="${live.liveTitle}">라이브 제목</h3>
+                                <p th:if="${live.liveMessage != null and !live.liveMessage.isBlank()}"
+                                   th:text="${live.liveMessage}">라이브 소개 문구</p>
+                                <div class="live-main-cta">
+                                    <a th:href="@{/live/{id}(id=${live.liveSessionId})}">방송 보러가기</a>
+                                    <div class="live-main-controls">
+                                        <button type="button" class="live-scroll-btn" data-live-scroll="prev" aria-label="이전 라이브">‹</button>
+                                        <button type="button" class="live-scroll-btn" data-live-scroll="next" aria-label="다음 라이브">›</button>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    </article>
+                        </article>
+                    </div>
+                </div>
+
+                <div class="promo-slot" th:if="${promotedProducts != null and !#lists.isEmpty(promotedProducts)}">
+                    <div class="promo-slot-label">✨ H-Insight 추천 픽</div>
+                    <div class="promo-slot-list">
+                        <a class="promo-card" th:each="p : ${promotedProducts}"
+                           th:href="@{/customer/products/{id}(id=${p.productId})}">
+                            <div class="promo-card-img">
+                                <img th:if="${p.imageUrl}" th:src="${p.imageUrl}" th:alt="${p.productName}">
+                            </div>
+                            <div class="promo-card-info">
+                                <div class="promo-card-name" th:text="${p.productName}">상품명</div>
+                                <div class="promo-card-price" th:text="${#numbers.formatInteger(p.price, 0, 'COMMA')} + '원'">0원</div>
+                            </div>
+                        </a>
+                    </div>
                 </div>
             </div>
         </section>
@@ -100,7 +159,8 @@
             .hot-empty { color:var(--text-sub); font-size:13px; padding:8px 2px; }
             @media (max-width:700px){ .hot-card,.hot-card-img{flex-basis:132px; width:132px;} .hot-card-img{height:132px;} }
         </style>
-        <section class="hot-trend" id="hotTrend" style="display:none">
+        <!-- 전체 보기에서만 노출 — 카테고리 선택/검색 시엔 결과에 집중 (라이브·추천픽과 동일 기준) -->
+        <section class="hot-trend" id="hotTrend" style="display:none" th:if="${showLiveBroadcast}">
             <h2 class="section-title">🔥 실시간 급상승</h2>
             <p class="hot-sub">최근 1시간 실시간 집계 · <span id="hotAt">–</span> 기준</p>
 
@@ -112,7 +172,7 @@
         </section>
 
         <h2 class="section-title" th:if="${condition.categoryGroup() == null}">
-            H-Insight 추천 픽
+            전체 상품
         </h2>
 
         <p class="did-you-mean"

@@ -51,6 +51,8 @@ dependencies {
     // KAN-106: S3 마트 읽기 (AWS SDK v2, 읽기전용 IAM 키)
     implementation 'software.amazon.awssdk:s3:2.28.0'
     implementation 'software.amazon.awssdk:apache-client:2.28.0'
+    // 임베딩 Lambda(hf4-embedding) SDK invoke — EC2 로컬 Ollama 대체
+    implementation 'software.amazon.awssdk:lambda:2.28.0'
     // KAN-114: 리뷰봇 금칙어 필터 — Aho-Corasick(수만 개 금칙어를 O(N) 인메모리 스캔, 네트워크 0)
     implementation 'org.ahocorasick:ahocorasick:0.6.3'
 

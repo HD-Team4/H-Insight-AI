@@ -45,7 +45,7 @@ public class SemanticDemoApiController {
             return ApiResponse.ok(semanticDemoService.analyze(questions, threshold, repeatThreshold));
         } catch (Exception e) {
             log.warn("[시맨틱-데모] 분석 실패: {}", e.getMessage());
-            return ApiResponse.fail("임베딩 모델(BGE-M3) 호출에 실패했습니다. Ollama 구동 여부를 확인하세요: " + e.getMessage());
+            return ApiResponse.fail("임베딩 모델(BGE-M3) 호출에 실패했습니다. 임베딩 Lambda(hf4-embedding) 상태를 확인하세요: " + e.getMessage());
         }
     }
 
