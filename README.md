@@ -21,7 +21,7 @@
 ![AWS](https://img.shields.io/badge/AWS-S3%20·%20Athena%20·%20Lambda%20·%20MSK-232F3E?logo=amazonwebservices&logoColor=white)
 ![Spring AI](https://img.shields.io/badge/Spring%20AI-Gemini-4285F4?logo=google)
 
-**4팀 ONE WAY** · 안정민 · 공채연 · 홍준표 · 안의찬
+**4팀 ONE WAY** · Annie · 공채연 · 홍준표 · 안의찬
 
 </div>
 
@@ -281,7 +281,7 @@ S3 데이터레이크 → MSK/Connect → Athena/Lambda 배포는 [docs/cloud/](
 
 | 이름 | GitHub |
 |------|--------|
-| 안정민 | [@Dev-Anniee](https://github.com/Dev-Anniee) |
+| Annie | [@Dev-Anniee](https://github.com/Dev-Anniee) |
 | 공채연 | [@chaeyeonKong](https://github.com/chaeyeonKong) |
 | 홍준표 | [@HongJunPyo0222](https://github.com/HongJunPyo0222) |
 | 안의찬 | [@Ui-chan](https://github.com/Ui-chan) |
