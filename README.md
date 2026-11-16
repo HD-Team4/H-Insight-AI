@@ -21,7 +21,7 @@
 ![AWS](https://img.shields.io/badge/AWS-S3%20·%20Athena%20·%20Lambda%20·%20MSK-232F3E?logo=amazonwebservices&logoColor=white)
 ![Spring AI](https://img.shields.io/badge/Spring%20AI-Gemini-4285F4?logo=google)
 
-**4팀 ONE WAY** · 안정민 · 공채연 · 홍준표 · 안의찬
+**4팀 ONE WAY** · Annie · 공채연 · 홍준표 · 안의찬
 
 </div>
 
