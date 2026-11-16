@@ -281,7 +281,7 @@ S3 데이터레이크 → MSK/Connect → Athena/Lambda 배포는 [docs/cloud/](
 
 | 이름 | GitHub |
 |------|--------|
-| 안정민 | [@Dev-Anniee](https://github.com/Dev-Anniee) |
+| Annie | [@Dev-Anniee](https://github.com/Dev-Anniee) |
 | 공채연 | [@chaeyeonKong](https://github.com/chaeyeonKong) |
 | 홍준표 | [@HongJunPyo0222](https://github.com/HongJunPyo0222) |
 | 안의찬 | [@Ui-chan](https://github.com/Ui-chan) |
